@@ -15,10 +15,12 @@ using namespace std;
 
 class UATmvaFactory_t {
   public:
+  UATmvaFactory_t(){ TmvaFile = NULL ; TmvaFactory = NULL; }
+  ~UATmvaFactory_t(){ TmvaFile->Close(); delete TmvaFile ; delete TmvaFactory ; }
+   
   TString              TmvaName ;
   TFile*               TmvaFile ;
   Factory*             TmvaFactory ; 
-  vector<TString>      TmvaConfig  ; 
 };
 
 
@@ -26,11 +28,9 @@ class UATmvaClassification {
 
   private:
 
-  Bool_t                    InitDone    ;
-  vector<UATmvaFactory_t>   UATmvaFactory ;
-
-  //TFile*               TmvaOutput  ;
-  //Factory*             TmvaFactory ; 
+  Bool_t                    InitDone  ;
+  UATmvaFactory_t*          UAFactory ;
+  void Train(); 
  
   public:
 
@@ -39,10 +39,10 @@ class UATmvaClassification {
 
   Bool_t IsInit() { return InitDone ; }
 
-  void Init    ( UATmvaConfig&, UATmvaTree&);
-  void InitMLP ( UATmvaConfig&, UATmvaTree&);
+  void Do    ( UATmvaConfig&, UATmvaTree&);
+  void DoMLP ( UATmvaConfig&, UATmvaTree&);
 
-  void Train(); 
+
 
 };
 
