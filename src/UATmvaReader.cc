@@ -252,12 +252,12 @@ void UATmvaReader::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
      Limit.Write();
 
      // clean histo's 
-     delete hMVA_data;
+/*     delete hMVA_data;
      delete hMVA_sig;
      delete hMVA_bkgd;
      delete hMVA_bgSp;
      delete hMVA_bgTr;
-
+*/
      // Clean UAReader
      delete UAReader ; 
 
