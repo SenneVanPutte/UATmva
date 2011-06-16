@@ -29,11 +29,11 @@ void UATmvaConfig::Reset(){
   TmvaWeight         = "" ;
   TmvaVar.clear();
 
-  ANNCycles          = 1   ;
-  ANNVarNumRemove    = 2   ;
-  ANNHiddenLayersMin = 1   ;
+  ANNCycles          = 500 ;
+  ANNVarNumRemove    = 0   ;
+  ANNHiddenLayersMin = 2   ;
   ANNHiddenLayersMax = 2   ;
-  ANNHiddenNodesMin  = 1   ;
+  ANNHiddenNodesMin  = 3   ;
   ANNHiddenNodesMax  = 3   ;
   ANNFracTrain       = .5  ; 
   ANNFracTest        = .5  ;

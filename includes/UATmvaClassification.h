@@ -28,9 +28,11 @@ class UATmvaClassification {
 
   private:
 
+  string NAME;
   Bool_t                    InitDone  ;
   UATmvaFactory_t*          UAFactory ;
   void Train(); 
+  void Plot();
  
   public:
 

@@ -27,8 +27,11 @@ void UATmvaClassification::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
      ostringstream Name;
      Name << Cfg.GetTmvaName() << "_MLP_" << nHLayers << "Layers_" << nHNodes << "Nodes_" << nVarMax << "Var" ;
      UAFactory->TmvaName = Name.str();
+     NAME =  Name.str();
+
  
      // Open TMVA output file
+     cout << "[UATmvaClassification::DoMLP()] Create: " << UAFactory->TmvaName << endl;
      UAFactory->TmvaFile  = TFile::Open("rootfiles/" + UAFactory->TmvaName  + ".root","RECREATE" );
   
      // Create TMVA Factory
@@ -72,9 +75,14 @@ void UATmvaClassification::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
 
      // Train , Test, Validate
      Train();
+
+     // Plots
  
      // Clean UAFactory
      delete UAFactory ; 
+
+     // Making some basic plots
+     Plot();
    
    } // Nodes
    } // Layers
@@ -90,4 +98,35 @@ void UATmvaClassification::Train( ){
     UAFactory->TmvaFactory->EvaluateAllMethods();
 }
 
+void UATmvaClassification::Plot( ){
+    cout << "[UATmvaClassification::Plot()] Plotting " << UAFactory->TmvaName << endl;
+    string command;
 
+    // Correlations
+    command = "root -b -q $ROOTSYS/tmva/test/correlations.C\\(\\\"rootfiles/"+NAME+".root\\\"\\)";
+    system(command.c_str());
+    command = "mv plots/CorrelationMatrixS.eps plots/CorrelationMatrixS_"+NAME+".eps";
+    system(command.c_str());
+    command = "mv plots/CorrelationMatrixS.gif plots/CorrelationMatrixS_"+NAME+".gif";
+    system(command.c_str());
+    command = "mv plots/CorrelationMatrixB.eps plots/CorrelationMatrixB_"+NAME+".eps";
+    system(command.c_str());
+    command = "mv plots/CorrelationMatrixB.gif plots/CorrelationMatrixB_"+NAME+".gif";
+    system(command.c_str());
+
+    // overtraining (test and training)
+    command = "root -b -q $ROOTSYS/tmva/test/mvas.C\\(\\\"rootfiles/"+NAME+".root\\\",3\\)";
+    system(command.c_str());
+
+    // epoch plot (test and training)
+    command = "root -b -q $ROOTSYS/tmva/test/annconvergencetest.C\\(\\\"rootfiles/"+NAME+".root\\\"\\)";
+    system(command.c_str());
+    command = "mv plots/annconvergencetest.eps plots/annconvergencetest_"+NAME+".eps";
+    system(command.c_str());
+    command = "mv plots/annconvergencetest.gif plots/annconvergencetest_"+NAME+".gif";
+    system(command.c_str());
+ 
+    // MVA efficiency
+    //command = "root -b -q $ROOTSYS/tmva/test/mvaeffs.C\\(\\\"rootfiles/"+NAME+".root\\\"\\)";
+    //system(command.c_str());
+}
