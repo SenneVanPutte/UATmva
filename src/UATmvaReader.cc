@@ -243,7 +243,7 @@ void UATmvaReader::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
       delete wRoo;
       // All
       S = hMVA_sig->Integral(Bin.GetBinContent(iBin+2),hMVA_sig->GetNbinsX());
-      B = hMVA_bgTr->Integral(Bin.GetBinContent(iBin+2),hMVA_bgTr->GetNbinsX());
+      B = hMVA_bkgd->Integral(Bin.GetBinContent(iBin+2),hMVA_bkgd->GetNbinsX());
       init();
       Limit.SetBinContent(iBin+2,limitBayesian(B,.35,S,.1));
       delete wRoo;
