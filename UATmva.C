@@ -14,15 +14,15 @@ void UATmva(){
   UATmvaConfigTest.ReadCfg("Config.cfg");
   UATmvaConfigTest.Print();
 
-//  UATmvaTree UATmvaTreeTest(UATmvaConfigTest);
+  UATmvaTree UATmvaTreeTest(UATmvaConfigTest);
 
 //  UATmvaClassification UATmva;
 //  UATmva.Do(UATmvaConfigTest,UATmvaTreeTest);
 
-//  UATmvaReader Reader;
-//  Reader.Do(UATmvaConfigTest,UATmvaTreeTest); 
+  UATmvaReader Reader;
+  Reader.Do(UATmvaConfigTest,UATmvaTreeTest); 
   
     UATmvaSummary Summary;
-    Summary.Do(UATmvaConfigTest);
+//    Summary.Do(UATmvaConfigTest);
 
 }

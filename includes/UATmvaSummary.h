@@ -13,11 +13,17 @@ using namespace std;
 
 class UATmvaSummary_t {
   public:
-  UATmvaSummary_t() {TmvaFile = NULL ; }
-  ~UATmvaSummary_t(){TmvaFile->Close(); delete TmvaFile ; }
+  UATmvaSummary_t()  ;
+  UATmvaSummary_t(TString)  ;
+  ~UATmvaSummary_t() ; 
    
   TString             TmvaName ;
-  TFile*              TmvaFile ;
+  //TFile*              TmvaFile ;
+
+  TH1D*               Cut; 
+//  TH1D*               Sign; 
+//  TH1D*               Limit; 
+
 };
 
 
@@ -32,7 +38,7 @@ class UATmvaSummary {
   public:
 
   UATmvaSummary(){ InitDone = false ;}
-  virtual ~UATmvaSummary(){;}
+  virtual ~UATmvaSummary();
 
   Bool_t IsInit() { return InitDone ; }
 

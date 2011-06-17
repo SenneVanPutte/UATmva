@@ -115,8 +115,7 @@ TH1D GetExclusionLimit(TString hName, TH1D* Signal , TH1D* Background) {
     Double_t S = Signal->Integral(iBin,hSign->GetNbinsX());
     Double_t B = Background->Integral(iBin,hSign->GetNbinsX());
     cout << "[CALL limitBayesian] B = " << B <<" S = "<< S <<endl;
-    if (S>0) hSign->SetBinContent(iBin,limitBayesian(B,.35,S,.1));
-    else     hSign->SetBinContent(iBin,-99.);
+    hSign->SetBinContent(iBin,limitBayesian(B,.35,S,.1));
     delete wRoo;
 
   }

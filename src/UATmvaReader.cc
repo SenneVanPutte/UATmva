@@ -26,6 +26,7 @@ void UATmvaReader::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
      // Build Name
      ostringstream Name;
      Name << Cfg.GetTmvaName() << "_MLP_" << nHLayers << "Layers_" << nHNodes << "Nodes_" << nVarMax << "Var" ;
+     cout << "[UATmvaReader] Reading: " << Name.str() << endl;
      UAReader->TmvaName = Name.str();
      NAME =  Name.str();
 
@@ -259,7 +260,7 @@ void UATmvaReader::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
      delete hMVA_bgTr;
 */
      // Clean UAReader
-     delete UAReader ; 
+//     delete UAReader ; 
 
      // Making some basic plots
 //     Plot();

@@ -31,9 +31,9 @@ void UATmvaConfig::Reset(){
 
   ANNCycles          = 500 ;
   ANNVarNumRemove    = 0   ;
-  ANNHiddenLayersMin = 2   ;
+  ANNHiddenLayersMin = 1   ;
   ANNHiddenLayersMax = 2   ;
-  ANNHiddenNodesMin  = 3   ;
+  ANNHiddenNodesMin  = 0   ;
   ANNHiddenNodesMax  = 3   ;
   ANNFracTrain       = .5  ; 
   ANNFracTest        = .5  ;

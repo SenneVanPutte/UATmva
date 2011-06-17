@@ -43,7 +43,7 @@ class UATmvaReader {
  
   public:
 
-  UATmvaReader(){ InitDone = false ; nbins = 100 ; minBin=-1.1 ; maxBin=1.1 ;}
+  UATmvaReader(){ InitDone = false ; nbins = 1 ; minBin=-1.1 ; maxBin=1.1 ;}
   virtual ~UATmvaReader(){;}
 
   Bool_t IsInit() { return InitDone ; }
