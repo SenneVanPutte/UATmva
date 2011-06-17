@@ -181,18 +181,20 @@ void UATmvaSummary::Print( ){
 
   cout << endl;
   cout << "  -------> BaseName = " << vUASummary.at(0)->BaseName << endl; 
-  cout << "  ----------------------------------------------------------------------------------------" << endl ;
+  cout << "  ------------------------------------------------------------------------------------------------------" << endl ;
   cout << "  | ID | NAME                |" ;
   cout << " S/Sqrt(S+B):         |";
   cout << " Limit:               |";
   cout << " D^2:        |";
+  cout << " Kol-Smirn:  |";
   cout << endl; 
   cout << "  |    |                     |" ;
   cout << " Cut  'WW'  Cut  All  |";
   cout << " Cut  'WW'  Cut  All  |";
   cout << " Train Test  |";
+  cout << " Sign  Bkgd  |";
   cout << endl; 
-  cout << "  ----------------------------------------------------------------------------------------" << endl ;
+  cout << "  ------------------------------------------------------------------------------------------------------" << endl ;
 
   
   for ( int iUAS = 0 ; iUAS !=  vUASummary.size() ; ++iUAS ) {
@@ -201,7 +203,7 @@ void UATmvaSummary::Print( ){
     if   (iUAS < 9) cout << "  | " ;
     else             cout << " | " ;
     cout << vUASummary.at(iUAS)->ExtName << " | " ;
-    printf ("%3.2f %3.2f  %3.2f %3.2f | %3.2f %3.2f  %3.2f %3.2f | %4.3f %4.3f |\n", 
+    printf ("%3.2f %3.2f  %3.2f %3.2f | %3.2f %3.2f  %3.2f %3.2f | %4.3f %4.3f | %4.3f %4.3f |\n", 
        vUASummary.at(iUAS)->Cut  ->GetBinContent(iSign),
        vUASummary.at(iUAS)->Sign ->GetBinContent(iSign),
        vUASummary.at(iUAS)->Cut  ->GetBinContent(iSign+2),
@@ -211,12 +213,14 @@ void UATmvaSummary::Print( ){
        vUASummary.at(iUAS)->Cut  ->GetBinContent(iLim+2),
        vUASummary.at(iUAS)->Limit->GetBinContent(iLim+2),
        vUASummary.at(iUAS)->D2Train ->GetBinContent( vUASummary.at(iUAS)->D2Train->GetNbinsX() ) ,
-       vUASummary.at(iUAS)->D2Test  ->GetBinContent( vUASummary.at(iUAS)->D2Train->GetNbinsX() ) 
+       vUASummary.at(iUAS)->D2Test  ->GetBinContent( vUASummary.at(iUAS)->D2Train->GetNbinsX() ) ,
+       vUASummary.at(iUAS)->STrain->KolmogorovTest( vUASummary.at(iUAS)->STest ) ,
+       vUASummary.at(iUAS)->BTrain->KolmogorovTest( vUASummary.at(iUAS)->BTest ) 
     );
 
   }
  
-  cout << "  ----------------------------------------------------------------------------------------" << endl ;
+  cout << "  ------------------------------------------------------------------------------------------------------" << endl ;
   cout << endl;
 
  
