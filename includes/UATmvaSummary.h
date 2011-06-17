@@ -7,7 +7,7 @@
 #include <TH1F.h>
 #include <TH1D.h>
 #include <TH2F.h>
-
+#include <TMath.h>
 #include <TString.h>
 #include <string>
 #include <vector>
@@ -35,6 +35,14 @@ class UATmvaSummary_t {
   TH1F*               STest  ;
   TH1F*               BTest  ;
 
+  TH1D*               SCut   ;
+  TH1D*               BCutTr ;
+  TH1D*               BCutAll;
+
+  TH1D*               SignCutTr;
+  TH1D*               SignCutAll;
+  TH1D*               LimitCutTr;
+  TH1D*               LimitCutAll;
 
   TH1D*               Cut; 
   TH1D*               Sign; 
@@ -62,9 +70,10 @@ class UATmvaSummary {
   void Print( );
   void Plots( );
 
-  void PlotEpoch( int );
-  void PlotOvertrain( int );
-
+  void PlotCorrMtx   ( int , bool = true);
+  void PlotEpoch     ( int );
+  void PlotOvertrain ( int );
+  void PlotEff       ( int );
 
 
 

@@ -75,6 +75,15 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   TH1F* STest_    = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_S");
   TH1F* BTest_    = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_B");
 
+  TH1D* SCut_     = (TH1D*) File->Get("OutputHistograms/Signal");
+  TH1D* BCutTr_   = (TH1D*) File->Get("OutputHistograms/BkgdTrain");
+  TH1D* BCutAll_  = (TH1D*) File->Get("OutputHistograms/BkgdTot");
+
+  TH1D* SignCutTr_   = (TH1D*) File->Get("OutputHistograms/bgTr_SoverSqrtBPlusDeltaB");
+  TH1D* SignCutAll_  = (TH1D*) File->Get("OutputHistograms/bkgd_SoverSqrtBPlusDeltaB");
+  TH1D* LimitCutTr_  = (TH1D*) File->Get("OutputHistograms/bgTr_BayesLimit");
+  TH1D* LimitCutAll_ = (TH1D*) File->Get("OutputHistograms/bkgd_BayesLimit");
+
   TH1D* Cut_      = (TH1D*) File->Get("OutputHistograms/Cut");   
   TH1D* Sign_     = (TH1D*) File->Get("OutputHistograms/Sign");
   TH1D* Limit_    = (TH1D*) File->Get("OutputHistograms/Limit");
@@ -93,6 +102,15 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   STest    = (TH1F*) STest_  ->Clone();
   BTest    = (TH1F*) BTest_  ->Clone();
 
+  SCut     = (TH1D*) SCut_    ->Clone() ;
+  BCutTr   = (TH1D*) BCutTr_  ->Clone() ;
+  BCutAll  = (TH1D*) BCutAll_ ->Clone();
+
+  SignCutTr   = (TH1D*) SignCutTr_   ->Clone() ;
+  SignCutAll  = (TH1D*) SignCutAll_  ->Clone() ;
+  LimitCutTr  = (TH1D*) LimitCutTr_  ->Clone() ;
+  LimitCutAll = (TH1D*) LimitCutAll_ ->Clone() ;
+
   Cut      = (TH1D*) Cut_    ->Clone();
   Sign     = (TH1D*) Sign_   ->Clone();
   Limit    = (TH1D*) Limit_  ->Clone();
@@ -108,10 +126,18 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   SetGoodAxis(STest);
   SetGoodAxis(BTest);
 
+  SetGoodAxis(SCut)   ;
+  SetGoodAxis(BCutTr) ;
+  SetGoodAxis(BCutAll);
+
+  SetGoodAxis(SignCutTr)  ;
+  SetGoodAxis(SignCutAll) ;
+  SetGoodAxis(LimitCutTr) ;
+  SetGoodAxis(LimitCutAll); 
+
   SetGoodAxis(Cut);
   SetGoodAxis(Sign);
   SetGoodAxis(Limit);
-  
 
   // Delete tmp objects
 
@@ -125,6 +151,15 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   delete BTrain_ ;
   delete STest_ ;
   delete BTest_ ;
+
+  delete SCut_    ;
+  delete BCutTr_  ;
+  delete BCutAll_ ;
+
+  delete SignCutTr_   ;
+  delete SignCutAll_  ;
+  delete LimitCutTr_  ;
+  delete LimitCutAll_ ;
 
   delete Cut_    ;
   delete Sign_   ; 
@@ -149,6 +184,15 @@ UATmvaSummary_t::~UATmvaSummary_t(){
   delete BTrain ;
   delete STest ;
   delete BTest ;
+
+  delete SCut   ;
+  delete BCutTr ;
+  delete BCutAll;
+
+  delete SignCutTr;
+  delete SignCutAll;
+  delete LimitCutTr;
+  delete LimitCutAll;
 
   delete Cut;    
   delete Sign;
@@ -258,13 +302,22 @@ void UATmvaSummary::Plots( ){
     cin  >> ID; 
     if ( ID > 0 && ID <=  vUASummary.size() ) {
       cout << "  --> Plotting: " << vUASummary.at(ID-1)->TmvaName << endl ;
-      TCanvas* Canvas = new TCanvas(vUASummary.at(ID-1)->TmvaName,vUASummary.at(ID-1)->TmvaName,700,700);
-      Canvas->Divide(2,2);
+      TCanvas* Canvas = new TCanvas(vUASummary.at(ID-1)->TmvaName,vUASummary.at(ID-1)->TmvaName,950,700);
+      
+      Canvas->Divide(3,2);
       Canvas->cd(1);
       PlotEpoch(ID-1);
       Canvas->cd(2);
       PlotOvertrain(ID-1);
-      
+      Canvas->cd(4);
+      PlotCorrMtx(ID-1,1);   
+      Canvas->cd(5);
+      PlotCorrMtx(ID-1,0);   
+      Canvas->cd(3);
+      PlotEff(ID-1);
+      Canvas->cd(6);
+      //PlotStack(ID-1);
+ 
       gPad->WaitPrimitive();
     } else if ( ID != 0 ) {
       cout << "  --> Invalid ID !!!!!!!!!!! " << endl ;
@@ -272,6 +325,28 @@ void UATmvaSummary::Plots( ){
   }
 
 }
+
+
+
+
+//-------------------------------- PlotCorrMtx()
+
+void UATmvaSummary::PlotCorrMtx(int iUAS, bool Signal ){
+
+   gStyle->SetPalette( 1, 0 );
+
+   gPad->SetRightMargin(0.02);
+   gPad->SetLeftMargin(0.15);
+
+   TH2F* CorrMtx;
+   if (Signal) CorrMtx = vUASummary.at(iUAS)->CorrMtxS ;
+   else        CorrMtx = vUASummary.at(iUAS)->CorrMtxB ;
+
+   CorrMtx->SetMarkerColor( kBlack );
+   CorrMtx->Draw("col");
+   CorrMtx->Draw("textsame"); 
+}
+
 
 //-------------------------------- PlotEpoch()
 
@@ -363,5 +438,20 @@ void UATmvaSummary::PlotOvertrain(int iUAS) {
 
 }
 
+// --------------------------- Ploteff()
 
+void UATmvaSummary::PlotEff ( int iUAS ) {
+
+   gPad->SetRightMargin(0.02);
+   gPad->SetLeftMargin(0.15);
+ 
+   vUASummary.at(iUAS)->SignCutAll ->SetLineColor(kRed);
+   vUASummary.at(iUAS)->LimitCutAll->SetLineColor(kBlue);
+
+   vUASummary.at(iUAS)->SignCutAll ->GetYaxis()->SetRangeUser(0.,10.);
+   vUASummary.at(iUAS)->SignCutAll ->Draw(); 
+   vUASummary.at(iUAS)->LimitCutAll->Draw("same");
+   
+    
+}
 

@@ -140,8 +140,54 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
       if   ( Elements.size() == 2 ) SetInputVar(Elements.at(1),TmvaVar) ;
       else UAError("[UATmvaConfig] Wrong TmvaVar Input !");
     }
-
  
+    // ------------------ MLP Inputs -------------------------
+ 
+    if ( Elements.at(0) == "ANNCycles") {
+      if   ( Elements.size() == 2 ) ANNCycles = atoi(Elements.at(1).c_str()) ;
+      else UAError("[UATmvaConfig] Wrong ANNCycles Input !");
+    }
+
+    if ( Elements.at(0) == "ANNVarNumRemove") {
+      if   ( Elements.size() == 2 ) ANNVarNumRemove = atoi(Elements.at(1).c_str()) ;
+      else UAError("[UATmvaConfig] Wrong ANNVarNumRemove Input !");
+    }
+
+    if ( Elements.at(0) == "ANNHiddenLayers") {
+      if   ( Elements.size() == 3 ) {
+           ANNHiddenLayersMin  = atoi(Elements.at(1).c_str()) ;
+           ANNHiddenLayersMax  = atoi(Elements.at(2).c_str()) ;
+      }
+      else UAError("[UATmvaConfig] Wrong ANNHiddenLayers Input !");
+    }
+
+    if ( Elements.at(0) == "ANNHiddenNodes") {
+      if   ( Elements.size() == 3 ) {
+           ANNHiddenNodesMin  = atoi(Elements.at(1).c_str()) ;
+           ANNHiddenNodesMax  = atoi(Elements.at(2).c_str()) ;
+      }
+      else UAError("[UATmvaConfig] Wrong ANNHiddenNodes Input !");
+    }
+
+    if ( Elements.at(0) == "ANNFracTrain") {
+      if   ( Elements.size() == 2 ) ANNFracTrain = atof(Elements.at(1).c_str()) ;
+      else UAError("[UATmvaConfig] Wrong ANNFracTrain Input !");
+    }
+
+    if ( Elements.at(0) == "ANNFracTest") {
+      if   ( Elements.size() == 2 ) ANNFracTest = atof(Elements.at(1).c_str()) ;
+      else UAError("[UATmvaConfig] Wrong ANNFracTest Input !");
+    }
+
+    if ( Elements.at(0) == "ANNFracValidate") {
+      if   ( Elements.size() == 2 ) ANNFracValidate = atof(Elements.at(1).c_str()) ;
+      else UAError("[UATmvaConfig] Wrong ANNFracValidate Input !");
+    }
+
+
+
+
+
 
  
 
