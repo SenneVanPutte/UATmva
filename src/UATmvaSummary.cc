@@ -9,7 +9,26 @@
 
 void SetGoodAxis(TObject* Curve_){
 
+  // For the canvas:
   gStyle->SetOptStat(0);
+  gStyle->SetCanvasBorderMode(0);
+  gStyle->SetCanvasColor(kWhite);
+
+  // For the Pad:
+  gStyle->SetPadBorderMode(0);
+  gStyle->SetPadBorderSize(0);
+  gStyle->SetPadColor(kWhite);
+
+  // For the frame:
+  gStyle->SetFrameBorderMode(0);
+  gStyle->SetFrameBorderSize(0);
+  gStyle->SetFrameFillColor(0);
+  gStyle->SetFrameFillStyle(0);
+  gStyle->SetFrameLineColor(1);
+  gStyle->SetFrameLineStyle(1);
+  gStyle->SetFrameLineWidth(1);
+
+
 
   TAxis* xaxis = 0;
   TAxis* yaxis = 0;
