@@ -449,9 +449,23 @@ void UATmvaSummary::PlotEff ( int iUAS ) {
    vUASummary.at(iUAS)->LimitCutAll->SetLineColor(kBlue);
 
    vUASummary.at(iUAS)->SignCutAll ->GetYaxis()->SetRangeUser(0.,10.);
+   vUASummary.at(iUAS)->SignCutAll ->SetTitle("MVA Efficiency");
+   vUASummary.at(iUAS)->SignCutAll ->GetXaxis()->SetTitle("Response");
+   vUASummary.at(iUAS)->SignCutAll ->GetYaxis()->SetTitle("Sigma");
+
    vUASummary.at(iUAS)->SignCutAll ->Draw(); 
    vUASummary.at(iUAS)->LimitCutAll->Draw("same");
-   
+
+   TLegend* Legend = new TLegend (.2,.75,.5,.85);
+   Legend->SetBorderSize(0);
+   Legend->SetFillColor(0);
+   Legend->SetTextSize(0.04);
+   Legend->AddEntry( vUASummary.at(iUAS)->SignCutAll  , "Significance" , "l" );
+   Legend->AddEntry( vUASummary.at(iUAS)->LimitCutAll , "Limit" , "l" );
+
+   Legend->Draw("same");  
+ 
+
     
 }
 
