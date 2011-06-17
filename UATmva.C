@@ -16,13 +16,14 @@ void UATmva(){
 
   UATmvaTree UATmvaTreeTest(UATmvaConfigTest);
 
-//  UATmvaClassification UATmva;
-//  UATmva.Do(UATmvaConfigTest,UATmvaTreeTest);
+  UATmvaClassification UATmva;
+  UATmva.Do(UATmvaConfigTest,UATmvaTreeTest);
 
   UATmvaReader Reader;
+  Reader.SetNbin(100); 
   Reader.Do(UATmvaConfigTest,UATmvaTreeTest); 
   
-    UATmvaSummary Summary;
+//    UATmvaSummary Summary;
 //    Summary.Do(UATmvaConfigTest);
 
 }

@@ -43,7 +43,7 @@ class UATmvaReader {
  
   public:
 
-  UATmvaReader(){ InitDone = false ; nbins = 1 ; minBin=-1.1 ; maxBin=1.1 ;}
+  UATmvaReader(){ InitDone = false ; nbins = 100 ; minBin=-1.1 ; maxBin=1.1 ;}
   virtual ~UATmvaReader(){;}
 
   Bool_t IsInit() { return InitDone ; }
@@ -51,6 +51,9 @@ class UATmvaReader {
   void Do    ( UATmvaConfig&, UATmvaTree&);
   void DoMLP ( UATmvaConfig&, UATmvaTree&);
 
+  void SetNbin   ( Int_t   N ) { nbins  = N ;}
+  void SetMinbin ( Float_t V ) { minBin = V ;}
+  void SetMaxbin ( Float_t V ) { maxBin = V ;}
 
 
 };
