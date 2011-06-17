@@ -4,7 +4,10 @@
 #include "../includes/UATmvaConfig.h"
 
 #include <TFile.h>
+#include <TH1F.h>
 #include <TH1D.h>
+#include <TH2F.h>
+
 #include <TString.h>
 #include <string>
 #include <vector>
@@ -14,15 +17,28 @@ using namespace std;
 class UATmvaSummary_t {
   public:
   UATmvaSummary_t()  ;
-  UATmvaSummary_t(TString)  ;
+  UATmvaSummary_t(TString,TString,TString)  ;
   ~UATmvaSummary_t() ; 
-   
-  TString             TmvaName ;
-  //TFile*              TmvaFile ;
+
+  TString             BaseName;
+  TString             ExtName;  
+  TString             TmvaName;
+
+  TH2F*               CorrMtxS;
+  TH2F*               CorrMtxB;
+
+  TH1F*               D2Train;
+  TH1F*               D2Test ;
+
+  TH1F*               STrain ;
+  TH1F*               BTrain ;
+  TH1F*               STest  ;
+  TH1F*               BTest  ;
+
 
   TH1D*               Cut; 
-//  TH1D*               Sign; 
-//  TH1D*               Limit; 
+  TH1D*               Sign; 
+  TH1D*               Limit; 
 
 };
 
@@ -42,7 +58,14 @@ class UATmvaSummary {
 
   Bool_t IsInit() { return InitDone ; }
 
-  void Do ( UATmvaConfig& );
+  void Init ( UATmvaConfig& );
+  void Print( );
+  void Plots( );
+
+  void PlotEpoch( int );
+  void PlotOvertrain( int );
+
+
 
 
 

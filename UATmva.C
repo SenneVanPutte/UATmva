@@ -1,4 +1,3 @@
-
 #include "src/UATmvaConfig.cc"
 #include "src/UATmvaTree.cc"
 #include "src/UATmvaClassification.cc"
@@ -9,21 +8,22 @@
 
 
 void UATmva(){
-  
+
   UATmvaConfig UATmvaConfigTest ;
   UATmvaConfigTest.ReadCfg("Config.cfg");
   UATmvaConfigTest.Print();
 
-  UATmvaTree UATmvaTreeTest(UATmvaConfigTest);
+//  UATmvaTree UATmvaTreeTest(UATmvaConfigTest);
 
-  UATmvaClassification UATmva;
-  UATmva.Do(UATmvaConfigTest,UATmvaTreeTest);
+//  UATmvaClassification UATmva;
+//  UATmva.Do(UATmvaConfigTest,UATmvaTreeTest);
 
-  UATmvaReader Reader;
-  Reader.SetNbin(100); 
-  Reader.Do(UATmvaConfigTest,UATmvaTreeTest); 
+  //UATmvaReader Reader;
+  //Reader.SetNbin(10); 
+  //Reader.Do(UATmvaConfigTest,UATmvaTreeTest); 
   
-//    UATmvaSummary Summary;
-//    Summary.Do(UATmvaConfigTest);
+    UATmvaSummary Summary;
+    Summary.Init(UATmvaConfigTest);
+    Summary.Plots();
 
 }
