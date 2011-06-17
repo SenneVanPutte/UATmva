@@ -2,8 +2,15 @@
 #include "../includes/UATmvaSummary.h"
 #include <stdio.h>
 #include <TCanvas.h>
+#include <TStyle.h>
+#include <TSystem.h>
+#include <TText.h>
+#include <TLegend.h>
 
 void SetGoodAxis(TObject* Curve_){
+
+  gStyle->SetOptStat(0);
+
   TAxis* xaxis = 0;
   TAxis* yaxis = 0;
 
@@ -190,7 +197,6 @@ void UATmvaSummary::Print( ){
   
   for ( int iUAS = 0 ; iUAS !=  vUASummary.size() ; ++iUAS ) {
 
-
     cout << "  | " << iUAS+1;
     if   (iUAS < 9) cout << "  | " ;
     else             cout << " | " ;
@@ -207,12 +213,6 @@ void UATmvaSummary::Print( ){
        vUASummary.at(iUAS)->D2Train ->GetBinContent( vUASummary.at(iUAS)->D2Train->GetNbinsX() ) ,
        vUASummary.at(iUAS)->D2Test  ->GetBinContent( vUASummary.at(iUAS)->D2Train->GetNbinsX() ) 
     );
-
-
-
-
-    
-
 
   }
  
@@ -241,9 +241,7 @@ void UATmvaSummary::Plots( ){
       PlotEpoch(ID-1);
       Canvas->cd(2);
       PlotOvertrain(ID-1);
-
       
-      Canvas->cd();
       gPad->WaitPrimitive();
     } else if ( ID != 0 ) {
       cout << "  --> Invalid ID !!!!!!!!!!! " << endl ;
@@ -255,6 +253,9 @@ void UATmvaSummary::Plots( ){
 //-------------------------------- PlotEpoch()
 
 void UATmvaSummary::PlotEpoch(int iUAS){
+
+   gPad->SetRightMargin(0.02);
+   gPad->SetLeftMargin(0.15);
  
    vUASummary.at(iUAS)->D2Train->SetLineColor(kRed);
    vUASummary.at(iUAS)->D2Test->SetLineColor(kBlue);
@@ -270,16 +271,34 @@ void UATmvaSummary::PlotEpoch(int iUAS){
    vUASummary.at(iUAS)->D2Train->Draw();
    vUASummary.at(iUAS)->D2Test->Draw("same");
 
+   TLegend* Legend = new TLegend (.5,.75,.8,.85);
+   Legend->SetBorderSize(0);
+   Legend->SetFillColor(0);
+   Legend->SetTextSize(0.04);
+   Legend->AddEntry( vUASummary.at(iUAS)->D2Train , "Train Sample" , "l" );
+   Legend->AddEntry( vUASummary.at(iUAS)->D2Test  , "Test  Sample" , "l" );
+
+   Legend->Draw("same");  
+ 
+
 }
 
 //-------------------------------- PlotOvertrain()
 
 void UATmvaSummary::PlotOvertrain(int iUAS) {
 
+   gPad->SetRightMargin(0.02);
+   gPad->SetLeftMargin(0.15);
+
    vUASummary.at(iUAS)->STrain->SetLineColor(kBlue);
    vUASummary.at(iUAS)->BTrain->SetLineColor(kRed);
    vUASummary.at(iUAS)->STest ->SetLineColor(kBlue);
    vUASummary.at(iUAS)->BTest ->SetLineColor(kRed);
+
+   vUASummary.at(iUAS)->STrain->SetMarkerColor(kBlue);
+   vUASummary.at(iUAS)->BTrain->SetMarkerColor(kRed);
+   vUASummary.at(iUAS)->STrain->SetMarkerStyle(20);
+   vUASummary.at(iUAS)->BTrain->SetMarkerStyle(20);
 
    Double_t hMax = TMath::Max( vUASummary.at(iUAS)->STrain->GetMaximum() , vUASummary.at(iUAS)->BTrain->GetMaximum() );
    hMax = TMath::Max ( hMax , vUASummary.at(iUAS)->STest->GetMaximum() );
@@ -290,11 +309,35 @@ void UATmvaSummary::PlotOvertrain(int iUAS) {
    vUASummary.at(iUAS)->STest ->GetXaxis()->SetTitle("Response");
    vUASummary.at(iUAS)->STest ->GetYaxis()->SetTitle("(1/N) dN/dx");
 
-
    vUASummary.at(iUAS)->STest ->Draw("hist");      
    vUASummary.at(iUAS)->BTest ->Draw("histsame"); 
    vUASummary.at(iUAS)->STrain->Draw("esame");      
    vUASummary.at(iUAS)->BTrain->Draw("esame");
+
+   TLegend* Legend = new TLegend (.5,.65,.8,.85);
+   Legend->SetBorderSize(0);
+   Legend->SetFillColor(0);
+   Legend->SetTextSize(0.04);
+   Legend->AddEntry( vUASummary.at(iUAS)->STest  , "Signal (Test Sample)" , "l");
+   Legend->AddEntry( vUASummary.at(iUAS)->BTest  , "Bkgd   (Test Sample)" , "l");
+   Legend->AddEntry( vUASummary.at(iUAS)->STrain , "Signal (Train Sample)" , "p");
+   Legend->AddEntry( vUASummary.at(iUAS)->BTrain , "Bkgd   (Train Sample)" , "p");
+   Legend->Draw("same");
+
+   Double_t kolS = vUASummary.at(iUAS)->STrain->KolmogorovTest( vUASummary.at(iUAS)->STest );
+   Double_t kolB = vUASummary.at(iUAS)->BTrain->KolmogorovTest( vUASummary.at(iUAS)->BTest );
+
+   cout << "  ---> Goodness of signal (background) consistency: " << kolS << " (" << kolB << ")" << endl;
+
+   char sKSS[50] ;
+   char sKSB[50] ;
+   sprintf (sKSS,"K-S Signal: %5.3g",kolS);
+   sprintf (sKSB,"K-S Bkgd  : %5.3g",kolB);
+
+   TText* KSS = new TText( .6 , .6  , TString(sKSS) );KSS->SetTextSize(0.04);KSS->SetNDC();KSS->AppendPad();
+   TText* KSB = new TText( .6 , .55 , TString(sKSB) );KSB->SetTextSize(0.04);KSB->SetNDC();KSB->AppendPad();
+
+
 }
 
 
