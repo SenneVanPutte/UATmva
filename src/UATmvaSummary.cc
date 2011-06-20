@@ -75,6 +75,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   TH1F* STest_    = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_S");
   TH1F* BTest_    = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_B");
 
+  TH1D* DCut_     = (TH1D*) File->Get("OutputHistograms/Data");
   TH1D* SCut_     = (TH1D*) File->Get("OutputHistograms/Signal");
   TH1D* BCutTr_   = (TH1D*) File->Get("OutputHistograms/BkgdTrain");
   TH1D* BCutAll_  = (TH1D*) File->Get("OutputHistograms/BkgdTot");
@@ -87,6 +88,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   TH1D* Cut_      = (TH1D*) File->Get("OutputHistograms/Cut");   
   TH1D* Sign_     = (TH1D*) File->Get("OutputHistograms/Sign");
   TH1D* Limit_    = (TH1D*) File->Get("OutputHistograms/Limit");
+
 
   // Have to create the new object outside of gDirectory from File
   gROOT->cd(); 
@@ -102,6 +104,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   STest    = (TH1F*) STest_  ->Clone();
   BTest    = (TH1F*) BTest_  ->Clone();
 
+  DCut     = (TH1D*) DCut_    ->Clone() ;
   SCut     = (TH1D*) SCut_    ->Clone() ;
   BCutTr   = (TH1D*) BCutTr_  ->Clone() ;
   BCutAll  = (TH1D*) BCutAll_ ->Clone();
@@ -126,6 +129,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   SetGoodAxis(STest);
   SetGoodAxis(BTest);
 
+  SetGoodAxis(DCut)   ;
   SetGoodAxis(SCut)   ;
   SetGoodAxis(BCutTr) ;
   SetGoodAxis(BCutAll);
@@ -152,6 +156,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   delete STest_ ;
   delete BTest_ ;
 
+  delete DCut_    ;
   delete SCut_    ;
   delete BCutTr_  ;
   delete BCutAll_ ;
@@ -185,6 +190,7 @@ UATmvaSummary_t::~UATmvaSummary_t(){
   delete STest ;
   delete BTest ;
 
+  delete DCut   ;
   delete SCut   ;
   delete BCutTr ;
   delete BCutAll;
@@ -316,7 +322,7 @@ void UATmvaSummary::Plots( ){
       Canvas->cd(3);
       PlotEff(ID-1);
       Canvas->cd(6);
-      //PlotStack(ID-1);
+      PlotStack(ID-1);
  
       gPad->WaitPrimitive();
     } else if ( ID != 0 ) {
@@ -326,6 +332,48 @@ void UATmvaSummary::Plots( ){
 
 }
 
+
+
+//-------------------------------- PlotStack()
+
+void UATmvaSummary::PlotStack(int iUAS ){
+
+   gPad->SetRightMargin(0.02);
+   gPad->SetLeftMargin(0.15);
+   gPad->SetLogy(1);
+
+   vUASummary.at(iUAS)->SCut->SetLineColor(kBlue);
+   vUASummary.at(iUAS)->BCutAll->SetLineColor(kRed);
+
+   vUASummary.at(iUAS)->DCut->SetMarkerColor(kBlack);
+   vUASummary.at(iUAS)->DCut->SetMarkerStyle(20);
+    
+   Double_t hMax = TMath::Max( vUASummary.at(iUAS)->SCut->GetMaximum() , vUASummary.at(iUAS)->DCut->GetMaximum() );
+   hMax = TMath::Max ( hMax , vUASummary.at(iUAS)->BCutAll->GetMaximum() );
+
+   vUASummary.at(iUAS)->BCutAll->GetYaxis()->SetRangeUser( 0.01 , 10*hMax);
+   vUASummary.at(iUAS)->BCutAll->SetTitle(vUASummary.at(iUAS)->BaseName);
+   vUASummary.at(iUAS)->BCutAll->GetXaxis()->SetTitle("MVA Response");
+   vUASummary.at(iUAS)->BCutAll->GetYaxis()->SetTitle("Events");
+
+
+   vUASummary.at(iUAS)->BCutAll->Draw("hist");   
+   vUASummary.at(iUAS)->SCut->Draw("histsame");
+   vUASummary.at(iUAS)->DCut->Draw("esame");
+
+
+   TLegend* Legend = new TLegend (.5,.65,.8,.85);
+   Legend->SetBorderSize(0);
+   Legend->SetFillColor(0);
+   Legend->SetTextSize(0.04);
+   Legend->AddEntry( vUASummary.at(iUAS)->DCut   , "Data  " , "p");
+   Legend->AddEntry( vUASummary.at(iUAS)->BCutAll, "Bkgd  " , "l");
+   Legend->AddEntry( vUASummary.at(iUAS)->SCut   , "Signal" , "l");
+   Legend->Draw("same");
+
+
+
+}
 
 
 
@@ -404,7 +452,7 @@ void UATmvaSummary::PlotOvertrain(int iUAS) {
 
    vUASummary.at(iUAS)->STest ->GetYaxis()->SetRangeUser( 0. , 1.3*hMax);
    vUASummary.at(iUAS)->STest ->SetTitle("Overtraining Test");
-   vUASummary.at(iUAS)->STest ->GetXaxis()->SetTitle("Response");
+   vUASummary.at(iUAS)->STest ->GetXaxis()->SetTitle("MVA Response");
    vUASummary.at(iUAS)->STest ->GetYaxis()->SetTitle("(1/N) dN/dx");
 
    vUASummary.at(iUAS)->STest ->Draw("hist");      

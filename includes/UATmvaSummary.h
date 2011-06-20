@@ -35,9 +35,11 @@ class UATmvaSummary_t {
   TH1F*               STest  ;
   TH1F*               BTest  ;
 
+  TH1D*               DCut   ;
   TH1D*               SCut   ;
   TH1D*               BCutTr ;
   TH1D*               BCutAll;
+  vector<TH1D*>       vBCut  ;
 
   TH1D*               SignCutTr;
   TH1D*               SignCutAll;
@@ -47,6 +49,7 @@ class UATmvaSummary_t {
   TH1D*               Cut; 
   TH1D*               Sign; 
   TH1D*               Limit; 
+
 
 };
 
@@ -74,7 +77,7 @@ class UATmvaSummary {
   void PlotEpoch     ( int );
   void PlotOvertrain ( int );
   void PlotEff       ( int );
-
+  void PlotStack     ( int );
 
 
 
