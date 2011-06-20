@@ -54,7 +54,7 @@ UATmvaSummary_t::UATmvaSummary_t(){
 }
 
 
-UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString NameExt){
+UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString NameExt , UATmvaConfig& Cfg ){
  
   BaseName = NameBase+"_"+MethodName;
   ExtName  = NameExt;
@@ -79,6 +79,14 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   TH1D* SCut_     = (TH1D*) File->Get("OutputHistograms/Signal");
   TH1D* BCutTr_   = (TH1D*) File->Get("OutputHistograms/BkgdTrain");
   TH1D* BCutAll_  = (TH1D*) File->Get("OutputHistograms/BkgdTot");
+  vector <TH1D*>  vBCut_ ;
+  for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+    if (iD->BkgdData) {
+      vBName.push_back(iD->NickName);
+      vBCut_.push_back( (TH1D*) File->Get("OutputHistograms/"+iD->NickName) ) ;
+    } 
+  } 
+
 
   TH1D* SignCutTr_   = (TH1D*) File->Get("OutputHistograms/bgTr_SoverSqrtBPlusDeltaB");
   TH1D* SignCutAll_  = (TH1D*) File->Get("OutputHistograms/bkgd_SoverSqrtBPlusDeltaB");
@@ -89,6 +97,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   TH1D* Sign_     = (TH1D*) File->Get("OutputHistograms/Sign");
   TH1D* Limit_    = (TH1D*) File->Get("OutputHistograms/Limit");
 
+  TH1D* CutBased_ = (TH1D*) File->Get("OutputHistograms/CutBased");
 
   // Have to create the new object outside of gDirectory from File
   gROOT->cd(); 
@@ -108,6 +117,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   SCut     = (TH1D*) SCut_    ->Clone() ;
   BCutTr   = (TH1D*) BCutTr_  ->Clone() ;
   BCutAll  = (TH1D*) BCutAll_ ->Clone();
+  for ( int iD = 0 ; iD < vBCut_.size() ; ++iD ) vBCut.push_back( (TH1D*) vBCut_.at(iD)->Clone() ) ;
 
   SignCutTr   = (TH1D*) SignCutTr_   ->Clone() ;
   SignCutAll  = (TH1D*) SignCutAll_  ->Clone() ;
@@ -117,6 +127,8 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   Cut      = (TH1D*) Cut_    ->Clone();
   Sign     = (TH1D*) Sign_   ->Clone();
   Limit    = (TH1D*) Limit_  ->Clone();
+
+  CutBased = (TH1D*) CutBased_  ->Clone();
 
   SetGoodAxis(CorrMtxS);
   SetGoodAxis(CorrMtxB);
@@ -133,6 +145,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   SetGoodAxis(SCut)   ;
   SetGoodAxis(BCutTr) ;
   SetGoodAxis(BCutAll);
+  for ( int iD = 0 ; iD < vBCut.size() ; ++iD ) SetGoodAxis(vBCut.at(iD));
 
   SetGoodAxis(SignCutTr)  ;
   SetGoodAxis(SignCutAll) ;
@@ -142,6 +155,8 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   SetGoodAxis(Cut);
   SetGoodAxis(Sign);
   SetGoodAxis(Limit);
+
+  SetGoodAxis(CutBased);
 
   // Delete tmp objects
 
@@ -160,6 +175,8 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   delete SCut_    ;
   delete BCutTr_  ;
   delete BCutAll_ ;
+  for ( int iD = 0 ; iD < vBCut.size() ; ++iD ) delete vBCut_.at(iD);
+  vBCut_.clear();
 
   delete SignCutTr_   ;
   delete SignCutAll_  ;
@@ -169,6 +186,8 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   delete Cut_    ;
   delete Sign_   ; 
   delete Limit_  ;
+
+  delete CutBased_ ;
 
   // Close File
   File->Close();
@@ -194,6 +213,10 @@ UATmvaSummary_t::~UATmvaSummary_t(){
   delete SCut   ;
   delete BCutTr ;
   delete BCutAll;
+  for ( int iD = 0 ; iD < vBCut.size() ; ++iD ) delete vBCut.at(iD);
+  vBCut.clear();
+  vBName.clear();
+
 
   delete SignCutTr;
   delete SignCutAll;
@@ -235,7 +258,7 @@ void UATmvaSummary::Init( UATmvaConfig& Cfg ) {
      ostringstream Name;
      Name << nHLayers << "Layers_" << nHNodes << "Nodes_" << nVarMax << "Var" ;
 
-     vUASummary.push_back (new UATmvaSummary_t(Cfg.GetTmvaName(),MethodName,Name.str()));
+     vUASummary.push_back (new UATmvaSummary_t(Cfg.GetTmvaName(),MethodName,Name.str(), Cfg ));
 
   } // Nodes
   } // Layers
@@ -250,9 +273,12 @@ void UATmvaSummary::Print( ){
 
   cout << endl;
   cout << "  -------> BaseName = " << vUASummary.at(0)->BaseName << endl; 
+  cout << "  -------> Cut Based S/Sqrt(S+B)  = " << vUASummary.at(0)->CutBased->GetBinContent(4) << endl; 
+  cout << "  -------> Cut Based S/Sqrt(B+dB) = " << vUASummary.at(0)->CutBased->GetBinContent(5) << endl; 
+  cout << "  -------> Cut Based Limit        = " << vUASummary.at(0)->CutBased->GetBinContent(6) << endl; 
   cout << "  ------------------------------------------------------------------------------------------------------" << endl ;
   cout << "  | ID | NAME                |" ;
-  cout << " S/Sqrt(S+B):         |";
+  cout << " S/Sqrt(B+dB):        |";
   cout << " Limit:               |";
   cout << " D^2:        |";
   cout << " Kol-Smirn:  |";
@@ -352,8 +378,8 @@ void UATmvaSummary::PlotStack(int iUAS ){
    hMax = TMath::Max ( hMax , vUASummary.at(iUAS)->BCutAll->GetMaximum() );
 
    vUASummary.at(iUAS)->BCutAll->GetYaxis()->SetRangeUser( 0.01 , 10*hMax);
-   vUASummary.at(iUAS)->BCutAll->SetTitle(vUASummary.at(iUAS)->BaseName);
-   vUASummary.at(iUAS)->BCutAll->GetXaxis()->SetTitle("MVA Response");
+   vUASummary.at(iUAS)->BCutAll->SetTitle(vUASummary.at(iUAS)->TmvaName);
+   vUASummary.at(iUAS)->BCutAll->GetXaxis()->SetTitle("MVA Output");
    vUASummary.at(iUAS)->BCutAll->GetYaxis()->SetTitle("Events");
 
 
@@ -362,7 +388,7 @@ void UATmvaSummary::PlotStack(int iUAS ){
    vUASummary.at(iUAS)->DCut->Draw("esame");
 
 
-   TLegend* Legend = new TLegend (.5,.65,.8,.85);
+   TLegend* Legend = new TLegend (.18,.65,.5,.85);
    Legend->SetBorderSize(0);
    Legend->SetFillColor(0);
    Legend->SetTextSize(0.04);
@@ -452,7 +478,7 @@ void UATmvaSummary::PlotOvertrain(int iUAS) {
 
    vUASummary.at(iUAS)->STest ->GetYaxis()->SetRangeUser( 0. , 1.3*hMax);
    vUASummary.at(iUAS)->STest ->SetTitle("Overtraining Test");
-   vUASummary.at(iUAS)->STest ->GetXaxis()->SetTitle("MVA Response");
+   vUASummary.at(iUAS)->STest ->GetXaxis()->SetTitle("MVA Output");
    vUASummary.at(iUAS)->STest ->GetYaxis()->SetTitle("(1/N) dN/dx");
 
    vUASummary.at(iUAS)->STest ->Draw("hist");      
@@ -498,7 +524,7 @@ void UATmvaSummary::PlotEff ( int iUAS ) {
 
    vUASummary.at(iUAS)->SignCutAll ->GetYaxis()->SetRangeUser(0.,10.);
    vUASummary.at(iUAS)->SignCutAll ->SetTitle("MVA Efficiency");
-   vUASummary.at(iUAS)->SignCutAll ->GetXaxis()->SetTitle("Response");
+   vUASummary.at(iUAS)->SignCutAll ->GetXaxis()->SetTitle("MVA Output");
    vUASummary.at(iUAS)->SignCutAll ->GetYaxis()->SetTitle("Sigma");
 
    vUASummary.at(iUAS)->SignCutAll ->Draw(); 

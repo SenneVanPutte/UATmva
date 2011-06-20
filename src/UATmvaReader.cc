@@ -252,6 +252,47 @@ void UATmvaReader::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
      }
      Limit.Write();
 
+     // --------------- Cut Based Reference --------------------------
+
+     Double_t CutBased_Data                 = 0.;
+     Double_t CutBased_Signal               = 0.;
+     Double_t CutBased_Bkgd                 = 0.;
+     Double_t CutBased_Limit                = 100. ;
+     Double_t CutBased_SoverSqrtSPlusB      = 0. ;
+     Double_t CutBased_SoverSqrtBPlusDeltaB = 0. ;
+
+
+     if ( Cfg.GetCutBasedHistName() != "NULL" ) {
+       for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+         TFile* File = new TFile(iD->FileName,"READ" );
+         if (iD->TrueData                ) CutBased_Data   +=  ( (TH1*) File->Get(Cfg.GetCutBasedHistName()) ) -> GetBinContent(Cfg.GetCutBasedHistBin()) ;
+         if (iD->SigTrain                ) CutBased_Signal +=  ( (TH1*) File->Get(Cfg.GetCutBasedHistName()) ) -> GetBinContent(Cfg.GetCutBasedHistBin()) ;
+         if (iD->BkgdData||iD->BkgdTrain ) CutBased_Bkgd   +=  ( (TH1*) File->Get(Cfg.GetCutBasedHistName()) ) -> GetBinContent(Cfg.GetCutBasedHistBin()) ;
+         File->Close();
+         delete File;
+       }
+       CutBased_SoverSqrtSPlusB       = CutBased_Signal/sqrt(CutBased_Signal+CutBased_Bkgd);
+       CutBased_SoverSqrtBPlusDeltaB  = CutBased_Signal/sqrt(CutBased_Bkgd+pow(0.35*CutBased_Bkgd,2)) ;
+       init();
+       CutBased_Limit = limitBayesian(CutBased_Bkgd,.35,CutBased_Signal,.1);
+       delete wRoo;
+     }
+
+     TH1D CutBased = TH1D("CutBased","CutBased",6,0.5,6.5);
+     CutBased.SetBinContent(1,CutBased_Data );
+     CutBased.SetBinContent(2,CutBased_Signal );
+     CutBased.SetBinContent(3,CutBased_Bkgd );
+     CutBased.SetBinContent(4,CutBased_SoverSqrtSPlusB  );
+     CutBased.SetBinContent(5,CutBased_SoverSqrtBPlusDeltaB );
+     CutBased.SetBinContent(6,CutBased_Limit );
+     UAReader->TmvaFile->cd();
+     UAReader->TmvaFile->cd(Directory.c_str());
+     CutBased.Write();
+
+
+     UAReader->TmvaFile->Close();
+
+
      // clean histo's 
 /*     delete hMVA_data;
      delete hMVA_sig;

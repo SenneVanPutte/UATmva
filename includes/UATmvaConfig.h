@@ -67,6 +67,9 @@ class UATmvaConfig {
   Float_t              ANNFracTest        ;
   Float_t              ANNFracValidate    ;
 
+  // Cut Based Yields
+  TString              CutBasedHistName   ;
+  Int_t                CutBasedHistBin    ;  
 
   public:
  
@@ -104,7 +107,8 @@ class UATmvaConfig {
   Float_t              GetANNFracTest()        { return ANNFracTest        ; }
   Float_t              GetANNFracValidate()    { return ANNFracValidate    ; }
 
-
+  TString              GetCutBasedHistName()   { return CutBasedHistName ; }
+  Int_t                GetCutBasedHistBin()    { return CutBasedHistBin  ; }
   
 
   

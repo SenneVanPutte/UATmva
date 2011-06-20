@@ -17,7 +17,7 @@ using namespace std;
 class UATmvaSummary_t {
   public:
   UATmvaSummary_t()  ;
-  UATmvaSummary_t(TString,TString,TString)  ;
+  UATmvaSummary_t(TString,TString,TString,UATmvaConfig&)  ;
   ~UATmvaSummary_t() ; 
 
   TString             BaseName;
@@ -40,6 +40,7 @@ class UATmvaSummary_t {
   TH1D*               BCutTr ;
   TH1D*               BCutAll;
   vector<TH1D*>       vBCut  ;
+  vector<TString>     vBName ;
 
   TH1D*               SignCutTr;
   TH1D*               SignCutAll;
@@ -50,6 +51,7 @@ class UATmvaSummary_t {
   TH1D*               Sign; 
   TH1D*               Limit; 
 
+  TH1D*               CutBased;
 
 };
 

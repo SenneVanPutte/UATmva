@@ -7,23 +7,23 @@
 #include "src/UATmvaSummary.cc"
 
 
-void UATmva(){
+void UATmva(TString Cfg = "Config.cfg" ){
 
-  UATmvaConfig UATmvaConfigTest ;
-  UATmvaConfigTest.ReadCfg("Config.cfg");
-  UATmvaConfigTest.Print();
+  UATmvaConfig Config;
+  Config.ReadCfg(Cfg);
+  Config.Print();
 
-//  UATmvaTree UATmvaTreeTest(UATmvaConfigTest);
+//    UATmvaTree Tree(Config);
 
-//  UATmvaClassification UATmva;
-//  UATmva.Do(UATmvaConfigTest,UATmvaTreeTest);
+//    UATmvaClassification UATmva;
+//    UATmva.Do(Config,Tree);
 
-  //UATmvaReader Reader;
-  //Reader.SetNbin(10); 
-  //Reader.Do(UATmvaConfigTest,UATmvaTreeTest); 
+//    UATmvaReader Reader;
+//    Reader.SetNbin(100); 
+//    Reader.Do(Config,Tree); 
   
     UATmvaSummary Summary;
-    Summary.Init(UATmvaConfigTest);
+    Summary.Init(Config);
     Summary.Plots();
 
 }

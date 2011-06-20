@@ -32,12 +32,15 @@ void UATmvaConfig::Reset(){
   ANNCycles          = 500 ;
   ANNVarNumRemove    = 0   ;
   ANNHiddenLayersMin = 1   ;
-  ANNHiddenLayersMax = 1   ;
+  ANNHiddenLayersMax = 2   ;
   ANNHiddenNodesMin  = 0   ;
-  ANNHiddenNodesMax  = 0   ;
+  ANNHiddenNodesMax  = 3   ;
   ANNFracTrain       = .5  ; 
   ANNFracTest        = .5  ;
   ANNFracValidate    = 1.  ;
+
+  CutBasedHistName   = "NULL" ;
+  CutBasedHistBin    = -1 ;
 
 }
 
@@ -184,7 +187,16 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
       else UAError("[UATmvaConfig] Wrong ANNFracValidate Input !");
     }
 
+    // Cut Based Yield
 
+   if ( Elements.at(0) == "CutBased" ) {
+      if   ( Elements.size() == 3 ) {
+        CutBasedHistName = Elements.at(1) ;
+        CutBasedHistBin  = atoi(Elements.at(2).c_str()) ;
+      }
+      else UAError("[UATmvaConfig] Wrong CutBased Input !");
+   }
+ 
 
 
 
@@ -255,5 +267,12 @@ void UATmvaConfig::Print(){
     cout << "ANNFracTest     = " << ANNFracTest << endl;
     cout << "ANNFracValidate = " << ANNFracValidate << endl;
   }
+  
+  if ( CutBasedHistName != "NULL" ) {
+    cout << "--------------------- Cut Based Limit ---------------------" << endl;
+    cout << "CutBasedHistName = " << CutBasedHistName<< endl;
+    cout << "CutBasedHistBin  = " << CutBasedHistBin<< endl;
+  }
+
 
 }
