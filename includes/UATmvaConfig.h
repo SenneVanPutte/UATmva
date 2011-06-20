@@ -20,6 +20,13 @@ class InputData_t {
   Bool_t  BkgdData  ;    
 };
 
+class PlotGroup_t {
+  public:
+  TString          PlotGroupName   ;
+  Int_t            PlotGroupColor  ;
+  vector<TString>  PlotGroupMember ;
+};
+
 class InputVar_t {
   public:
   InputVar_t(){;}
@@ -71,6 +78,10 @@ class UATmvaConfig {
   TString              CutBasedHistName   ;
   Int_t                CutBasedHistBin    ;  
 
+  // Final Plot group ( for bkgd only )
+
+  vector<PlotGroup_t>  PlotGroup ;
+
   public:
  
   UATmvaConfig(){ Reset() ; InitDone = false ; }  
@@ -109,7 +120,8 @@ class UATmvaConfig {
 
   TString              GetCutBasedHistName()   { return CutBasedHistName ; }
   Int_t                GetCutBasedHistBin()    { return CutBasedHistBin  ; }
-  
+ 
+  vector<PlotGroup_t>* GetPlotGroup()      { return &PlotGroup  ; }     
 
   
 

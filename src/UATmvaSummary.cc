@@ -79,14 +79,31 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   TH1D* SCut_     = (TH1D*) File->Get("OutputHistograms/Signal");
   TH1D* BCutTr_   = (TH1D*) File->Get("OutputHistograms/BkgdTrain");
   TH1D* BCutAll_  = (TH1D*) File->Get("OutputHistograms/BkgdTot");
-  vector <TH1D*>  vBCut_ ;
-  for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
-    if (iD->BkgdData) {
-      vBName.push_back(iD->NickName);
-      vBCut_.push_back( (TH1D*) File->Get("OutputHistograms/"+iD->NickName) ) ;
-    } 
-  } 
 
+  vector <TH1D*>  vBCut_ ;
+  if ( Cfg.GetPlotGroup()->size() == 0 ) {
+    for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+      if (iD->BkgdData) {
+        vBName.push_back(iD->NickName);
+        vBCut_.push_back( (TH1D*) File->Get("OutputHistograms/"+iD->NickName) ) ;
+      } 
+    } 
+  } else {
+    for ( vector<PlotGroup_t>::iterator iG = (Cfg.GetPlotGroup())->begin() ; iG != (Cfg.GetPlotGroup())->end() ; ++iG) {
+      vBName.push_back(iG->PlotGroupName) ;
+      TH1D* iGHist ;
+      for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+        if ( iG->PlotGroupMember.at(0) == iD->NickName ) iGHist = (TH1D*) ((TH1D*) File->Get("OutputHistograms/"+iD->NickName))->Clone()  ;
+      }
+      for ( int iGM=1 ; iGM < iG->PlotGroupMember.size() ; ++iGM ) {
+        for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+          if ( iG->PlotGroupMember.at(iGM) == iD->NickName ) iGHist->Add ((TH1D*) File->Get("OutputHistograms/"+iD->NickName));
+        }
+      }
+      vBCut_.push_back( (TH1D*) iGHist->Clone() ) ;
+      delete iGHist ; 
+    }
+  }
 
   TH1D* SignCutTr_   = (TH1D*) File->Get("OutputHistograms/bgTr_SoverSqrtBPlusDeltaB");
   TH1D* SignCutAll_  = (TH1D*) File->Get("OutputHistograms/bkgd_SoverSqrtBPlusDeltaB");
@@ -349,8 +366,17 @@ void UATmvaSummary::Plots( ){
       PlotEff(ID-1);
       Canvas->cd(6);
       PlotStack(ID-1);
- 
-      gPad->WaitPrimitive();
+      //gPad->WaitPrimitive();
+      Canvas->SaveAs("plots/mvasummary_"+vUASummary.at(ID-1)->TmvaName+".eps");
+      Canvas->SaveAs("plots/mvasummaty_"+vUASummary.at(ID-1)->TmvaName+".png");
+
+      TCanvas* CanvasStack = new TCanvas(vUASummary.at(ID-1)->TmvaName+"_Stack",vUASummary.at(ID-1)->TmvaName,500,500);
+      CanvasStack->cd();
+      PlotStack(ID-1);
+      CanvasStack->SaveAs("plots/mvastack_"+vUASummary.at(ID-1)->TmvaName+".eps");
+      CanvasStack->SaveAs("plots/mvastack_"+vUASummary.at(ID-1)->TmvaName+".png");
+
+
     } else if ( ID != 0 ) {
       cout << "  --> Invalid ID !!!!!!!!!!! " << endl ;
     }
@@ -368,33 +394,46 @@ void UATmvaSummary::PlotStack(int iUAS ){
    gPad->SetLeftMargin(0.15);
    gPad->SetLogy(1);
 
-   vUASummary.at(iUAS)->SCut->SetLineColor(kBlue);
-   vUASummary.at(iUAS)->BCutAll->SetLineColor(kRed);
+   vector<TH1D*> vStack;
+   for (int iD=0 ; iD < vUASummary.at(iUAS)->vBCut.size() ; ++iD ) {
+     cout << vUASummary.at(iUAS)->vBName.at(iD) << " = " ;
+     TH1D* iStack = (TH1D*) vUASummary.at(iUAS)->vBCut.at(iD)->Clone("s"+vUASummary.at(iUAS)->vBName.at(iD));
+     for (int iD2Sum=iD+1 ; iD2Sum <  vUASummary.at(iUAS)->vBCut.size() ; ++iD2Sum ) {
+        cout << vUASummary.at(iUAS)->vBName.at(iD2Sum) << " + " ;
+       iStack->Add(vUASummary.at(iUAS)->vBCut.at(iD2Sum));
+     }
+     cout << endl;
+     iStack->SetLineColor(iD+2);
+     iStack->SetFillColor(iD+2);
+     vStack.push_back( (TH1D*) iStack->Clone() );
+     delete iStack;
+   }
 
+   vUASummary.at(iUAS)->SCut->SetLineColor(kBlack);
+   vUASummary.at(iUAS)->SCut->SetLineWidth(2);
    vUASummary.at(iUAS)->DCut->SetMarkerColor(kBlack);
    vUASummary.at(iUAS)->DCut->SetMarkerStyle(20);
     
-   Double_t hMax = TMath::Max( vUASummary.at(iUAS)->SCut->GetMaximum() , vUASummary.at(iUAS)->DCut->GetMaximum() );
+   Double_t hMax = TMath::Max( vStack.at(0)->GetMaximum() , vUASummary.at(iUAS)->DCut->GetMaximum() );
    hMax = TMath::Max ( hMax , vUASummary.at(iUAS)->BCutAll->GetMaximum() );
 
-   vUASummary.at(iUAS)->BCutAll->GetYaxis()->SetRangeUser( 0.01 , 10*hMax);
-   vUASummary.at(iUAS)->BCutAll->SetTitle(vUASummary.at(iUAS)->TmvaName);
-   vUASummary.at(iUAS)->BCutAll->GetXaxis()->SetTitle("MVA Output");
-   vUASummary.at(iUAS)->BCutAll->GetYaxis()->SetTitle("Events");
+   vStack.at(0)->GetYaxis()->SetRangeUser( 0.01 , 10*hMax);
+   vStack.at(0)->SetTitle(vUASummary.at(iUAS)->TmvaName);
+   vStack.at(0)->GetXaxis()->SetTitle("MVA Output");
+   vStack.at(0)->GetYaxis()->SetTitle("Events");
 
-
-   vUASummary.at(iUAS)->BCutAll->Draw("hist");   
+   vStack.at(0)->Draw("hist"); 
+   for (int iD=1 ; iD < vStack.size()  ; ++iD ) vStack.at(iD)->Draw("histsame");
    vUASummary.at(iUAS)->SCut->Draw("histsame");
    vUASummary.at(iUAS)->DCut->Draw("esame");
 
-
-   TLegend* Legend = new TLegend (.18,.65,.5,.85);
+   TLegend* Legend = new TLegend (.18,.45,.5,.85);
    Legend->SetBorderSize(0);
    Legend->SetFillColor(0);
    Legend->SetTextSize(0.04);
    Legend->AddEntry( vUASummary.at(iUAS)->DCut   , "Data  " , "p");
-   Legend->AddEntry( vUASummary.at(iUAS)->BCutAll, "Bkgd  " , "l");
    Legend->AddEntry( vUASummary.at(iUAS)->SCut   , "Signal" , "l");
+   for (int iD=0 ; iD < vStack.size()  ; ++iD ) Legend->AddEntry( vStack.at(iD) , vUASummary.at(iUAS)->vBName.at(iD) , "f");
    Legend->Draw("same");
 
 

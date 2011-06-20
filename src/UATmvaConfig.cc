@@ -42,6 +42,8 @@ void UATmvaConfig::Reset(){
   CutBasedHistName   = "NULL" ;
   CutBasedHistBin    = -1 ;
 
+  PlotGroup.clear() ;
+
 }
 
 // ----------------------
@@ -197,7 +199,17 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
       else UAError("[UATmvaConfig] Wrong CutBased Input !");
    }
  
-
+   // Final Plot group ( for bkgd only )
+   if ( Elements.at(0) == "PlotGroup" ) {
+     if ( Elements.size() >= 3 ) {
+       PlotGroup_t PlotGroupTmp;
+       PlotGroupTmp.PlotGroupName  = Elements.at(1) ;
+       PlotGroupTmp.PlotGroupColor = atoi(Elements.at(2).c_str()) ;
+       for (int iMember = 3 ; iMember < Elements.size() ; ++iMember ) PlotGroupTmp.PlotGroupMember.push_back(Elements.at(iMember));
+       PlotGroup.push_back(PlotGroupTmp);
+     }
+     else UAError("[UATmvaConfig] Wrong PlotGroup Input !");
+   }
 
 
 
@@ -272,6 +284,15 @@ void UATmvaConfig::Print(){
     cout << "--------------------- Cut Based Limit ---------------------" << endl;
     cout << "CutBasedHistName = " << CutBasedHistName<< endl;
     cout << "CutBasedHistBin  = " << CutBasedHistBin<< endl;
+  }
+
+  if ( PlotGroup.size() > 0 ) {
+    cout << "--------------------- Plot Group ( for bkgd only ) --------" << endl;
+    for (int iG=0 ; iG < PlotGroup.size() ; ++iG ) {
+      cout << "PlotGroup :" << PlotGroup.at(iG).PlotGroupName << " " << PlotGroup.at(iG).PlotGroupColor << " = "; 
+      for (int iGM=0 ; iGM < PlotGroup.at(iG).PlotGroupMember.size() ; ++iGM ) cout << PlotGroup.at(iG).PlotGroupMember.at(iGM) ;
+      cout << endl;
+    } 
   }
 
 
