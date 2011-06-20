@@ -427,7 +427,8 @@ void UATmvaSummary::PlotStack(int iUAS ){
    vUASummary.at(iUAS)->SCut->Draw("histsame");
    vUASummary.at(iUAS)->DCut->Draw("esame");
 
-   TLegend* Legend = new TLegend (.18,.45,.5,.85);
+   int nLegEntry = 2 + vStack.size();
+   TLegend* Legend = new TLegend (.18,.85-nLegEntry*.035,.5,.85);
    Legend->SetBorderSize(0);
    Legend->SetFillColor(0);
    Legend->SetTextSize(0.04);
