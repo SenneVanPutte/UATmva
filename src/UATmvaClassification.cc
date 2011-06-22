@@ -11,24 +11,103 @@
 void UATmvaClassification::Do( UATmvaConfig& Cfg, UATmvaTree& T) {
 
    if ( Cfg.GetTmvaType() == "ANN" )  DoMLP(Cfg,T);
+   if ( Cfg.GetTmvaType() == "BDT" )  DoBDT(Cfg,T);
 
 }
 
 void UATmvaClassification::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
 
-   for (Int_t nVarRem  = 0 ; nVarRem <= Cfg.GetANNVarNumRemove() ; ++nVarRem) {
+   for (Int_t nVarRem  = 0 ; nVarRem <= Cfg.GetTmvaVarNumRemove() ; ++nVarRem) {
    Int_t nVarMax = (Cfg.GetTmvaVar())->size() - nVarRem ; 
    for (Int_t nHLayers = Cfg.GetANNHiddenLayersMin() ; nHLayers <= Cfg.GetANNHiddenLayersMax() ; ++nHLayers ) {
    for (Int_t nHNodes  = Cfg.GetANNHiddenNodesMin()  ; nHNodes  <= Cfg.GetANNHiddenNodesMax()  ; ++nHNodes  ) {
     
-     UAFactory = new UATmvaFactory_t() ; 
  
      // Build Name
      ostringstream Name;
      Name << Cfg.GetTmvaName() << "_MLP_" << nHLayers << "Layers_" << nHNodes << "Nodes_" << nVarMax << "Var" ;
-     UAFactory->TmvaName = Name.str();
      NAME =  Name.str();
 
+     // Create ethod Options
+     ostringstream Method;
+     Method << "H:!V:NeuronType=tanh:VarTransform=N:NCycles=" << Cfg.GetANNCycles() << ":HiddenLayers=" ;
+     for ( Int_t iHLayer = 1 ; iHLayer <= nHLayers ; ++iHLayer ) {
+       Method << "N+" << nHNodes ; 
+       if ( iHLayer != nHLayers ) Method << "," ;
+     }
+
+     // Create and Train MVA
+     Train(Cfg,T,Name.str(),Method.str(),nVarMax);
+
+     // Making some basic plots
+     Plot(1);
+   
+   } // Nodes
+   } // Layers
+   } // Variables
+
+}
+
+
+void UATmvaClassification::DoBDT( UATmvaConfig& Cfg, UATmvaTree& T) {
+
+   for (Int_t nVarRem  = 0 ; nVarRem <= Cfg.GetTmvaVarNumRemove() ; ++nVarRem) {
+   Int_t nVarMax = (Cfg.GetTmvaVar())->size() - nVarRem ;
+   
+   for( int iBDTNTrees         = 0 ; iBDTNTrees         < (signed) (Cfg.GetBDTNTrees())->size()         ; ++iBDTNTrees         ) {
+   for( int iBDTBoostType      = 0 ; iBDTBoostType      < (signed) (Cfg.GetBDTBoostType())->size()      ; ++iBDTBoostType      ) {
+   for( int iBDTSeparationType = 0 ; iBDTSeparationType < (signed) (Cfg.GetBDTSeparationType())->size() ; ++iBDTSeparationType ) {
+   for( int iBDTnCuts          = 0 ; iBDTnCuts          < (signed) (Cfg.GetBDTnCuts())->size()          ; ++iBDTnCuts          ) {
+   for( int iBDTPruneMethod    = 0 ; iBDTPruneMethod    < (signed) (Cfg.GetBDTPruneMethod())->size()    ; ++iBDTPruneMethod    ) {
+   for( int iBDTPruneStrength  = 0 ; iBDTPruneStrength  < (signed) (Cfg.GetBDTPruneStrength())->size()  ; ++iBDTPruneStrength  ) {
+ 
+
+     // Build Name
+     ostringstream Name;
+     Name << Cfg.GetTmvaName() << "_BDT_" ;
+     Name << Cfg.GetBDTNTrees()->at(iBDTNTrees) << "Trees_" ; 
+     Name << Cfg.GetBDTBoostType()->at(iBDTBoostType) << "_" ; 
+     Name << Cfg.GetBDTSeparationType()->at(iBDTSeparationType) << "_" ; 
+     Name << Cfg.GetBDTnCuts()->at(iBDTnCuts) << "Cuts_" ; 
+     Name << Cfg.GetBDTPruneMethod()->at(iBDTPruneMethod) << "_" ; 
+     Name << Cfg.GetBDTPruneStrength()->at(iBDTPruneStrength) << "PruneStrength_" ;
+     Name << nVarMax << "Var" ;
+     NAME =  Name.str();
+
+     // Create ethod Options
+     ostringstream Method;
+     Method << "H:!V:NTrees="      << Cfg.GetBDTNTrees()->at(iBDTNTrees)                ;
+     Method << ":BoostType="       << Cfg.GetBDTBoostType()->at(iBDTBoostType)          ;
+     Method << ":SeparationType="  << Cfg.GetBDTSeparationType()->at(iBDTSeparationType);
+     Method << ":nCuts="           << Cfg.GetBDTnCuts()->at(iBDTnCuts)                  ;
+     Method << ":PruneMethod="     << Cfg.GetBDTPruneMethod()->at(iBDTPruneMethod)      ;
+     Method << ":PruneStrength="   << Cfg.GetBDTPruneStrength()->at(iBDTPruneStrength)  ;
+
+     // Create and Train MVA
+     Train(Cfg,T,Name.str(),Method.str(),nVarMax);
+
+     // Making some basic plots
+     Plot(0);
+
+   } // BDTNTrees
+   } // BDTBoostType
+   } // BDTSeparationType
+   } // BDTnCuts
+   } // BDTPruneMethod
+   } // BDTPruneStrength
+
+   } // Variables
+
+}
+
+void UATmvaClassification::Train(UATmvaConfig& Cfg, UATmvaTree& T , string Name , string Method , int nVarMax ){
+
+     cout << "[UATmvaClassification::Train()] TmvaName = " << Name   << endl;
+     cout << "[UATmvaClassification::Train()] Method   = " << Method << endl;
+
+     // Create UA TMVA Factory Interface
+     UAFactory = new UATmvaFactory_t() ; 
+     UAFactory->TmvaName = Name;
  
      // Open TMVA output file
      cout << "[UATmvaClassification::DoMLP()] Create: " << UAFactory->TmvaName << endl;
@@ -37,7 +116,6 @@ void UATmvaClassification::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
      // Create TMVA Factory
      UAFactory->TmvaFactory = new Factory(UAFactory->TmvaName , UAFactory->TmvaFile ,
       "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification");
-  
      
      // Add VariablesCfg.GetTmvaVar())
      Int_t nVar = 0;     
@@ -64,67 +142,51 @@ void UATmvaClassification::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
      UAFactory->TmvaFactory->PrepareTrainingAndTestTree("","");
   
      // BookMethod
-     ostringstream Method;
-     Method << "H:!V:NeuronType=tanh:VarTransform=N:NCycles=" << Cfg.GetANNCycles() << ":HiddenLayers=" ;
-     for ( Int_t iHLayer = 1 ; iHLayer <= nHLayers ; ++iHLayer ) {
-       Method << "N+" << nHNodes ; 
-       if ( iHLayer != nHLayers ) Method << "," ;
-     }
-
-     UAFactory->TmvaFactory->BookMethod( TMVA::Types::kMLP, UAFactory->TmvaName , Method.str() );
+     if ( Cfg.GetTmvaType() == "ANN" ) UAFactory->TmvaFactory->BookMethod( TMVA::Types::kMLP, UAFactory->TmvaName , Method );
+     if ( Cfg.GetTmvaType() == "BDT" ) UAFactory->TmvaFactory->BookMethod( TMVA::Types::kBDT, UAFactory->TmvaName , Method );
 
      // Train , Test, Validate
-     Train();
+     UAFactory->TmvaFactory->TrainAllMethods(); 
+     UAFactory->TmvaFactory->TestAllMethods();
+     UAFactory->TmvaFactory->EvaluateAllMethods();
 
-     // Plots
- 
      // Clean UAFactory
-     delete UAFactory ; 
-
-     // Making some basic plots
-     Plot();
-   
-   } // Nodes
-   } // Layers
-   } // Variables
+     delete UAFactory ;
 
 }
 
-
-void UATmvaClassification::Train( ){
-    cout << "[UATmvaClassification::Train()] Training " << UAFactory->TmvaName << endl;
-    UAFactory->TmvaFactory->TrainAllMethods(); 
-    UAFactory->TmvaFactory->TestAllMethods();
-    UAFactory->TmvaFactory->EvaluateAllMethods();
-}
-
-void UATmvaClassification::Plot( ){
+void UATmvaClassification::Plot( bool isMLP ){
     cout << "[UATmvaClassification::Plot()] Plotting " << UAFactory->TmvaName << endl;
     string command;
 
+    int iret;
     // Correlations
     command = "root -b -q $ROOTSYS/tmva/test/correlations.C\\(\\\"rootfiles/"+NAME+".root\\\"\\)";
-    system(command.c_str());
+    iret = system(command.c_str());
     command = "mv plots/CorrelationMatrixS.eps plots/CorrelationMatrixS_"+NAME+".eps";
-    system(command.c_str());
+    iret = system(command.c_str());
     command = "mv plots/CorrelationMatrixS.gif plots/CorrelationMatrixS_"+NAME+".gif";
-    system(command.c_str());
+    iret = system(command.c_str());
     command = "mv plots/CorrelationMatrixB.eps plots/CorrelationMatrixB_"+NAME+".eps";
-    system(command.c_str());
+    iret = system(command.c_str());
     command = "mv plots/CorrelationMatrixB.gif plots/CorrelationMatrixB_"+NAME+".gif";
-    system(command.c_str());
+    iret = system(command.c_str());
 
     // overtraining (test and training)
     command = "root -b -q $ROOTSYS/tmva/test/mvas.C\\(\\\"rootfiles/"+NAME+".root\\\",3\\)";
-    system(command.c_str());
+    iret = system(command.c_str());
 
-    // epoch plot (test and training)
-    command = "root -b -q $ROOTSYS/tmva/test/annconvergencetest.C\\(\\\"rootfiles/"+NAME+".root\\\"\\)";
-    system(command.c_str());
-    command = "mv plots/annconvergencetest.eps plots/annconvergencetest_"+NAME+".eps";
-    system(command.c_str());
-    command = "mv plots/annconvergencetest.gif plots/annconvergencetest_"+NAME+".gif";
-    system(command.c_str());
+    if (isMLP) {
+      // epoch plot (test and training)
+      command = "root -b -q $ROOTSYS/tmva/test/annconvergencetest.C\\(\\\"rootfiles/"+NAME+".root\\\"\\)";
+      iret = system(command.c_str());
+      command = "mv plots/annconvergencetest.eps plots/annconvergencetest_"+NAME+".eps";
+      iret = system(command.c_str());
+      command = "mv plots/annconvergencetest.gif plots/annconvergencetest_"+NAME+".gif";
+      iret = system(command.c_str());
+    }
+
+    if ( iret != 0 ) {cout << iret;}
  
     // MVA efficiency
     //command = "root -b -q $ROOTSYS/tmva/test/mvaeffs.C\\(\\\"rootfiles/"+NAME+".root\\\"\\)";

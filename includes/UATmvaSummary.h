@@ -17,7 +17,7 @@ using namespace std;
 class UATmvaSummary_t {
   public:
   UATmvaSummary_t()  ;
-  UATmvaSummary_t(TString,TString,TString,UATmvaConfig&)  ;
+  UATmvaSummary_t(TString,TString,TString,UATmvaConfig&,int)  ;
   ~UATmvaSummary_t() ; 
 
   TString             BaseName;

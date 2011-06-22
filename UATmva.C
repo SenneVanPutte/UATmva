@@ -7,23 +7,37 @@
 #include "src/UATmvaSummary.cc"
 
 
-void UATmva(TString Cfg = "Config.cfg" ){
+void UATmva(TString Cfg = "Config.cfg" , TString Steps = "TRS" ){
+
+  Steps.ToUpper();
 
   UATmvaConfig Config;
   Config.ReadCfg(Cfg);
   Config.Print();
 
-//    UATmvaTree Tree(Config);
+  // Connect inout TTrees if needed (Training & Reading)
+  UATmvaTree Tree;
+  if ( Steps.Contains ('T') || Steps.Contains ('R') ) Tree.Open(Config);
 
-//    UATmvaClassification UATmva;
-//    UATmva.Do(Config,Tree);
+  // MVA Training
+  if ( Steps.Contains ('T') ) { 
+    UATmvaClassification UATmva;
+    UATmva.Do(Config,Tree);
+  }
 
-//    UATmvaReader Reader;
-//    Reader.SetNbin(100); 
-//    Reader.Do(Config,Tree); 
-  
+  // MVA Reading (Evaluation)
+  if ( Steps.Contains ('R') ) {
+    UATmvaReader Reader;
+    Reader.SetNbin(44); 
+    Reader.Do(Config,Tree); 
+  }  
+
+  // Summary & Plots
+  if ( Steps.Contains ('S') || Steps.Contains ('P') ) {
     UATmvaSummary Summary;
     Summary.Init(Config);
-    Summary.Plots();
+    if ( Steps.Contains ('S') ) Summary.Print();
+    if ( Steps.Contains ('P') ) Summary.Plots();
+  }
 
 }

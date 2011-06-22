@@ -1,6 +1,8 @@
 
 #include "../includes/UATmvaSummary.h"
 #include <stdio.h>
+#include <iostream>
+
 #include <TCanvas.h>
 #include <TStyle.h>
 #include <TSystem.h>
@@ -54,7 +56,7 @@ UATmvaSummary_t::UATmvaSummary_t(){
 }
 
 
-UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString NameExt , UATmvaConfig& Cfg ){
+UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString NameExt , UATmvaConfig& Cfg , int iLumi ){
  
   BaseName = NameBase+"_"+MethodName;
   ExtName  = NameExt;
@@ -63,58 +65,78 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   // Open File $ fetc objects
   // cout << "[UATmvaSummary_t] Reading File: " << TmvaName << endl;
   TFile*   File     = new TFile("rootfiles/" + TmvaName  + ".root","READ" );
-
+  ostringstream Directory;
+  Directory << "OutputHistograms_" << Cfg.GetTargetLumi()->at(iLumi).Lumi << "pbinv" ;
+  TString TSDirectory = Directory.str();
+  cout << TSDirectory << endl;
+ 
   TH2F* CorrMtxS_ = (TH2F*) File->Get("CorrelationMatrixS");
   TH2F* CorrMtxB_ = (TH2F*) File->Get("CorrelationMatrixB");  
 
-  TH1F* D2Train_  = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/estimatorHistTrain");
-  TH1F* D2Test_   = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/estimatorHistTest");
+  TH1F* D2Train_  ;
+  TH1F* D2Test_   ;
+  if ( Cfg.GetTmvaType() == "ANN" ) {
+    D2Train_ = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/estimatorHistTrain");
+    D2Test_  = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/estimatorHistTest");
+  } else {
+    D2Train_ = new TH1F();
+    D2Test_  = new TH1F();
+  }
+
 
   TH1F* STrain_   = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_Train_S");
   TH1F* BTrain_   = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_Train_B");
   TH1F* STest_    = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_S");
   TH1F* BTest_    = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_B");
 
-  TH1D* DCut_     = (TH1D*) File->Get("OutputHistograms/Data");
-  TH1D* SCut_     = (TH1D*) File->Get("OutputHistograms/Signal");
-  TH1D* BCutTr_   = (TH1D*) File->Get("OutputHistograms/BkgdTrain");
-  TH1D* BCutAll_  = (TH1D*) File->Get("OutputHistograms/BkgdTot");
+  cout << "DCut_" << endl;
+
+  TH1D* DCut_     = (TH1D*) File->Get(TSDirectory+"/Data");
+  TH1D* SCut_     = (TH1D*) File->Get(TSDirectory+"/Signal");
+  TH1D* BCutTr_   = (TH1D*) File->Get(TSDirectory+"/BkgdTrain");
+  TH1D* BCutAll_  = (TH1D*) File->Get(TSDirectory+"/BkgdTot");
+
+  cout << "vBCut_" << endl;
 
   vector <TH1D*>  vBCut_ ;
   if ( Cfg.GetPlotGroup()->size() == 0 ) {
     for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
       if (iD->BkgdData) {
         vBName.push_back(iD->NickName);
-        vBCut_.push_back( (TH1D*) File->Get("OutputHistograms/"+iD->NickName) ) ;
+        vBCut_.push_back( (TH1D*) File->Get(TSDirectory+"/"+iD->NickName) ) ;
       } 
     } 
   } else {
     for ( vector<PlotGroup_t>::iterator iG = (Cfg.GetPlotGroup())->begin() ; iG != (Cfg.GetPlotGroup())->end() ; ++iG) {
       vBName.push_back(iG->PlotGroupName) ;
-      TH1D* iGHist ;
+      TH1D* iGHist = NULL ;
       for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
-        if ( iG->PlotGroupMember.at(0) == iD->NickName ) iGHist = (TH1D*) ((TH1D*) File->Get("OutputHistograms/"+iD->NickName))->Clone()  ;
+        if ( iG->PlotGroupMember.at(0) == iD->NickName ) iGHist = (TH1D*) ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName))->Clone()  ;
       }
-      for ( int iGM=1 ; iGM < iG->PlotGroupMember.size() ; ++iGM ) {
+      for ( int iGM=1 ; iGM < (signed) iG->PlotGroupMember.size() ; ++iGM ) {
         for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
-          if ( iG->PlotGroupMember.at(iGM) == iD->NickName ) iGHist->Add ((TH1D*) File->Get("OutputHistograms/"+iD->NickName));
+          if ( iG->PlotGroupMember.at(iGM) == iD->NickName ) iGHist->Add ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName));
         }
       }
-      vBCut_.push_back( (TH1D*) iGHist->Clone() ) ;
-      delete iGHist ; 
+      if ( iGHist != NULL ) {
+        vBCut_.push_back( (TH1D*) iGHist->Clone() ) ;
+        delete iGHist ;
+      } 
     }
   }
 
-  TH1D* SignCutTr_   = (TH1D*) File->Get("OutputHistograms/bgTr_SoverSqrtBPlusDeltaB");
-  TH1D* SignCutAll_  = (TH1D*) File->Get("OutputHistograms/bkgd_SoverSqrtBPlusDeltaB");
-  TH1D* LimitCutTr_  = (TH1D*) File->Get("OutputHistograms/bgTr_BayesLimit");
-  TH1D* LimitCutAll_ = (TH1D*) File->Get("OutputHistograms/bkgd_BayesLimit");
+  cout << "SignCutTr_" <<endl;
 
-  TH1D* Cut_      = (TH1D*) File->Get("OutputHistograms/Cut");   
-  TH1D* Sign_     = (TH1D*) File->Get("OutputHistograms/Sign");
-  TH1D* Limit_    = (TH1D*) File->Get("OutputHistograms/Limit");
+  TH1D* SignCutTr_   = (TH1D*) File->Get(TSDirectory+"/bgTr_SoverSqrtBPlusDeltaB");
+  TH1D* SignCutAll_  = (TH1D*) File->Get(TSDirectory+"/bkgd_SoverSqrtBPlusDeltaB");
+  TH1D* LimitCutTr_  = (TH1D*) File->Get(TSDirectory+"/bgTr_BayesLimit");
+  TH1D* LimitCutAll_ = (TH1D*) File->Get(TSDirectory+"/bkgd_BayesLimit");
 
-  TH1D* CutBased_ = (TH1D*) File->Get("OutputHistograms/CutBased");
+  TH1D* Cut_      = (TH1D*) File->Get(TSDirectory+"/Cut");   
+  TH1D* Sign_     = (TH1D*) File->Get(TSDirectory+"/Sign");
+  TH1D* Limit_    = (TH1D*) File->Get(TSDirectory+"/Limit");
+
+  TH1D* CutBased_ = (TH1D*) File->Get(TSDirectory+"/CutBased");
 
   // Have to create the new object outside of gDirectory from File
   gROOT->cd(); 
@@ -134,7 +156,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   SCut     = (TH1D*) SCut_    ->Clone() ;
   BCutTr   = (TH1D*) BCutTr_  ->Clone() ;
   BCutAll  = (TH1D*) BCutAll_ ->Clone();
-  for ( int iD = 0 ; iD < vBCut_.size() ; ++iD ) vBCut.push_back( (TH1D*) vBCut_.at(iD)->Clone() ) ;
+  for ( int iD = 0 ; iD < (signed) vBCut_.size() ; ++iD ) vBCut.push_back( (TH1D*) vBCut_.at(iD)->Clone() ) ;
 
   SignCutTr   = (TH1D*) SignCutTr_   ->Clone() ;
   SignCutAll  = (TH1D*) SignCutAll_  ->Clone() ;
@@ -162,7 +184,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   SetGoodAxis(SCut)   ;
   SetGoodAxis(BCutTr) ;
   SetGoodAxis(BCutAll);
-  for ( int iD = 0 ; iD < vBCut.size() ; ++iD ) SetGoodAxis(vBCut.at(iD));
+  for ( int iD = 0 ; iD < (signed) vBCut.size() ; ++iD ) SetGoodAxis(vBCut.at(iD));
 
   SetGoodAxis(SignCutTr)  ;
   SetGoodAxis(SignCutAll) ;
@@ -192,7 +214,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   delete SCut_    ;
   delete BCutTr_  ;
   delete BCutAll_ ;
-  for ( int iD = 0 ; iD < vBCut.size() ; ++iD ) delete vBCut_.at(iD);
+  for ( int iD = 0 ; iD < (signed) vBCut.size() ; ++iD ) delete vBCut_.at(iD);
   vBCut_.clear();
 
   delete SignCutTr_   ;
@@ -230,7 +252,7 @@ UATmvaSummary_t::~UATmvaSummary_t(){
   delete SCut   ;
   delete BCutTr ;
   delete BCutAll;
-  for ( int iD = 0 ; iD < vBCut.size() ; ++iD ) delete vBCut.at(iD);
+  for ( int iD = 0 ; iD < (signed) vBCut.size() ; ++iD ) delete vBCut.at(iD);
   vBCut.clear();
   vBName.clear();
 
@@ -251,7 +273,7 @@ UATmvaSummary_t::~UATmvaSummary_t(){
 
 UATmvaSummary::~UATmvaSummary(){
   //cout << "UATmvaSummary Destructor" << endl;
-  int iC = 1;
+  //int iC = 1;
   for ( vector<UATmvaSummary_t*>::iterator itC = vUASummary.begin() ; itC != vUASummary.end() ; ++itC ){
      //cout << "UATmvaSummary_t Delete # : " << iC++ << endl;
      delete (*itC);
@@ -263,22 +285,54 @@ UATmvaSummary::~UATmvaSummary(){
 
 void UATmvaSummary::Init( UATmvaConfig& Cfg ) {
 
-  TString MethodName("MLP");
+  TString MethodName;
+  if ( Cfg.GetTmvaType() == "ANN" )  MethodName = "MLP" ;
+  if ( Cfg.GetTmvaType() == "BDT" )  MethodName = "BDT" ;
 
   // Open All files and Load Histos
   for (Int_t nVarRem  = 0 ; nVarRem <= Cfg.GetANNVarNumRemove() ; ++nVarRem) {
   Int_t nVarMax = (Cfg.GetTmvaVar())->size() - nVarRem ;
-  for (Int_t nHLayers = Cfg.GetANNHiddenLayersMin() ; nHLayers <= Cfg.GetANNHiddenLayersMax() ; ++nHLayers ) {
-  for (Int_t nHNodes  = Cfg.GetANNHiddenNodesMin()  ; nHNodes  <= Cfg.GetANNHiddenNodesMax()  ; ++nHNodes  ) {
 
-     // Build Name
-     ostringstream Name;
-     Name << nHLayers << "Layers_" << nHNodes << "Nodes_" << nVarMax << "Var" ;
+    if ( Cfg.GetTmvaType() == "ANN" ) {
+      for (Int_t nHLayers = Cfg.GetANNHiddenLayersMin() ; nHLayers <= Cfg.GetANNHiddenLayersMax() ; ++nHLayers ) {
+      for (Int_t nHNodes  = Cfg.GetANNHiddenNodesMin()  ; nHNodes  <= Cfg.GetANNHiddenNodesMax()  ; ++nHNodes  ) {
+         // Build Name
+         ostringstream Name;
+         Name << nHLayers << "Layers_" << nHNodes << "Nodes_" << nVarMax << "Var" ;
+         // Read
+         vUASummary.push_back (new UATmvaSummary_t(Cfg.GetTmvaName(),MethodName,Name.str(), Cfg , 0 ));
+      } // Nodes
+      } // Layers
+    }
 
-     vUASummary.push_back (new UATmvaSummary_t(Cfg.GetTmvaName(),MethodName,Name.str(), Cfg ));
+    if ( Cfg.GetTmvaType() == "BDT" ) {
+      for( int iBDTNTrees         = 0 ; iBDTNTrees         < (signed) (Cfg.GetBDTNTrees())->size()         ; ++iBDTNTrees         ) {
+      for( int iBDTBoostType      = 0 ; iBDTBoostType      < (signed) (Cfg.GetBDTBoostType())->size()      ; ++iBDTBoostType      ) {
+      for( int iBDTSeparationType = 0 ; iBDTSeparationType < (signed) (Cfg.GetBDTSeparationType())->size() ; ++iBDTSeparationType ) {
+      for( int iBDTnCuts          = 0 ; iBDTnCuts          < (signed) (Cfg.GetBDTnCuts())->size()          ; ++iBDTnCuts          ) {
+      for( int iBDTPruneMethod    = 0 ; iBDTPruneMethod    < (signed) (Cfg.GetBDTPruneMethod())->size()    ; ++iBDTPruneMethod    ) {
+      for( int iBDTPruneStrength  = 0 ; iBDTPruneStrength  < (signed) (Cfg.GetBDTPruneStrength())->size()  ; ++iBDTPruneStrength  ) {
 
-  } // Nodes
-  } // Layers
+        // Build Name
+        ostringstream Name;
+        Name << Cfg.GetBDTNTrees()->at(iBDTNTrees) << "Trees_" ;
+        Name << Cfg.GetBDTBoostType()->at(iBDTBoostType) << "_" ;
+        Name << Cfg.GetBDTSeparationType()->at(iBDTSeparationType) << "_" ;
+        Name << Cfg.GetBDTnCuts()->at(iBDTnCuts) << "Cuts_" ;
+        Name << Cfg.GetBDTPruneMethod()->at(iBDTPruneMethod) << "_" ;
+        Name << Cfg.GetBDTPruneStrength()->at(iBDTPruneStrength) << "PruneStrength_" ;
+        Name << nVarMax << "Var" ;
+        // Read
+        vUASummary.push_back (new UATmvaSummary_t(Cfg.GetTmvaName(),MethodName,Name.str(), Cfg , 0 ));
+
+      } // BDTNTrees
+      } // BDTBoostType
+      } // BDTSeparationType
+      } // BDTnCuts
+      } // BDTPruneMethod
+      } // BDTPruneStrength
+    }
+
   } // Variables
 } 
 
@@ -309,7 +363,7 @@ void UATmvaSummary::Print( ){
   cout << "  ------------------------------------------------------------------------------------------------------" << endl ;
 
   
-  for ( int iUAS = 0 ; iUAS !=  vUASummary.size() ; ++iUAS ) {
+  for ( int iUAS = 0 ; iUAS !=  (signed) vUASummary.size() ; ++iUAS ) {
 
     cout << "  | " << iUAS+1;
     if   (iUAS < 9) cout << "  | " ;
@@ -349,7 +403,7 @@ void UATmvaSummary::Plots( ){
     Print();
     cout << "  Enter ID of MVA to plot (0 to exit): ";
     cin  >> ID; 
-    if ( ID > 0 && ID <=  vUASummary.size() ) {
+    if ( ID > 0 && ID <= (signed)  vUASummary.size() ) {
       cout << "  --> Plotting: " << vUASummary.at(ID-1)->TmvaName << endl ;
       TCanvas* Canvas = new TCanvas(vUASummary.at(ID-1)->TmvaName,vUASummary.at(ID-1)->TmvaName,950,700);
       
@@ -395,10 +449,10 @@ void UATmvaSummary::PlotStack(int iUAS ){
    gPad->SetLogy(1);
 
    vector<TH1D*> vStack;
-   for (int iD=0 ; iD < vUASummary.at(iUAS)->vBCut.size() ; ++iD ) {
+   for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) {
      cout << vUASummary.at(iUAS)->vBName.at(iD) << " = " ;
      TH1D* iStack = (TH1D*) vUASummary.at(iUAS)->vBCut.at(iD)->Clone("s"+vUASummary.at(iUAS)->vBName.at(iD));
-     for (int iD2Sum=iD+1 ; iD2Sum <  vUASummary.at(iUAS)->vBCut.size() ; ++iD2Sum ) {
+     for (int iD2Sum=iD+1 ; iD2Sum < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD2Sum ) {
         cout << vUASummary.at(iUAS)->vBName.at(iD2Sum) << " + " ;
        iStack->Add(vUASummary.at(iUAS)->vBCut.at(iD2Sum));
      }
@@ -423,20 +477,21 @@ void UATmvaSummary::PlotStack(int iUAS ){
    vStack.at(0)->GetYaxis()->SetTitle("Events");
 
    vStack.at(0)->Draw("hist"); 
-   for (int iD=1 ; iD < vStack.size()  ; ++iD ) vStack.at(iD)->Draw("histsame");
+   for (int iD=1 ; iD < (signed) vStack.size()  ; ++iD ) vStack.at(iD)->Draw("histsame");
    vUASummary.at(iUAS)->SCut->Draw("histsame");
    vUASummary.at(iUAS)->DCut->Draw("esame");
 
-   int nLegEntry = 2 + vStack.size();
+   int nLegEntry = 2 + (signed) vStack.size();
    TLegend* Legend = new TLegend (.18,.85-nLegEntry*.035,.5,.85);
    Legend->SetBorderSize(0);
    Legend->SetFillColor(0);
    Legend->SetTextSize(0.04);
    Legend->AddEntry( vUASummary.at(iUAS)->DCut   , "Data  " , "p");
    Legend->AddEntry( vUASummary.at(iUAS)->SCut   , "Signal" , "l");
-   for (int iD=0 ; iD < vStack.size()  ; ++iD ) Legend->AddEntry( vStack.at(iD) , vUASummary.at(iUAS)->vBName.at(iD) , "f");
+   for (int iD=0 ; iD < (signed) vStack.size()  ; ++iD ) Legend->AddEntry( vStack.at(iD) , vUASummary.at(iUAS)->vBName.at(iD) , "f");
    Legend->Draw("same");
 
+   gPad->WaitPrimitive();
 
 
 }

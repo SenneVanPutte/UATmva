@@ -50,6 +50,8 @@ class UATmvaReader {
 
   void Do    ( UATmvaConfig&, UATmvaTree&);
   void DoMLP ( UATmvaConfig&, UATmvaTree&);
+  void DoBDT ( UATmvaConfig&, UATmvaTree&);
+  void Read  ( UATmvaConfig&, UATmvaTree&, string, int, int );
 
   void SetNbin   ( Int_t   N ) { nbins  = N ;}
   void SetMinbin ( Float_t V ) { minBin = V ;}

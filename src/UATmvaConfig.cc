@@ -28,9 +28,9 @@ void UATmvaConfig::Reset(){
   TmvaType           = "ANN" ;
   TmvaWeight         = "" ;
   TmvaVar.clear();
+  TmvaVarNumRemove   = 0   ;
 
   ANNCycles          = 500 ;
-  ANNVarNumRemove    = 0   ;
   ANNHiddenLayersMin = 1   ;
   ANNHiddenLayersMax = 2   ;
   ANNHiddenNodesMin  = 0   ;
@@ -38,6 +38,20 @@ void UATmvaConfig::Reset(){
   ANNFracTrain       = .5  ; 
   ANNFracTest        = .5  ;
   ANNFracValidate    = 1.  ;
+
+  BDTNTrees        .clear();
+  BDTBoostType     .clear();
+  BDTSeparationType.clear();
+  BDTnCuts         .clear();
+  BDTPruneMethod   .clear();
+  BDTPruneStrength .clear();
+
+  BDTNTrees        .push_back(400)             ;
+  BDTBoostType     .push_back("AdaBoost")      ;    
+  BDTSeparationType.push_back("GiniIndex")     ;
+  BDTnCuts         .push_back(20)              ;
+  BDTPruneMethod   .push_back("CostComplexity");
+  BDTPruneStrength .push_back(12) ;
 
   CutBasedHistName   = "NULL" ;
   CutBasedHistBin    = -1 ;
@@ -112,14 +126,15 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
 
     // InputData
     if ( Elements.at(0) == "InputData" ) {
-       if  ( Elements.size() == 7 ) {
+       if  ( Elements.size() == 8 ) {
           InputData_t InDat;
           InDat.NickName  = Elements.at(1);
-          InDat.FileName  = Elements.at(6);
+          InDat.FileName  = Elements.at(7);
           InDat.SigTrain  = atoi(Elements.at(2).c_str()) ;
           InDat.BkgdTrain = atoi(Elements.at(3).c_str()) ;
           InDat.TrueData  = atoi(Elements.at(4).c_str()) ;
           InDat.BkgdData  = atoi(Elements.at(5).c_str()) ;
+          InDat.Lumi      = atof(Elements.at(6).c_str()) ;
           InputData.push_back(InDat);
        }
        else UAError("[UATmvaConfig] Wrong InputData Input !");
@@ -145,17 +160,18 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
       if   ( Elements.size() == 2 ) SetInputVar(Elements.at(1),TmvaVar) ;
       else UAError("[UATmvaConfig] Wrong TmvaVar Input !");
     }
+
+    if ( Elements.at(0) == "TmvaVarNumRemove") {
+      if   ( Elements.size() == 2 ) TmvaVarNumRemove = atoi(Elements.at(1).c_str()) ;
+      else UAError("[UATmvaConfig] Wrong TmvaVarNumRemove Input !");
+    }
+
  
     // ------------------ MLP Inputs -------------------------
  
     if ( Elements.at(0) == "ANNCycles") {
       if   ( Elements.size() == 2 ) ANNCycles = atoi(Elements.at(1).c_str()) ;
       else UAError("[UATmvaConfig] Wrong ANNCycles Input !");
-    }
-
-    if ( Elements.at(0) == "ANNVarNumRemove") {
-      if   ( Elements.size() == 2 ) ANNVarNumRemove = atoi(Elements.at(1).c_str()) ;
-      else UAError("[UATmvaConfig] Wrong ANNVarNumRemove Input !");
     }
 
     if ( Elements.at(0) == "ANNHiddenLayers") {
@@ -189,7 +205,60 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
       else UAError("[UATmvaConfig] Wrong ANNFracValidate Input !");
     }
 
-    // Cut Based Yield
+    // ------------------------------ BDT Options
+
+
+   if ( Elements.at(0) == "BDTNTrees") {
+     if   ( Elements.size() >= 2 ) {
+       BDTNTrees.clear();
+       for ( int iE = 1 ; iE < (signed) Elements.size() ; ++iE ) BDTNTrees.push_back(atoi(Elements.at(iE).c_str()));
+     }
+     else UAError("[UATmvaConfig] Wrong BDTNTrees Input !"); 
+   }
+
+   if ( Elements.at(0) == "BDTBoostType") {
+     if   ( Elements.size() >= 2 ) {
+       BDTBoostType.clear();
+       for ( int iE = 1 ; iE < (signed) Elements.size() ; ++iE ) BDTBoostType.push_back(Elements.at(iE));
+     }
+     else UAError("[UATmvaConfig] Wrong BDTBoostType Input !"); 
+   }
+
+   if ( Elements.at(0) == "BDTSeparationType") {
+     if   ( Elements.size() >= 2 ) {
+       BDTSeparationType.clear();
+       for ( int iE = 1 ; iE < (signed) Elements.size() ; ++iE ) BDTSeparationType.push_back(Elements.at(iE));
+     }
+     else UAError("[UATmvaConfig] Wrong BDTSeparationType Input !"); 
+   }
+
+   if ( Elements.at(0) == "BDTnCuts") {
+     if   ( Elements.size() >= 2 ) {
+       BDTnCuts.clear();
+       for ( int iE = 1 ; iE < (signed) Elements.size() ; ++iE ) BDTnCuts.push_back(atoi(Elements.at(iE).c_str()));
+     }
+     else UAError("[UATmvaConfig] Wrong BDTnCuts Input !"); 
+   }
+
+   if ( Elements.at(0) == "BDTPruneMethod") {
+     if   ( Elements.size() >= 2 ) {
+       BDTPruneMethod.clear();
+       for ( int iE = 1 ; iE < (signed) Elements.size() ; ++iE ) BDTPruneMethod.push_back(Elements.at(iE));
+     }
+     else UAError("[UATmvaConfig] Wrong BDTPruneMethod Input !"); 
+   }
+
+   if ( Elements.at(0) == "BDTPruneStrength") {
+     if   ( Elements.size() >= 2 ) {
+       BDTPruneStrength.clear();
+       for ( int iE = 1 ; iE < (signed) Elements.size() ; ++iE ) BDTPruneStrength.push_back(atoi(Elements.at(iE).c_str()));
+     }
+     else UAError("[UATmvaConfig] Wrong BDTPruneStrength Input !"); 
+   }
+
+
+
+    // ------------------------------ Cut Based Yield
 
    if ( Elements.at(0) == "CutBased" ) {
       if   ( Elements.size() == 3 ) {
@@ -205,17 +274,33 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
        PlotGroup_t PlotGroupTmp;
        PlotGroupTmp.PlotGroupName  = Elements.at(1) ;
        PlotGroupTmp.PlotGroupColor = atoi(Elements.at(2).c_str()) ;
-       for (int iMember = 3 ; iMember < Elements.size() ; ++iMember ) PlotGroupTmp.PlotGroupMember.push_back(Elements.at(iMember));
+       for (int iMember = 3 ; iMember < (signed)Elements.size() ; ++iMember ) PlotGroupTmp.PlotGroupMember.push_back(Elements.at(iMember));
        PlotGroup.push_back(PlotGroupTmp);
      }
      else UAError("[UATmvaConfig] Wrong PlotGroup Input !");
    }
 
-
-
- 
+   // Plot Target Lumi
+   if ( Elements.at(0) == "TargetLumi" ) {
+     if ( Elements.size() == 3 ) {
+       TargetLumi_t TargetLumiTmp;
+       TargetLumiTmp.useData = atoi(Elements.at(1).c_str()) ;
+       TargetLumiTmp.Lumi    = atof(Elements.at(2).c_str()) ;
+       TargetLumi.push_back(TargetLumiTmp);
+     }
+     else UAError("[UATmvaConfig] Wrong TargetLumi Input !");    
+   }
 
   }
+
+  // Dummy TargetLumi if needed --> 1fb-1
+  if ( TargetLumi.size() == 0 ) {
+    TargetLumi_t TargetLumiTmp;
+    TargetLumiTmp.useData = 0     ;
+    TargetLumiTmp.Lumi    = 1000. ;  
+    TargetLumi.push_back(TargetLumiTmp);
+  }
+
   InitDone = true;
  
   Cfg.close();
@@ -268,18 +353,29 @@ void UATmvaConfig::Print(){
   for (vector<InputVar_t> ::iterator iVar = TmvaVar.begin() ; iVar != TmvaVar.end() ; ++iVar ) {
      cout << "TmvaVar : " << iVar->VarName << " " << iVar->VarType << " " << iVar->Active << endl;
   }
+  cout << "TmvaVarNumRemove= " << TmvaVarNumRemove << endl;
 
   if ( TmvaType == "ANN" ) {
     cout << "--------------------- TMVA: ANN ---------------------------" << endl;
     cout << "ANNCycles       = " << ANNCycles << endl;
-    cout << "ANNVarNumRemove = " << ANNVarNumRemove << endl;
     cout << "ANNHiddenLayers = " << ANNHiddenLayersMin << " " << ANNHiddenLayersMax << endl;
     cout << "ANNHiddenNodes  = " << ANNHiddenNodesMin  << " " << ANNHiddenNodesMax  << endl;
     cout << "ANNFracTrain    = " << ANNFracTrain << endl;
     cout << "ANNFracTest     = " << ANNFracTest << endl;
     cout << "ANNFracValidate = " << ANNFracValidate << endl;
   }
-  
+ 
+
+  if ( TmvaType == "BDT" ) {
+     cout << "--------------------- TMVA: BDT ---------------------------" << endl;
+     cout << "BDTNTrees        = " ; for (int iE = 0 ; iE<(signed)BDTNTrees.size()         ; ++iE ) cout << BDTNTrees.at(iE)         << " " ; cout << endl;
+     cout << "BDTBoostType     = " ; for (int iE = 0 ; iE<(signed)BDTBoostType.size()      ; ++iE ) cout << BDTBoostType.at(iE)      << " " ; cout << endl;
+     cout << "BDTSeparationType= " ; for (int iE = 0 ; iE<(signed)BDTSeparationType.size() ; ++iE ) cout << BDTSeparationType.at(iE) << " " ; cout << endl;
+     cout << "BDTnCuts         = " ; for (int iE = 0 ; iE<(signed)BDTnCuts.size()          ; ++iE ) cout << BDTnCuts.at(iE)          << " " ; cout << endl;
+     cout << "BDTPruneMethod   = " ; for (int iE = 0 ; iE<(signed)BDTPruneMethod.size()    ; ++iE ) cout << BDTPruneMethod.at(iE)    << " " ; cout << endl;
+     cout << "BDTPruneStrength = " ; for (int iE = 0 ; iE<(signed)BDTPruneStrength.size()  ; ++iE ) cout << BDTPruneStrength.at(iE)  << " " ; cout << endl;
+  }
+
   if ( CutBasedHistName != "NULL" ) {
     cout << "--------------------- Cut Based Limit ---------------------" << endl;
     cout << "CutBasedHistName = " << CutBasedHistName<< endl;
@@ -288,12 +384,18 @@ void UATmvaConfig::Print(){
 
   if ( PlotGroup.size() > 0 ) {
     cout << "--------------------- Plot Group ( for bkgd only ) --------" << endl;
-    for (int iG=0 ; iG < PlotGroup.size() ; ++iG ) {
+    for (int iG=0 ; iG < (signed) PlotGroup.size() ; ++iG ) {
       cout << "PlotGroup :" << PlotGroup.at(iG).PlotGroupName << " " << PlotGroup.at(iG).PlotGroupColor << " = "; 
-      for (int iGM=0 ; iGM < PlotGroup.at(iG).PlotGroupMember.size() ; ++iGM ) cout << PlotGroup.at(iG).PlotGroupMember.at(iGM) ;
+      for (int iGM=0 ; iGM < (signed) PlotGroup.at(iG).PlotGroupMember.size() ; ++iGM ) cout << PlotGroup.at(iG).PlotGroupMember.at(iGM) ;
       cout << endl;
     } 
   }
 
+  if (TargetLumi.size() > 0 ) {
+    cout << "--------------------- Plot Target Lumi --------------------" << endl;
+    for (int iL=0 ; iL < (signed) TargetLumi.size() ; ++iL ) {
+      cout << "TargetLumi :  useData = " << TargetLumi.at(iL).useData << " Lumi = " << TargetLumi.at(iL).Lumi << endl;
+    }
+  }
 
 }

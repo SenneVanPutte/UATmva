@@ -11,24 +11,81 @@
 void UATmvaReader::Do( UATmvaConfig& Cfg, UATmvaTree& T) {
 
    if ( Cfg.GetTmvaType() == "ANN" ) DoMLP(Cfg,T);
+   if ( Cfg.GetTmvaType() == "BDT" ) DoBDT(Cfg,T);
 
 }
 
 void UATmvaReader::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
 
-   for (Int_t nVarRem  = 0 ; nVarRem <= Cfg.GetANNVarNumRemove() ; ++nVarRem) {
+   for (Int_t iLumi    = 0 ; iLumi   < (signed) Cfg.GetTargetLumi()->size() ; ++iLumi  ) {
+   for (Int_t nVarRem  = 0 ; nVarRem <= Cfg.GetANNVarNumRemove()   ; ++nVarRem) {
    Int_t nVarMax = (Cfg.GetTmvaVar())->size() - nVarRem ; 
    for (Int_t nHLayers = Cfg.GetANNHiddenLayersMin() ; nHLayers <= Cfg.GetANNHiddenLayersMax() ; ++nHLayers ) {
    for (Int_t nHNodes  = Cfg.GetANNHiddenNodesMin()  ; nHNodes  <= Cfg.GetANNHiddenNodesMax()  ; ++nHNodes  ) {
-    
-     UAReader = new UATmvaReader_t() ; 
- 
+
+
      // Build Name
      ostringstream Name;
      Name << Cfg.GetTmvaName() << "_MLP_" << nHLayers << "Layers_" << nHNodes << "Nodes_" << nVarMax << "Var" ;
-     cout << "[UATmvaReader] Reading: " << Name.str() << endl;
-     UAReader->TmvaName = Name.str();
      NAME =  Name.str();
+
+     Read(Cfg,T,Name.str(),nVarMax,iLumi) ;
+ 
+   } // Nodes
+   } // Layers
+   } // Variables
+   } // TargetLumi
+
+}
+
+
+void UATmvaReader::DoBDT( UATmvaConfig& Cfg, UATmvaTree& T) {
+
+   for (Int_t iLumi    = 0 ; iLumi   < (signed) Cfg.GetTargetLumi()->size() ; ++iLumi  ) {
+   for (Int_t nVarRem  = 0 ; nVarRem <= Cfg.GetANNVarNumRemove()   ; ++nVarRem) {
+   Int_t nVarMax = (Cfg.GetTmvaVar())->size() - nVarRem ; 
+
+   for( int iBDTNTrees         = 0 ; iBDTNTrees         < (signed) (Cfg.GetBDTNTrees())->size()         ; ++iBDTNTrees         ) {
+   for( int iBDTBoostType      = 0 ; iBDTBoostType      < (signed) (Cfg.GetBDTBoostType())->size()      ; ++iBDTBoostType      ) {
+   for( int iBDTSeparationType = 0 ; iBDTSeparationType < (signed) (Cfg.GetBDTSeparationType())->size() ; ++iBDTSeparationType ) {
+   for( int iBDTnCuts          = 0 ; iBDTnCuts          < (signed) (Cfg.GetBDTnCuts())->size()          ; ++iBDTnCuts          ) {
+   for( int iBDTPruneMethod    = 0 ; iBDTPruneMethod    < (signed) (Cfg.GetBDTPruneMethod())->size()    ; ++iBDTPruneMethod    ) {
+   for( int iBDTPruneStrength  = 0 ; iBDTPruneStrength  < (signed) (Cfg.GetBDTPruneStrength())->size()  ; ++iBDTPruneStrength  ) {
+
+
+     // Build Name
+     ostringstream Name;
+     Name << Cfg.GetTmvaName() << "_BDT_" ;
+     Name << Cfg.GetBDTNTrees()->at(iBDTNTrees) << "Trees_" ;
+     Name << Cfg.GetBDTBoostType()->at(iBDTBoostType) << "_" ;
+     Name << Cfg.GetBDTSeparationType()->at(iBDTSeparationType) << "_" ;
+     Name << Cfg.GetBDTnCuts()->at(iBDTnCuts) << "Cuts_" ;
+     Name << Cfg.GetBDTPruneMethod()->at(iBDTPruneMethod) << "_" ;
+     Name << Cfg.GetBDTPruneStrength()->at(iBDTPruneStrength) << "PruneStrength_" ;
+     Name << nVarMax << "Var" ;
+     NAME =  Name.str();
+
+     Read(Cfg,T,Name.str(),nVarMax,iLumi) ;
+
+   } // BDTNTrees
+   } // BDTBoostType
+   } // BDTSeparationType
+   } // BDTnCuts
+   } // BDTPruneMethod
+   } // BDTPruneStrength
+ 
+   } // Variables
+   } // TargetLumi
+
+}
+
+
+void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVarMax, int iLumi ) {
+
+     UAReader = new UATmvaReader_t() ; 
+ 
+     cout << "[UATmvaReader] Reading: " << Name << endl;
+     UAReader->TmvaName = Name;
 
      // Load InputTrees branches
      Double_t treeWeight ;
@@ -74,17 +131,15 @@ void UATmvaReader::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
 
      // Re-Open TMVA output file
      UAReader->TmvaFile  = TFile::Open("rootfiles/" + UAReader->TmvaName  + ".root","UPDATE" );
-     string Directory("OutputHistograms");
-     UAReader->TmvaFile->mkdir(Directory.c_str()); 
-     UAReader->TmvaFile->cd(Directory.c_str());    
+     //string Directory("OutputHistograms");
+     ostringstream Directory;
+     Directory << "OutputHistograms_" << Cfg.GetTargetLumi()->at(iLumi).Lumi << "pbinv" ;
+     UAReader->TmvaFile->mkdir(Directory.str().c_str()); 
+     UAReader->TmvaFile->cd(Directory.str().c_str());    
+
 
      // Fill Output for each tree
      cout << "[UATmvaReader::DoMLP()] Fill: " << UAReader->TmvaName << endl;
-
-     Double_t DaWeight=1.0; 
-     Double_t SgWeight=1.0;
-     Double_t BgWeight=1.0;
-     Double_t Weight=1.0;
 
      TH1D* hMVA_data = new TH1D ("Data"     ,"Data"     ,nbins,minBin,maxBin) ;
      TH1D* hMVA_sig  = new TH1D ("Signal"   ,"Signal"   ,nbins,minBin,maxBin) ;
@@ -93,6 +148,23 @@ void UATmvaReader::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
      TH1D* hMVA_bgSp = new TH1D ("BkgdSpect","BkgdSpect",nbins,minBin,maxBin) ;
 
      for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+       Double_t DaWeight=1.0; 
+       Double_t SgWeight=1.0;
+       Double_t BgWeight=1.0;
+       Double_t Weight=1.0;
+       // Set TargetLumi
+       Double_t LumiScale = 1.;
+       LumiScale = Cfg.GetTargetLumi()->at(iLumi).Lumi / iD->Lumi ;
+       cout << iD->NickName << " : SampleLumi= " << iD->Lumi<< " TargetLumi= " << Cfg.GetTargetLumi()->at(iLumi).Lumi << " --> LumiScale = " << LumiScale << endl;
+       if ( Cfg.GetTargetLumi()->at(iLumi).useData ) {  
+         if ( iD->TrueData &&  LumiScale != 1. ) cout << "[UATmvaReade::DoMLP] WARNING: Rescaling Data Luminosity" << endl; 
+         DaWeight *= LumiScale;
+       }
+       else DaWeight = 0;
+//       SgWeight *= LumiScale;
+//       BgWeight *= LumiScale;
+       cout << "------> DaWeight= " << DaWeight << " SgWeight= " << SgWeight << " BgWeight= " << BgWeight << endl;
+       // File MVA Response
        TH1D* hMVA = new TH1D (iD->NickName,iD->NickName,nbins,minBin,maxBin) ;
        Int_t nEntries = (T.GetTree(iD->NickName))->GetEntries(); 
        for (Int_t jEntry = 0 ;  jEntry < nEntries ; ++jEntry) {
@@ -111,6 +183,7 @@ void UATmvaReader::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
          if (iD->BkgdData||iD->BkgdTrain) Weight *= BgWeight;
          if (iD->TrueData               ) Weight *= DaWeight;
          Double_t result = UAReader->TmvaReader->EvaluateMVA(UAReader->TmvaName); 
+//         cout << result << " " << Weight << endl;
          hMVA -> Fill( result , Weight);
          if (iD->TrueData                ) hMVA_data -> Fill( result , Weight);
          if (iD->SigTrain                ) hMVA_sig  -> Fill( result , Weight);
@@ -118,30 +191,33 @@ void UATmvaReader::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
          if (iD->BkgdData&&!iD->BkgdTrain) hMVA_bgSp -> Fill( result , Weight);
          if (iD->BkgdTrain               ) hMVA_bgTr -> Fill( result , Weight);
        }
+       UAReader->TmvaFile->cd(Directory.str().c_str());
        hMVA->Write();
        delete hMVA; 
      }     
- 
+
+     //UAReader->TmvaFile->cd(Directory.str().c_str());
      hMVA_data ->Write();
      hMVA_sig  ->Write();
      hMVA_bkgd ->Write(); 
      hMVA_bgSp ->Write(); 
      hMVA_bgTr ->Write(); 
 
+
      // Build Significance
      cout << "[UATmvaReader::DoMLP()] Evaluate: " << UAReader->TmvaName << endl;
 
-     TH1D bgTr_SoverB = GetSoverB("bgTr_SoverB",hMVA_sig ,hMVA_bgTr); bgTr_SoverB.Write();
-     TH1D bgSp_SoverB = GetSoverB("bgSp_SoverB",hMVA_sig ,hMVA_bgSp); bgSp_SoverB.Write();
-     TH1D bkgd_SoverB = GetSoverB("bkgd_SoverB",hMVA_sig ,hMVA_bkgd); bkgd_SoverB.Write();
-
-     TH1D bgTr_SoverSqrtSPlusB = GetSoverSqrtSPlusB("bgTr_SoverSqrtSPlusB",hMVA_sig ,hMVA_bgTr); bgTr_SoverSqrtSPlusB.Write();
-     TH1D bgSp_SoverSqrtSPlusB = GetSoverSqrtSPlusB("bgSp_SoverSqrtSPlusB",hMVA_sig ,hMVA_bgSp); bgSp_SoverSqrtSPlusB.Write();
-     TH1D bkgd_SoverSqrtSPlusB = GetSoverSqrtSPlusB("bkgd_SoverSqrtSPlusB",hMVA_sig ,hMVA_bkgd); bkgd_SoverSqrtSPlusB.Write();
+     TH1D* bgTr_SoverB = GetSoverB("bgTr_SoverB",hMVA_sig ,hMVA_bgTr); bgTr_SoverB->Write();
+     TH1D* bgSp_SoverB = GetSoverB("bgSp_SoverB",hMVA_sig ,hMVA_bgSp); bgSp_SoverB->Write();
+     TH1D* bkgd_SoverB = GetSoverB("bkgd_SoverB",hMVA_sig ,hMVA_bkgd); bkgd_SoverB->Write();
+ 
+     TH1D* bgTr_SoverSqrtSPlusB = GetSoverSqrtSPlusB("bgTr_SoverSqrtSPlusB",hMVA_sig ,hMVA_bgTr); bgTr_SoverSqrtSPlusB->Write();
+     TH1D* bgSp_SoverSqrtSPlusB = GetSoverSqrtSPlusB("bgSp_SoverSqrtSPlusB",hMVA_sig ,hMVA_bgSp); bgSp_SoverSqrtSPlusB->Write();
+     TH1D* bkgd_SoverSqrtSPlusB = GetSoverSqrtSPlusB("bkgd_SoverSqrtSPlusB",hMVA_sig ,hMVA_bkgd); bkgd_SoverSqrtSPlusB->Write();
      
-     TH1D bgTr_SoverSqrtBPlusDeltaB = GetSoverSqrtBPlusDeltaB("bgTr_SoverSqrtBPlusDeltaB",hMVA_sig ,hMVA_bgTr); bgTr_SoverSqrtBPlusDeltaB.Write();
-     TH1D bgSp_SoverSqrtBPlusDeltaB = GetSoverSqrtBPlusDeltaB("bgSp_SoverSqrtBPlusDeltaB",hMVA_sig ,hMVA_bgSp); bgSp_SoverSqrtBPlusDeltaB.Write();
-     TH1D bkgd_SoverSqrtBPlusDeltaB = GetSoverSqrtBPlusDeltaB("bkgd_SoverSqrtBPlusDeltaB",hMVA_sig ,hMVA_bkgd); bkgd_SoverSqrtBPlusDeltaB.Write();
+     TH1D* bgTr_SoverSqrtBPlusDeltaB = GetSoverSqrtBPlusDeltaB("bgTr_SoverSqrtBPlusDeltaB",hMVA_sig ,hMVA_bgTr); bgTr_SoverSqrtBPlusDeltaB->Write();
+     TH1D* bgSp_SoverSqrtBPlusDeltaB = GetSoverSqrtBPlusDeltaB("bgSp_SoverSqrtBPlusDeltaB",hMVA_sig ,hMVA_bgSp); bgSp_SoverSqrtBPlusDeltaB->Write();
+     TH1D* bkgd_SoverSqrtBPlusDeltaB = GetSoverSqrtBPlusDeltaB("bkgd_SoverSqrtBPlusDeltaB",hMVA_sig ,hMVA_bkgd); bkgd_SoverSqrtBPlusDeltaB->Write();
 
      // Find Optimal Cut for Significance
      Double_t Cut_bgTr_SoverSqrtSPlusB = OptimalCutHigh(bgTr_SoverSqrtSPlusB);
@@ -169,9 +245,9 @@ void UATmvaReader::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
      Double_t Bin_bkgd_SoverSqrtBPlusDeltaB = OptimalCutHigh(bkgd_SoverSqrtBPlusDeltaB,2);
 
      // Get Limits
-     TH1D bgTr_BayesLimit = GetExclusionLimit("bgTr_BayesLimit",hMVA_sig ,hMVA_bgTr); bgTr_BayesLimit.Write();
-     TH1D bgSp_BayesLimit = GetExclusionLimit("bgSp_BayesLimit",hMVA_sig ,hMVA_bgSp); bgSp_BayesLimit.Write();
-     TH1D bkgd_BayesLimit = GetExclusionLimit("bkgd_BayesLimit",hMVA_sig ,hMVA_bkgd); bkgd_BayesLimit.Write();
+     TH1D* bgTr_BayesLimit = GetExclusionLimit("bgTr_BayesLimit",hMVA_sig ,hMVA_bgTr); bgTr_BayesLimit->Write();
+     TH1D* bgSp_BayesLimit = GetExclusionLimit("bgSp_BayesLimit",hMVA_sig ,hMVA_bgSp); bgSp_BayesLimit->Write();
+     TH1D* bkgd_BayesLimit = GetExclusionLimit("bkgd_BayesLimit",hMVA_sig ,hMVA_bkgd); bkgd_BayesLimit->Write();
 
      // Find Optimal Cut for Limit
 
@@ -189,68 +265,68 @@ void UATmvaReader::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
 
      // Keep Cuts
 
-     TH1D Cut = TH1D("Cut","Cut",9,0.5,9.5);
-     Cut.SetBinContent(1,Cut_bgTr_SoverSqrtSPlusB);
-     Cut.SetBinContent(2,Cut_bgSp_SoverSqrtSPlusB);
-     Cut.SetBinContent(3,Cut_bkgd_SoverSqrtSPlusB);
-     Cut.SetBinContent(4,Cut_bgTr_SoverSqrtBPlusDeltaB);
-     Cut.SetBinContent(5,Cut_bgSp_SoverSqrtBPlusDeltaB);
-     Cut.SetBinContent(6,Cut_bkgd_SoverSqrtBPlusDeltaB);
-     Cut.SetBinContent(7,Cut_bgTr_BayesLimit);
-     Cut.SetBinContent(8,Cut_bgSp_BayesLimit);
-     Cut.SetBinContent(9,Cut_bkgd_BayesLimit);
-     Cut.Write();
+     TH1D* Cut = new TH1D("Cut","Cut",9,0.5,9.5);
+     Cut->SetBinContent(1,Cut_bgTr_SoverSqrtSPlusB);
+     Cut->SetBinContent(2,Cut_bgSp_SoverSqrtSPlusB);
+     Cut->SetBinContent(3,Cut_bkgd_SoverSqrtSPlusB);
+     Cut->SetBinContent(4,Cut_bgTr_SoverSqrtBPlusDeltaB);
+     Cut->SetBinContent(5,Cut_bgSp_SoverSqrtBPlusDeltaB);
+     Cut->SetBinContent(6,Cut_bkgd_SoverSqrtBPlusDeltaB);
+     Cut->SetBinContent(7,Cut_bgTr_BayesLimit);
+     Cut->SetBinContent(8,Cut_bgSp_BayesLimit);
+     Cut->SetBinContent(9,Cut_bkgd_BayesLimit);
+     Cut->Write();
 
-     TH1D Bin = TH1D("Bin","Bin",9,0.5,9.5);
-     Bin.SetBinContent(1,Bin_bgTr_SoverSqrtSPlusB);
-     Bin.SetBinContent(2,Bin_bgSp_SoverSqrtSPlusB);
-     Bin.SetBinContent(3,Bin_bkgd_SoverSqrtSPlusB);
-     Bin.SetBinContent(4,Bin_bgTr_SoverSqrtBPlusDeltaB);
-     Bin.SetBinContent(5,Bin_bgSp_SoverSqrtBPlusDeltaB);
-     Bin.SetBinContent(6,Bin_bkgd_SoverSqrtBPlusDeltaB);
-     Bin.SetBinContent(7,Bin_bgTr_BayesLimit);
-     Bin.SetBinContent(8,Bin_bgSp_BayesLimit);
-     Bin.SetBinContent(9,Bin_bkgd_BayesLimit);
-     Bin.Write();
+     TH1D* Bin = new TH1D("Bin","Bin",9,0.5,9.5);
+     Bin->SetBinContent(1,Bin_bgTr_SoverSqrtSPlusB);
+     Bin->SetBinContent(2,Bin_bgSp_SoverSqrtSPlusB);
+     Bin->SetBinContent(3,Bin_bkgd_SoverSqrtSPlusB);
+     Bin->SetBinContent(4,Bin_bgTr_SoverSqrtBPlusDeltaB);
+     Bin->SetBinContent(5,Bin_bgSp_SoverSqrtBPlusDeltaB);
+     Bin->SetBinContent(6,Bin_bkgd_SoverSqrtBPlusDeltaB);
+     Bin->SetBinContent(7,Bin_bgTr_BayesLimit);
+     Bin->SetBinContent(8,Bin_bgSp_BayesLimit);
+     Bin->SetBinContent(9,Bin_bkgd_BayesLimit);
+     Bin->Write();
 
      // Keep Cut Discri values
-     TH1D Sign = TH1D("Sign","Sign",9,0.5,9.5);
-     Sign.SetBinContent(1,Sign_bgTr_SoverSqrtSPlusB);
-     Sign.SetBinContent(2,Sign_bgSp_SoverSqrtSPlusB);
-     Sign.SetBinContent(3,Sign_bkgd_SoverSqrtSPlusB);
-     Sign.SetBinContent(4,Sign_bgTr_SoverSqrtBPlusDeltaB);
-     Sign.SetBinContent(5,Sign_bgSp_SoverSqrtBPlusDeltaB);
-     Sign.SetBinContent(6,Sign_bkgd_SoverSqrtBPlusDeltaB);
-     Sign.SetBinContent(7,Sign_bgTr_BayesLimit);
-     Sign.SetBinContent(8,Sign_bgSp_BayesLimit);
-     Sign.SetBinContent(9,Sign_bkgd_BayesLimit);
-     Sign.Write();
+     TH1D* Sign = new TH1D("Sign","Sign",9,0.5,9.5);
+     Sign->SetBinContent(1,Sign_bgTr_SoverSqrtSPlusB);
+     Sign->SetBinContent(2,Sign_bgSp_SoverSqrtSPlusB);
+     Sign->SetBinContent(3,Sign_bkgd_SoverSqrtSPlusB);
+     Sign->SetBinContent(4,Sign_bgTr_SoverSqrtBPlusDeltaB);
+     Sign->SetBinContent(5,Sign_bgSp_SoverSqrtBPlusDeltaB);
+     Sign->SetBinContent(6,Sign_bkgd_SoverSqrtBPlusDeltaB);
+     Sign->SetBinContent(7,Sign_bgTr_BayesLimit);
+     Sign->SetBinContent(8,Sign_bgSp_BayesLimit);
+     Sign->SetBinContent(9,Sign_bkgd_BayesLimit);
+     Sign->Write();
 
      // Keep Cut Limit values
      
-     TH1D Limit = TH1D("Limit","Limit",9,0.5,9.5);
+     TH1D* Limit = new TH1D("Limit","Limit",9,0.5,9.5);
      for (Int_t iBin = 1 ; iBin < 9 ; ) {
       // Training Only
-      Double_t S = hMVA_sig->Integral(Bin.GetBinContent(iBin),hMVA_sig->GetNbinsX());
-      Double_t B = hMVA_bgTr->Integral(Bin.GetBinContent(iBin),hMVA_bgTr->GetNbinsX());
+      Double_t S = hMVA_sig->Integral(Bin->GetBinContent(iBin),hMVA_sig->GetNbinsX());
+      Double_t B = hMVA_bgTr->Integral(Bin->GetBinContent(iBin),hMVA_bgTr->GetNbinsX());
       init();
-      Limit.SetBinContent(iBin,limitBayesian(B,.35,S,.1));
+      Limit->SetBinContent(iBin,limitBayesian(B,.35,S,.1));
       delete wRoo;
       // Spectator Only
-      S = hMVA_sig->Integral(Bin.GetBinContent(iBin+1),hMVA_sig->GetNbinsX());
-      B = hMVA_bgSp->Integral(Bin.GetBinContent(iBin+1),hMVA_bgSp->GetNbinsX());
+      S = hMVA_sig->Integral(Bin->GetBinContent(iBin+1),hMVA_sig->GetNbinsX());
+      B = hMVA_bgSp->Integral(Bin->GetBinContent(iBin+1),hMVA_bgSp->GetNbinsX());
       init();
-      Limit.SetBinContent(iBin+1,limitBayesian(B,.35,S,.1));
+      Limit->SetBinContent(iBin+1,limitBayesian(B,.35,S,.1));
       delete wRoo;
       // All
-      S = hMVA_sig->Integral(Bin.GetBinContent(iBin+2),hMVA_sig->GetNbinsX());
-      B = hMVA_bkgd->Integral(Bin.GetBinContent(iBin+2),hMVA_bkgd->GetNbinsX());
+      S = hMVA_sig->Integral(Bin->GetBinContent(iBin+2),hMVA_sig->GetNbinsX());
+      B = hMVA_bkgd->Integral(Bin->GetBinContent(iBin+2),hMVA_bkgd->GetNbinsX());
       init();
-      Limit.SetBinContent(iBin+2,limitBayesian(B,.35,S,.1));
+      Limit->SetBinContent(iBin+2,limitBayesian(B,.35,S,.1));
       delete wRoo;
       iBin+=3;
      }
-     Limit.Write();
+     Limit->Write();
 
      // --------------- Cut Based Reference --------------------------
 
@@ -278,37 +354,48 @@ void UATmvaReader::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
        delete wRoo;
      }
 
-     TH1D CutBased = TH1D("CutBased","CutBased",6,0.5,6.5);
-     CutBased.SetBinContent(1,CutBased_Data );
-     CutBased.SetBinContent(2,CutBased_Signal );
-     CutBased.SetBinContent(3,CutBased_Bkgd );
-     CutBased.SetBinContent(4,CutBased_SoverSqrtSPlusB  );
-     CutBased.SetBinContent(5,CutBased_SoverSqrtBPlusDeltaB );
-     CutBased.SetBinContent(6,CutBased_Limit );
+     TH1D* CutBased = new TH1D("CutBased","CutBased",6,0.5,6.5);
+     CutBased->SetBinContent(1,CutBased_Data );
+     CutBased->SetBinContent(2,CutBased_Signal );
+     CutBased->SetBinContent(3,CutBased_Bkgd );
+     CutBased->SetBinContent(4,CutBased_SoverSqrtSPlusB  );
+     CutBased->SetBinContent(5,CutBased_SoverSqrtBPlusDeltaB );
+     CutBased->SetBinContent(6,CutBased_Limit );
      UAReader->TmvaFile->cd();
-     UAReader->TmvaFile->cd(Directory.c_str());
-     CutBased.Write();
-
-
-     UAReader->TmvaFile->Close();
-
+     UAReader->TmvaFile->cd(Directory.str().c_str());
+     CutBased->Write();
 
      // clean histo's 
-/*     delete hMVA_data;
+     delete hMVA_data;
      delete hMVA_sig;
      delete hMVA_bkgd;
      delete hMVA_bgSp;
      delete hMVA_bgTr;
-*/
-     // Clean UAReader
-//     delete UAReader ; 
 
-     // Making some basic plots
-//     Plot();
+     delete bgTr_SoverB ;
+     delete bgSp_SoverB ;
+     delete bkgd_SoverB ;
+
+     delete bgTr_SoverSqrtSPlusB ;
+     delete bgSp_SoverSqrtSPlusB ;
+     delete bkgd_SoverSqrtSPlusB ;
+
+     delete bgTr_SoverSqrtBPlusDeltaB ;
+     delete bgSp_SoverSqrtBPlusDeltaB ;
+     delete bkgd_SoverSqrtBPlusDeltaB ;
+
+     delete bgTr_BayesLimit ;
+     delete bgSp_BayesLimit ;
+     delete bkgd_BayesLimit ;
+
+     delete Cut ;
+     delete Bin ;
+     delete Sign ;
+     delete Limit ;
+
+     // Clean UAReader
+     delete UAReader ; 
    
-   } // Nodes
-   } // Layers
-   } // Variables
 
 }
 

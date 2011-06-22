@@ -31,8 +31,8 @@ class UATmvaClassification {
   string NAME;
   Bool_t                    InitDone  ;
   UATmvaFactory_t*          UAFactory ;
-  void Train(); 
-  void Plot();
+  void Train(UATmvaConfig&, UATmvaTree& ,string ,string ,int); 
+  void Plot(bool);
  
   public:
 
@@ -43,6 +43,7 @@ class UATmvaClassification {
 
   void Do    ( UATmvaConfig&, UATmvaTree&);
   void DoMLP ( UATmvaConfig&, UATmvaTree&);
+  void DoBDT ( UATmvaConfig&, UATmvaTree&);
 
 
 
