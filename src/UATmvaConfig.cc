@@ -297,7 +297,7 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
          CtrlPlotTmp.nBins   = atoi(Elements.at(2).c_str()) ;
          CtrlPlotTmp.xMin    = atoi(Elements.at(3).c_str()) ;
          CtrlPlotTmp.xMax    = atoi(Elements.at(4).c_str()) ;
-         CtrlPlotTmp.kLogY   = atoi(Elements.at(4).c_str()) ;
+         CtrlPlotTmp.kLogY   = atoi(Elements.at(5).c_str()) ;
          CtrlPlot.push_back(CtrlPlotTmp);
        }
        // else UAError("[UATmvaConfig] Wrong CtrlPlot VarName = "+Elements.at(1));
@@ -423,7 +423,8 @@ void UATmvaConfig::Print(){
                            << " (" << CtrlPlot.at(iG).nBins
                            << "," << CtrlPlot.at(iG).nBins
                            << "," << CtrlPlot.at(iG).nBins 
-                           << ")" << endl;
+                           << ") " << CtrlPlot.at(iG).kLogY 
+                           << endl;
     }
   }
 

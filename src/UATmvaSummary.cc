@@ -543,7 +543,7 @@ void UATmvaSummary::CPlots() {
             VarList += vUASummary.at(0)->CPlotsXAxis.at(iVar);
           }
         }
-        gPad->WaitPrimitive();
+        // gPad->WaitPrimitive();
         vCanvasCplot.at(iCanvas)->SaveAs("plots/cplot"+VarList+"_"+vUASummary.at(0)->TmvaName+".eps");
         vCanvasCplot.at(iCanvas)->SaveAs("plots/cplot"+VarList+"_"+vUASummary.at(0)->TmvaName+".png");
 
@@ -585,23 +585,21 @@ void UATmvaSummary::PlotStack( TH1F* hData , TH1F* hSign , vector<TH1F*> vBkgd ,
    vStack.at(0)->GetXaxis()->SetTitle(XAxisTitle);
    vStack.at(0)->GetYaxis()->SetTitle("Events");
 
-   vStack.at(0)->Draw("hist"); 
-   for (int iD=1 ; iD < (signed) vStack.size()  ; ++iD ) vStack.at(iD)->Draw("histsame");
-   hData->Draw("histsame");
-   hSign->Draw("esame");
+   vStack.at(0)->DrawCopy("hist"); 
+   for (int iD=1 ; iD < (signed) vStack.size()  ; ++iD ) vStack.at(iD)->DrawCopy("histsame");
+   hData->DrawCopy("esame");
+   hSign->DrawCopy("histsame");
 
    int nLegEntry = 2 + (signed) vStack.size();
    TLegend* Legend = new TLegend (.18,.85-nLegEntry*.035,.5,.85);
    Legend->SetBorderSize(0);
    Legend->SetFillColor(0);
+   Legend->SetFillStyle(0);
    Legend->SetTextSize(0.04);
    Legend->AddEntry( hData , "Data  " , "p");
    Legend->AddEntry( hSign , "Signal" , "l");
    for (int iD=0 ; iD < (signed) vStack.size()  ; ++iD ) Legend->AddEntry( vStack.at(iD) , vUASummary.at(iUAS)->vBName.at(iD) , "f");
    Legend->Draw("same");
-
-
-
 
 }
 
@@ -614,9 +612,12 @@ void UATmvaSummary::PlotCplotStack(int iUAS , int iVar ){
              vUASummary.at(iUAS)->vCPlotsBkgd.at(iVar),
              vUASummary.at(iUAS)->CPlotsXAxis.at(iVar),
              " ",
-             iUAS, 0
-//             vUASummary.at(iUAS)->CPlotsLogY.at(iVar)
+             iUAS, 
+             vUASummary.at(iUAS)->CPlotsLogY.at(iVar)
             );
+
+    cout << vUASummary.at(iUAS)->CPlotsLogY.at(iVar) << endl;
+
 }
 
 //-------------------------------- PlotMVAStack()
@@ -668,15 +669,16 @@ void UATmvaSummary::PlotMVAStack(int iUAS ){
    vStack.at(0)->GetXaxis()->SetTitle("MVA Output");
    vStack.at(0)->GetYaxis()->SetTitle("Events");
 
-   vStack.at(0)->Draw("hist"); 
-   for (int iD=1 ; iD < (signed) vStack.size()  ; ++iD ) vStack.at(iD)->Draw("histsame");
-   vUASummary.at(iUAS)->SCut->Draw("histsame");
-   vUASummary.at(iUAS)->DCut->Draw("esame");
+   vStack.at(0)->DrawCopy("hist"); 
+   for (int iD=1 ; iD < (signed) vStack.size()  ; ++iD ) vStack.at(iD)->DrawCopy("histsame");
+   vUASummary.at(iUAS)->SCut->DrawCopy("histsame");
+   vUASummary.at(iUAS)->DCut->DrawCopy("esame");
 
    int nLegEntry = 2 + (signed) vStack.size();
    TLegend* Legend = new TLegend (.18,.85-nLegEntry*.035,.5,.85);
    Legend->SetBorderSize(0);
    Legend->SetFillColor(0);
+   Legend->SetFillStyle(0);
    Legend->SetTextSize(0.04);
    Legend->AddEntry( vUASummary.at(iUAS)->DCut   , "Data  " , "p");
    Legend->AddEntry( vUASummary.at(iUAS)->SCut   , "Signal" , "l");
@@ -704,8 +706,8 @@ void UATmvaSummary::PlotCorrMtx(int iUAS, bool Signal ){
    else        CorrMtx = vUASummary.at(iUAS)->CorrMtxB ;
 
    CorrMtx->SetMarkerColor( kBlack );
-   CorrMtx->Draw("col");
-   CorrMtx->Draw("textsame"); 
+   CorrMtx->DrawCopy("col");
+   CorrMtx->DrawCopy("textsame"); 
 }
 
 
@@ -727,12 +729,13 @@ void UATmvaSummary::PlotEpoch(int iUAS){
    vUASummary.at(iUAS)->D2Train->GetXaxis()->SetTitle("Epochs");
    vUASummary.at(iUAS)->D2Train->GetYaxis()->SetTitle("D^2");
 
-   vUASummary.at(iUAS)->D2Train->Draw();
-   vUASummary.at(iUAS)->D2Test->Draw("same");
+   vUASummary.at(iUAS)->D2Train->DrawCopy();
+   vUASummary.at(iUAS)->D2Test->DrawCopy("same");
 
    TLegend* Legend = new TLegend (.5,.75,.8,.85);
    Legend->SetBorderSize(0);
    Legend->SetFillColor(0);
+   Legend->SetFillStyle(0);
    Legend->SetTextSize(0.04);
    Legend->AddEntry( vUASummary.at(iUAS)->D2Train , "Train Sample" , "l" );
    Legend->AddEntry( vUASummary.at(iUAS)->D2Test  , "Test  Sample" , "l" );
@@ -768,14 +771,15 @@ void UATmvaSummary::PlotOvertrain(int iUAS) {
    vUASummary.at(iUAS)->STest ->GetXaxis()->SetTitle("MVA Output");
    vUASummary.at(iUAS)->STest ->GetYaxis()->SetTitle("(1/N) dN/dx");
 
-   vUASummary.at(iUAS)->STest ->Draw("hist");      
-   vUASummary.at(iUAS)->BTest ->Draw("histsame"); 
-   vUASummary.at(iUAS)->STrain->Draw("esame");      
-   vUASummary.at(iUAS)->BTrain->Draw("esame");
+   vUASummary.at(iUAS)->STest ->DrawCopy("hist");      
+   vUASummary.at(iUAS)->BTest ->DrawCopy("histsame"); 
+   vUASummary.at(iUAS)->STrain->DrawCopy("esame");      
+   vUASummary.at(iUAS)->BTrain->DrawCopy("esame");
 
    TLegend* Legend = new TLegend (.5,.65,.8,.85);
    Legend->SetBorderSize(0);
    Legend->SetFillColor(0);
+   Legend->SetFillStyle(0);
    Legend->SetTextSize(0.04);
    Legend->AddEntry( vUASummary.at(iUAS)->STest  , "Signal (Test Sample)" , "l");
    Legend->AddEntry( vUASummary.at(iUAS)->BTest  , "Bkgd   (Test Sample)" , "l");
@@ -814,12 +818,13 @@ void UATmvaSummary::PlotEff ( int iUAS ) {
    vUASummary.at(iUAS)->SignCutAll ->GetXaxis()->SetTitle("MVA Output");
    vUASummary.at(iUAS)->SignCutAll ->GetYaxis()->SetTitle("Sigma");
 
-   vUASummary.at(iUAS)->SignCutAll ->Draw(); 
-   vUASummary.at(iUAS)->LimitCutAll->Draw("same");
+   vUASummary.at(iUAS)->SignCutAll ->DrawCopy(); 
+   vUASummary.at(iUAS)->LimitCutAll->DrawCopy("same");
 
    TLegend* Legend = new TLegend (.2,.75,.5,.85);
    Legend->SetBorderSize(0);
    Legend->SetFillColor(0);
+   Legend->SetFillStyle(0);
    Legend->SetTextSize(0.04);
    Legend->AddEntry( vUASummary.at(iUAS)->SignCutAll  , "Significance" , "l" );
    Legend->AddEntry( vUASummary.at(iUAS)->LimitCutAll , "Limit" , "l" );
