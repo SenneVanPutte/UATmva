@@ -69,6 +69,58 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   Directory << "OutputHistograms_" << Cfg.GetTargetLumi()->at(iLumi).Lumi << "pbinv" ;
   TString TSDirectory = Directory.str();
   cout << TSDirectory << endl;
+
+  vector< TH1F* >             CPlotsData_ ;
+  vector< TH1F* >             CPlotsSign_ ;  
+  vector< vector< TH1F* > >  vCPlotsBkgd_ ;
+  for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) {
+    CPlotsXAxis.push_back( Cfg.GetCtrlPlot()->at(iP).VarName );
+    CPlotsLogY.push_back( Cfg.GetCtrlPlot()->at(iP).kLogY );
+    // Data and Signal
+    TH1F* CPlotData_ = NULL;
+    TH1F* CPlotSign_ = NULL;
+    for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+      TString HistName = iD->NickName+"_"+Cfg.GetCtrlPlot()->at(iP).VarName ;
+      if (iD->TrueData) {
+        if ( CPlotData_ == NULL ) CPlotData_ = (TH1F*) ((TH1F*) File->Get(TSDirectory+"/"+HistName))->Clone() ;
+        else                      CPlotData_ -> Add    ((TH1F*) File->Get(TSDirectory+"/"+HistName))          ;
+      }
+      if (iD->SigTrain) {  
+        if ( CPlotSign_ == NULL ) CPlotSign_ = (TH1F*) ((TH1F*) File->Get(TSDirectory+"/"+HistName))->Clone() ;
+        else                      CPlotSign_ -> Add    ((TH1F*) File->Get(TSDirectory+"/"+HistName))          ;
+      }
+    }
+    // Backgrounds (need to group if requested)
+    vector<TH1F*> CPlotsBkgd_ ;
+    if ( Cfg.GetPlotGroup()->size() == 0 ) {
+      for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+        if (iD->BkgdData||iD->BkgdTrain ) {
+          TString HistName = iD->NickName+"_"+Cfg.GetCtrlPlot()->at(iP).VarName ;
+          CPlotsBkgd_.push_back( (TH1F*) File->Get(TSDirectory+"/"+HistName) );
+        }
+      }
+    } else {
+      for ( vector<PlotGroup_t>::iterator iG = (Cfg.GetPlotGroup())->begin() ; iG != (Cfg.GetPlotGroup())->end() ; ++iG) {
+        TH1F* CPlotBkgd_ = NULL; 
+        for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+          TString HistName = iD->NickName+"_"+Cfg.GetCtrlPlot()->at(iP).VarName ; 
+          for ( int iGM=0 ; iGM < (signed) iG->PlotGroupMember.size() ; ++iGM ) {
+            if ( CPlotBkgd_ == NULL ) CPlotBkgd_ = (TH1F*) ((TH1F*) File->Get(TSDirectory+"/"+HistName))->Clone() ;
+            else                      CPlotBkgd_ -> Add    ((TH1F*) File->Get(TSDirectory+"/"+HistName))          ;    
+          } 
+        }
+        //if ( CPlotBkgd_ == NULL ) CPlotBkgd_ = new TH1D(
+        CPlotsBkgd_.push_back( (TH1F*) CPlotBkgd_ ->Clone() ) ;
+        delete CPlotBkgd_;
+      }
+    }
+    // Store CtrlPlots far all sample  
+    if ( CPlotData_ == NULL ) CPlotData_ = new TH1F(Cfg.GetCtrlPlot()->at(iP).VarName,Cfg.GetCtrlPlot()->at(iP).VarName,
+                                                    Cfg.GetCtrlPlot()->at(iP).nBins,Cfg.GetCtrlPlot()->at(iP).xMin,Cfg.GetCtrlPlot()->at(iP).xMax);
+    CPlotsData_.push_back(CPlotData_ );
+    CPlotsSign_.push_back(CPlotSign_ );
+    vCPlotsBkgd_.push_back(CPlotsBkgd_); 
+  }  
  
   TH2F* CorrMtxS_ = (TH2F*) File->Get("CorrelationMatrixS");
   TH2F* CorrMtxB_ = (TH2F*) File->Get("CorrelationMatrixB");  
@@ -89,14 +141,10 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   TH1F* STest_    = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_S");
   TH1F* BTest_    = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_B");
 
-  cout << "DCut_" << endl;
-
   TH1D* DCut_     = (TH1D*) File->Get(TSDirectory+"/Data");
   TH1D* SCut_     = (TH1D*) File->Get(TSDirectory+"/Signal");
   TH1D* BCutTr_   = (TH1D*) File->Get(TSDirectory+"/BkgdTrain");
   TH1D* BCutAll_  = (TH1D*) File->Get(TSDirectory+"/BkgdTot");
-
-  cout << "vBCut_" << endl;
 
   vector <TH1D*>  vBCut_ ;
   if ( Cfg.GetPlotGroup()->size() == 0 ) {
@@ -125,8 +173,6 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
     }
   }
 
-  cout << "SignCutTr_" <<endl;
-
   TH1D* SignCutTr_   = (TH1D*) File->Get(TSDirectory+"/bgTr_SoverSqrtBPlusDeltaB");
   TH1D* SignCutAll_  = (TH1D*) File->Get(TSDirectory+"/bkgd_SoverSqrtBPlusDeltaB");
   TH1D* LimitCutTr_  = (TH1D*) File->Get(TSDirectory+"/bgTr_BayesLimit");
@@ -140,6 +186,14 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
 
   // Have to create the new object outside of gDirectory from File
   gROOT->cd(); 
+
+  for ( vector< TH1F* >::iterator iCP = CPlotsData_.begin() ; iCP != CPlotsData_.end() ; ++iCP ) CPlotsData.push_back( (TH1F*) (*iCP)->Clone() ) ;
+  for ( vector< TH1F* >::iterator iCP = CPlotsSign_.begin() ; iCP != CPlotsSign_.end() ; ++iCP ) CPlotsSign.push_back( (TH1F*) (*iCP)->Clone() ) ;
+  for ( vector<vector<TH1F*> >::iterator ivCP  = vCPlotsBkgd_.begin() ; ivCP !=  vCPlotsBkgd_.end() ; ++ivCP ) {
+    vector< TH1F* > CPlotsBkgd ;
+    for ( vector< TH1F* >::iterator iCP = ivCP->begin() ; iCP != ivCP->end() ; ++iCP )  CPlotsBkgd.push_back( (TH1F*) (*iCP)->Clone() ) ;
+    vCPlotsBkgd.push_back(CPlotsBkgd) ;
+  }
 
   CorrMtxS = (TH2F*) CorrMtxS_ ->Clone();
   CorrMtxB = (TH2F*) CorrMtxB_ ->Clone();
@@ -168,6 +222,13 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   Limit    = (TH1D*) Limit_  ->Clone();
 
   CutBased = (TH1D*) CutBased_  ->Clone();
+
+  for ( vector< TH1F* >::iterator iCP = CPlotsData.begin() ; iCP != CPlotsData.end() ; ++iCP ) SetGoodAxis(*iCP);
+  for ( vector< TH1F* >::iterator iCP = CPlotsSign.begin() ; iCP != CPlotsSign.end() ; ++iCP ) SetGoodAxis(*iCP);
+  for ( vector<vector<TH1F*> >::iterator ivCP  = vCPlotsBkgd.begin() ; ivCP !=  vCPlotsBkgd.end() ; ++ivCP ) {
+    for ( vector< TH1F* >::iterator iCP = ivCP->begin() ; iCP != ivCP->end() ; ++iCP ) SetGoodAxis(*iCP); 
+  }
+
 
   SetGoodAxis(CorrMtxS);
   SetGoodAxis(CorrMtxB);
@@ -198,6 +259,16 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   SetGoodAxis(CutBased);
 
   // Delete tmp objects
+
+  for ( vector< TH1F* >::iterator iCP = CPlotsData_.begin() ; iCP != CPlotsData_.end() ; ++iCP ) delete (*iCP);
+  for ( vector< TH1F* >::iterator iCP = CPlotsSign_.begin() ; iCP != CPlotsSign_.end() ; ++iCP ) delete (*iCP);
+  for ( vector<vector<TH1F*> >::iterator ivCP  = vCPlotsBkgd_.begin() ; ivCP !=  vCPlotsBkgd_.end() ; ++ivCP ) {
+    for ( vector< TH1F* >::iterator iCP = ivCP->begin() ; iCP != ivCP->end() ; ++iCP ) delete (*iCP);
+    ivCP->clear();
+  }
+  CPlotsData_.clear();
+  CPlotsSign_.clear();
+  vCPlotsBkgd_.clear();
 
   delete CorrMtxS_ ;
   delete CorrMtxB_ ;
@@ -236,6 +307,17 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
 
 
 UATmvaSummary_t::~UATmvaSummary_t(){
+
+  CPlotsXAxis.clear();
+  for ( vector< TH1F* >::iterator iCP = CPlotsData.begin() ; iCP != CPlotsData.end() ; ++iCP ) delete (*iCP);
+  for ( vector< TH1F* >::iterator iCP = CPlotsSign.begin() ; iCP != CPlotsSign.end() ; ++iCP ) delete (*iCP);
+  for ( vector<vector<TH1F*> >::iterator ivCP  = vCPlotsBkgd.begin() ; ivCP !=  vCPlotsBkgd.end() ; ++ivCP ) {
+    for ( vector< TH1F* >::iterator iCP = ivCP->begin() ; iCP != ivCP->end() ; ++iCP ) delete (*iCP);
+    ivCP->clear();
+  }
+  CPlotsData.clear();
+  CPlotsSign.clear();
+  vCPlotsBkgd.clear();
 
   delete CorrMtxS ;
   delete CorrMtxB ;
@@ -419,17 +501,16 @@ void UATmvaSummary::Plots( ){
       Canvas->cd(3);
       PlotEff(ID-1);
       Canvas->cd(6);
-      PlotStack(ID-1);
+      PlotMVAStack(ID-1);
       //gPad->WaitPrimitive();
       Canvas->SaveAs("plots/mvasummary_"+vUASummary.at(ID-1)->TmvaName+".eps");
       Canvas->SaveAs("plots/mvasummaty_"+vUASummary.at(ID-1)->TmvaName+".png");
 
-      TCanvas* CanvasStack = new TCanvas(vUASummary.at(ID-1)->TmvaName+"_Stack",vUASummary.at(ID-1)->TmvaName,500,500);
+      TCanvas* CanvasStack = new TCanvas(vUASummary.at(ID-1)->TmvaName+"_Stack",vUASummary.at(ID-1)->TmvaName,600,600);
       CanvasStack->cd();
-      PlotStack(ID-1);
+      PlotMVAStack(ID-1);
       CanvasStack->SaveAs("plots/mvastack_"+vUASummary.at(ID-1)->TmvaName+".eps");
       CanvasStack->SaveAs("plots/mvastack_"+vUASummary.at(ID-1)->TmvaName+".png");
-
 
     } else if ( ID != 0 ) {
       cout << "  --> Invalid ID !!!!!!!!!!! " << endl ;
@@ -439,10 +520,121 @@ void UATmvaSummary::Plots( ){
 }
 
 
+void UATmvaSummary::CPlots() {
 
-//-------------------------------- PlotStack()
+      int nDiv = 2; 
+      int nBox = nDiv*nDiv;
 
-void UATmvaSummary::PlotStack(int iUAS ){
+      vector<TCanvas*> vCanvasCplot;
+      int nCanvas =  vUASummary.at(0)->CPlotsData.size()/nBox ;
+      if ( ((float)vUASummary.at(0)->CPlotsData.size()/(float)nBox) > nCanvas ) ++nCanvas;
+      for ( int iCanvas = 0 ; iCanvas < nCanvas ; ++iCanvas ) {
+        ostringstream CanName; 
+        CanName  << "Cplot_" << iCanvas;
+        vCanvasCplot.push_back( new TCanvas(CanName.str().c_str(),vUASummary.at(0)->TmvaName,700,700) ) ;
+        vCanvasCplot.at(iCanvas)->Divide(nDiv,nDiv);
+        TString VarList;
+        for(int iPad=1 ; iPad<=nBox ; ++iPad ) { 
+          int iVar = iCanvas*nBox+iPad-1 ;
+          if (iVar < (signed) vUASummary.at(0)->CPlotsData.size()) { 
+            vCanvasCplot.at(iCanvas)->cd(iPad) ; 
+            PlotCplotStack(0,iVar);
+            VarList += "_" ;
+            VarList += vUASummary.at(0)->CPlotsXAxis.at(iVar);
+          }
+        }
+        gPad->WaitPrimitive();
+        vCanvasCplot.at(iCanvas)->SaveAs("plots/cplot"+VarList+"_"+vUASummary.at(0)->TmvaName+".eps");
+        vCanvasCplot.at(iCanvas)->SaveAs("plots/cplot"+VarList+"_"+vUASummary.at(0)->TmvaName+".png");
+
+      }
+
+
+}
+//-------------------------------- PlottStack()
+
+void UATmvaSummary::PlotStack( TH1F* hData , TH1F* hSign , vector<TH1F*> vBkgd , TString XAxisTitle , TString GlobalTitle , int iUAS , bool kLogY ){
+
+   gPad->SetRightMargin(0.02);
+   gPad->SetLeftMargin(0.15);
+   if (kLogY) gPad->SetLogy(1);
+
+   vector<TH1D*> vStack;
+   for (int iD=0 ; iD < (signed) vBkgd.size() ; ++iD ) {
+     TH1D* iStack = (TH1D*) vBkgd.at(iD)->Clone();
+     for (int iD2Sum=iD+1 ; iD2Sum < (signed)  vBkgd.size() ; ++iD2Sum ) {
+       iStack->Add(vBkgd.at(iD2Sum));
+     }
+     iStack->SetLineColor(iD+2);
+     iStack->SetFillColor(iD+2);
+     vStack.push_back( (TH1D*) iStack->Clone() );
+     delete iStack; 
+   }
+  
+   hSign->SetLineColor(kBlack);
+   hSign->SetLineWidth(2);
+   hData->SetMarkerColor(kBlack);
+   hData->SetMarkerStyle(20);
+
+   Double_t hMax = TMath::Max( vStack.at(0)->GetMaximum() , hSign->GetMaximum() );
+   hMax = TMath::Max ( hMax , hData->GetMaximum() ); 
+
+   if (kLogY) vStack.at(0)->GetYaxis()->SetRangeUser( 0.01 , 10*hMax);
+   else       vStack.at(0)->GetYaxis()->SetRangeUser( 0.   , 1.2*hMax); 
+   vStack.at(0)->SetTitle(GlobalTitle);
+   vStack.at(0)->GetXaxis()->SetTitle(XAxisTitle);
+   vStack.at(0)->GetYaxis()->SetTitle("Events");
+
+   vStack.at(0)->Draw("hist"); 
+   for (int iD=1 ; iD < (signed) vStack.size()  ; ++iD ) vStack.at(iD)->Draw("histsame");
+   hData->Draw("histsame");
+   hSign->Draw("esame");
+
+   int nLegEntry = 2 + (signed) vStack.size();
+   TLegend* Legend = new TLegend (.18,.85-nLegEntry*.035,.5,.85);
+   Legend->SetBorderSize(0);
+   Legend->SetFillColor(0);
+   Legend->SetTextSize(0.04);
+   Legend->AddEntry( hData , "Data  " , "p");
+   Legend->AddEntry( hSign , "Signal" , "l");
+   for (int iD=0 ; iD < (signed) vStack.size()  ; ++iD ) Legend->AddEntry( vStack.at(iD) , vUASummary.at(iUAS)->vBName.at(iD) , "f");
+   Legend->Draw("same");
+
+
+
+
+}
+
+//-------------------------------- PlotCplotStack()
+
+void UATmvaSummary::PlotCplotStack(int iUAS , int iVar ){
+
+   PlotStack(vUASummary.at(iUAS)->CPlotsData.at(iVar),
+             vUASummary.at(iUAS)->CPlotsSign.at(iVar),
+             vUASummary.at(iUAS)->vCPlotsBkgd.at(iVar),
+             vUASummary.at(iUAS)->CPlotsXAxis.at(iVar),
+             " ",
+             iUAS, 0
+//             vUASummary.at(iUAS)->CPlotsLogY.at(iVar)
+            );
+}
+
+//-------------------------------- PlotMVAStack()
+
+void UATmvaSummary::PlotMVAStack(int iUAS ){
+
+
+/*
+   PlotStack(vUASummary.at(iUAS)->DCut,
+             vUASummary.at(iUAS)->SCut,
+             vUASummary.at(iUAS)->vBCut);
+             TString("MVA Output"),
+             TString(vUASummary.at(iUAS)->TmvaName),
+             iUAS,
+             1
+            );
+*/
+
 
    gPad->SetRightMargin(0.02);
    gPad->SetLeftMargin(0.15);
@@ -491,7 +683,7 @@ void UATmvaSummary::PlotStack(int iUAS ){
    for (int iD=0 ; iD < (signed) vStack.size()  ; ++iD ) Legend->AddEntry( vStack.at(iD) , vUASummary.at(iUAS)->vBName.at(iD) , "f");
    Legend->Draw("same");
 
-   gPad->WaitPrimitive();
+   //gPad->WaitPrimitive();
 
 
 }

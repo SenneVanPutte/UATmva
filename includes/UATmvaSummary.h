@@ -23,6 +23,12 @@ class UATmvaSummary_t {
   TString             BaseName;
   TString             ExtName;  
   TString             TmvaName;
+ 
+  vector< Bool_t >            CPlotsLogY ;   
+  vector< TString >           CPlotsXAxis;
+  vector< TH1F* >             CPlotsData ;
+  vector< TH1F* >             CPlotsSign ;  
+  vector< vector< TH1F* > >  vCPlotsBkgd ;
 
   TH2F*               CorrMtxS;
   TH2F*               CorrMtxB;
@@ -63,6 +69,7 @@ class UATmvaSummary {
   
   Bool_t                    InitDone  ;
   vector<UATmvaSummary_t*>  vUASummary ;
+  void PlotStack( TH1F* , TH1F* , vector<TH1F*> , TString ="" , TString ="" , int = 0 , bool = false );
 
   public:
 
@@ -74,13 +81,14 @@ class UATmvaSummary {
   void Init ( UATmvaConfig& );
   void Print( );
   void Plots( );
+  void CPlots();
 
-  void PlotCorrMtx   ( int , bool = true);
-  void PlotEpoch     ( int );
-  void PlotOvertrain ( int );
-  void PlotEff       ( int );
-  void PlotStack     ( int );
-
+  void PlotCorrMtx    ( int , bool = true);
+  void PlotEpoch      ( int );
+  void PlotOvertrain  ( int );
+  void PlotEff        ( int );
+  void PlotMVAStack   ( int );
+  void PlotCplotStack ( int , int );
 
 
 };

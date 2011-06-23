@@ -28,15 +28,17 @@ void UATmva(TString Cfg = "Config.cfg" , TString Steps = "TRS" ){
   // MVA Reading (Evaluation)
   if ( Steps.Contains ('R') ) {
     UATmvaReader Reader;
-    Reader.SetNbin(44); 
+//    Reader.SetNbin(44); 
+    Reader.SetNbin(1);
     Reader.Do(Config,Tree); 
   }  
 
   // Summary & Plots
-  if ( Steps.Contains ('S') || Steps.Contains ('P') ) {
+  if ( Steps.Contains ('S') || Steps.Contains ('C') || Steps.Contains ('P') ) {
     UATmvaSummary Summary;
     Summary.Init(Config);
     if ( Steps.Contains ('S') ) Summary.Print();
+    if ( Steps.Contains ('C') ) Summary.CPlots();
     if ( Steps.Contains ('P') ) Summary.Plots();
   }
 

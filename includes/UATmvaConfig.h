@@ -37,6 +37,16 @@ class InputVar_t {
   Bool_t  Active  ;
 };
 
+class CtrlPlot_t {
+  public:
+  TString VarName ;
+  Int_t   iVarPos ; // Var position in TmvaInput
+  Int_t   nBins   ;
+  Float_t xMin    ;
+  Float_t xMax    ;
+  Bool_t  kLogY   ;
+}; 
+
 class TargetLumi_t {
   public:
   Float_t Lumi    ;
@@ -97,6 +107,7 @@ class UATmvaConfig {
   // Final Plots 
   vector<TargetLumi_t> TargetLumi;
   vector<PlotGroup_t>  PlotGroup ;
+  vector<CtrlPlot_t>   CtrlPlot  ;
 
   public:
  
@@ -147,6 +158,7 @@ class UATmvaConfig {
 
   vector<TargetLumi_t>*  GetTargetLumi()       { return &TargetLumi ; }
   vector<PlotGroup_t>*   GetPlotGroup()        { return &PlotGroup  ; }     
+  vector<CtrlPlot_t>*    GetCtrlPlot()         { return &CtrlPlot  ; }     
 
 };
 

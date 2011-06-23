@@ -161,11 +161,16 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
          DaWeight *= LumiScale;
        }
        else DaWeight = 0;
-//       SgWeight *= LumiScale;
-//       BgWeight *= LumiScale;
+       SgWeight *= LumiScale;
+       BgWeight *= LumiScale;
        cout << "------> DaWeight= " << DaWeight << " SgWeight= " << SgWeight << " BgWeight= " << BgWeight << endl;
        // File MVA Response
        TH1D* hMVA = new TH1D (iD->NickName,iD->NickName,nbins,minBin,maxBin) ;
+       vector<TH1F*> hCtrl ;
+       for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) {
+         TString HistName = iD->NickName+"_"+Cfg.GetCtrlPlot()->at(iP).VarName ;
+         hCtrl.push_back( new TH1F (HistName,HistName,Cfg.GetCtrlPlot()->at(iP).nBins,Cfg.GetCtrlPlot()->at(iP).xMin,Cfg.GetCtrlPlot()->at(iP).xMax) );
+       } 
        Int_t nEntries = (T.GetTree(iD->NickName))->GetEntries(); 
        for (Int_t jEntry = 0 ;  jEntry < nEntries ; ++jEntry) {
          (T.GetTree(iD->NickName))->GetEntry(jEntry);
@@ -190,9 +195,12 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
          if (iD->BkgdData||iD->BkgdTrain ) hMVA_bkgd -> Fill( result , Weight);
          if (iD->BkgdData&&!iD->BkgdTrain) hMVA_bgSp -> Fill( result , Weight);
          if (iD->BkgdTrain               ) hMVA_bgTr -> Fill( result , Weight);
+         // Var Control Plots 
+         for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) hCtrl.at(iP)->Fill( FVar[((Cfg.GetCtrlPlot())->at(iP)).iVarPos+1] , Weight);
        }
        UAReader->TmvaFile->cd(Directory.str().c_str());
        hMVA->Write();
+       for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) { hCtrl.at(iP)->Write(); delete hCtrl.at(iP) ; } // hCtrl.clear() ; }
        delete hMVA; 
      }     
 

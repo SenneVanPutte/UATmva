@@ -57,6 +57,7 @@ void UATmvaConfig::Reset(){
   CutBasedHistBin    = -1 ;
 
   PlotGroup.clear() ;
+  CtrlPlot.clear()  ;
 
 }
 
@@ -280,6 +281,30 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
      else UAError("[UATmvaConfig] Wrong PlotGroup Input !");
    }
 
+   // Control Plots
+   if ( Elements.at(0) == "CtrlPlot" ) {
+     if ( Elements.size() == 6 ) {
+       // Check if variable is available
+       TString VarName = Elements.at(1) ;
+       Int_t iPosVar = -1;
+       for ( int iV=0 ; iV < (signed) TmvaVar.size() ; ++iV ) {
+         if ( VarName == TmvaVar.at(iV).VarName ) iPosVar = iV ; 
+       }
+       if ( iPosVar != -1 ) {
+         CtrlPlot_t CtrlPlotTmp;
+         CtrlPlotTmp.VarName = VarName ;
+         CtrlPlotTmp.iVarPos = iPosVar ;
+         CtrlPlotTmp.nBins   = atoi(Elements.at(2).c_str()) ;
+         CtrlPlotTmp.xMin    = atoi(Elements.at(3).c_str()) ;
+         CtrlPlotTmp.xMax    = atoi(Elements.at(4).c_str()) ;
+         CtrlPlotTmp.kLogY   = atoi(Elements.at(4).c_str()) ;
+         CtrlPlot.push_back(CtrlPlotTmp);
+       }
+       // else UAError("[UATmvaConfig] Wrong CtrlPlot VarName = "+Elements.at(1));
+     }
+     else UAError("[UATmvaConfig] Wrong CtrlPlot Input !");
+   }
+
    // Plot Target Lumi
    if ( Elements.at(0) == "TargetLumi" ) {
      if ( Elements.size() == 3 ) {
@@ -389,6 +414,17 @@ void UATmvaConfig::Print(){
       for (int iGM=0 ; iGM < (signed) PlotGroup.at(iG).PlotGroupMember.size() ; ++iGM ) cout << PlotGroup.at(iG).PlotGroupMember.at(iGM) ;
       cout << endl;
     } 
+  }
+
+  if ( CtrlPlot.size() > 0 ) {
+    cout << "--------------------- Control Plots -----------------------" << endl;
+    for (int iG=0 ; iG < (signed) CtrlPlot.size() ; ++iG ) {
+      cout << "CtrlPlot: " << CtrlPlot.at(iG).VarName 
+                           << " (" << CtrlPlot.at(iG).nBins
+                           << "," << CtrlPlot.at(iG).nBins
+                           << "," << CtrlPlot.at(iG).nBins 
+                           << ")" << endl;
+    }
   }
 
   if (TargetLumi.size() > 0 ) {
