@@ -29,7 +29,7 @@ void UATmva(TString Cfg = "Config.cfg" , TString Steps = "TRS" ){
   if ( Steps.Contains ('R') ) {
     UATmvaReader Reader;
     Reader.SetNbin(44); 
-    Reader.SetNbin(1);
+    //Reader.SetNbin(1);
     Reader.Do(Config,Tree); 
   }  
 

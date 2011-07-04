@@ -318,19 +318,19 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
       Double_t S = hMVA_sig->Integral(Bin->GetBinContent(iBin),hMVA_sig->GetNbinsX());
       Double_t B = hMVA_bgTr->Integral(Bin->GetBinContent(iBin),hMVA_bgTr->GetNbinsX());
       init();
-      Limit->SetBinContent(iBin,limitBayesian(B,.35,S,.1));
+      Limit->SetBinContent(iBin,limitBayesian(B,.35,S,.2));
       delete wRoo;
       // Spectator Only
       S = hMVA_sig->Integral(Bin->GetBinContent(iBin+1),hMVA_sig->GetNbinsX());
       B = hMVA_bgSp->Integral(Bin->GetBinContent(iBin+1),hMVA_bgSp->GetNbinsX());
       init();
-      Limit->SetBinContent(iBin+1,limitBayesian(B,.35,S,.1));
+      Limit->SetBinContent(iBin+1,limitBayesian(B,.35,S,.2));
       delete wRoo;
       // All
       S = hMVA_sig->Integral(Bin->GetBinContent(iBin+2),hMVA_sig->GetNbinsX());
       B = hMVA_bkgd->Integral(Bin->GetBinContent(iBin+2),hMVA_bkgd->GetNbinsX());
       init();
-      Limit->SetBinContent(iBin+2,limitBayesian(B,.35,S,.1));
+      Limit->SetBinContent(iBin+2,limitBayesian(B,.35,S,.2));
       delete wRoo;
       iBin+=3;
      }
@@ -358,7 +358,7 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
        CutBased_SoverSqrtSPlusB       = CutBased_Signal/sqrt(CutBased_Signal+CutBased_Bkgd);
        CutBased_SoverSqrtBPlusDeltaB  = CutBased_Signal/sqrt(CutBased_Bkgd+pow(0.35*CutBased_Bkgd,2)) ;
        init();
-       CutBased_Limit = limitBayesian(CutBased_Bkgd,.35,CutBased_Signal,.1);
+       CutBased_Limit = limitBayesian(CutBased_Bkgd,.35,CutBased_Signal,.2);
        delete wRoo;
      }
 

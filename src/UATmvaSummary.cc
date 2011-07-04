@@ -444,9 +444,10 @@ void UATmvaSummary::Print( ){
   cout << endl; 
   cout << "  ------------------------------------------------------------------------------------------------------" << endl ;
 
-  
+  Double_t bestlimit = 999;
+    
   for ( int iUAS = 0 ; iUAS !=  (signed) vUASummary.size() ; ++iUAS ) {
-
+    
     cout << "  | " << iUAS+1;
     if   (iUAS < 9) cout << "  | " ;
     else             cout << " | " ;
@@ -466,8 +467,13 @@ void UATmvaSummary::Print( ){
        vUASummary.at(iUAS)->BTrain->KolmogorovTest( vUASummary.at(iUAS)->BTest ) 
     );
 
+  if( vUASummary.at(iUAS)->Limit->GetBinContent(iLim+2) < bestlimit) bestlimit = vUASummary.at(iUAS)->Limit->GetBinContent(iLim+2); 
+  
   }
  
+  cout << "                                         " << endl;
+  cout << "BestLimit = "                       <<bestlimit<<endl;
+  cout << "                                         " << endl;
   cout << "  ------------------------------------------------------------------------------------------------------" << endl ;
   cout << endl;
 
