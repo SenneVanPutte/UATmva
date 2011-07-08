@@ -53,6 +53,7 @@ class UATmvaSummary_t {
   TH1D*               LimitCutTr;
   TH1D*               LimitCutAll;
 
+  TH1D*               Bin; 
   TH1D*               Cut; 
   TH1D*               Sign; 
   TH1D*               Limit; 
@@ -71,6 +72,8 @@ class UATmvaSummary {
   vector<UATmvaSummary_t*>  vUASummary ;
   void PlotStack( TH1F* , TH1F* , vector<TH1F*> , TString ="" , TString ="" , int = 0 , bool = false );
 
+  Int_t MVARebinFac ;
+
   public:
 
   UATmvaSummary(){ InitDone = false ;}
@@ -82,6 +85,8 @@ class UATmvaSummary {
   void Print( );
   void Plots( );
   void CPlots();
+  void Yields();
+  void BestMVA();
 
   void PlotCorrMtx    ( int , bool = true);
   void PlotEpoch      ( int );
@@ -89,7 +94,9 @@ class UATmvaSummary {
   void PlotEff        ( int );
   void PlotMVAStack   ( int );
   void PlotCplotStack ( int , int );
-
+  void PrintYields ( int , int );
+  int    GetBestLimitMVAID ();
+  double GetBestLimitMVAVAL ();
 
 };
 

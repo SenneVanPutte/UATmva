@@ -151,7 +151,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
     for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
       if (iD->BkgdData) {
         vBName.push_back(iD->NickName);
-        vBCut_.push_back( (TH1D*) File->Get(TSDirectory+"/"+iD->NickName) ) ;
+        vBCut_.push_back( (TH1D*) ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName))->Clone() ) ;
       } 
     } 
   } else {
@@ -178,6 +178,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   TH1D* LimitCutTr_  = (TH1D*) File->Get(TSDirectory+"/bgTr_BayesLimit");
   TH1D* LimitCutAll_ = (TH1D*) File->Get(TSDirectory+"/bkgd_BayesLimit");
 
+  TH1D* Bin_      = (TH1D*) File->Get(TSDirectory+"/Bin");   
   TH1D* Cut_      = (TH1D*) File->Get(TSDirectory+"/Cut");   
   TH1D* Sign_     = (TH1D*) File->Get(TSDirectory+"/Sign");
   TH1D* Limit_    = (TH1D*) File->Get(TSDirectory+"/Limit");
@@ -217,6 +218,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   LimitCutTr  = (TH1D*) LimitCutTr_  ->Clone() ;
   LimitCutAll = (TH1D*) LimitCutAll_ ->Clone() ;
 
+  Bin      = (TH1D*) Bin_    ->Clone();
   Cut      = (TH1D*) Cut_    ->Clone();
   Sign     = (TH1D*) Sign_   ->Clone();
   Limit    = (TH1D*) Limit_  ->Clone();
@@ -293,6 +295,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   delete LimitCutTr_  ;
   delete LimitCutAll_ ;
 
+  delete Bin_    ;
   delete Cut_    ;
   delete Sign_   ; 
   delete Limit_  ;
@@ -344,6 +347,7 @@ UATmvaSummary_t::~UATmvaSummary_t(){
   delete LimitCutTr;
   delete LimitCutAll;
 
+  delete Bin;    
   delete Cut;    
   delete Sign;
   delete Limit;
@@ -366,6 +370,8 @@ UATmvaSummary::~UATmvaSummary(){
 // ---------------------------- Init()
 
 void UATmvaSummary::Init( UATmvaConfig& Cfg ) {
+
+  MVARebinFac = Cfg.GetTmvaRespRebinFac();
 
   TString MethodName;
   if ( Cfg.GetTmvaType() == "ANN" )  MethodName = "MLP" ;
@@ -444,7 +450,6 @@ void UATmvaSummary::Print( ){
   cout << endl; 
   cout << "  ------------------------------------------------------------------------------------------------------" << endl ;
 
-  Double_t bestlimit = 999;
     
   for ( int iUAS = 0 ; iUAS !=  (signed) vUASummary.size() ; ++iUAS ) {
     
@@ -466,17 +471,12 @@ void UATmvaSummary::Print( ){
        vUASummary.at(iUAS)->STrain->KolmogorovTest( vUASummary.at(iUAS)->STest ) ,
        vUASummary.at(iUAS)->BTrain->KolmogorovTest( vUASummary.at(iUAS)->BTest ) 
     );
-
-  if( vUASummary.at(iUAS)->Limit->GetBinContent(iLim+2) < bestlimit) bestlimit = vUASummary.at(iUAS)->Limit->GetBinContent(iLim+2); 
   
   }
  
-  cout << "                                         " << endl;
-  cout << "BestLimit = "                       <<bestlimit<<endl;
-  cout << "                                         " << endl;
   cout << "  ------------------------------------------------------------------------------------------------------" << endl ;
   cout << endl;
-
+  BestMVA();
  
 }
 
@@ -493,6 +493,11 @@ void UATmvaSummary::Plots( ){
     cin  >> ID; 
     if ( ID > 0 && ID <= (signed)  vUASummary.size() ) {
       cout << "  --> Plotting: " << vUASummary.at(ID-1)->TmvaName << endl ;
+      cout << " For Limit optimisation:" << endl;
+      PrintYields(ID-1,9);
+      cout << " For Cutbased optimisation:" << endl;
+      //PrintYields(ID,10);
+
       TCanvas* Canvas = new TCanvas(vUASummary.at(ID-1)->TmvaName,vUASummary.at(ID-1)->TmvaName,950,700);
       
       Canvas->Divide(3,2);
@@ -507,7 +512,7 @@ void UATmvaSummary::Plots( ){
       Canvas->cd(3);
       PlotEff(ID-1);
       Canvas->cd(6);
-      PlotMVAStack(ID-1);
+      PlotMVAStack(ID-1 );
       //gPad->WaitPrimitive();
       Canvas->SaveAs("plots/mvasummary_"+vUASummary.at(ID-1)->TmvaName+".eps");
       Canvas->SaveAs("plots/mvasummaty_"+vUASummary.at(ID-1)->TmvaName+".png");
@@ -557,6 +562,59 @@ void UATmvaSummary::CPlots() {
 
 
 }
+
+//-------------------------------- Yields()
+void UATmvaSummary::Yields() {
+
+
+  for ( int iUAS = 0 ; iUAS !=  (signed) vUASummary.size() ; ++iUAS ) {
+    cout << "Yields for: " << vUASummary.at(iUAS)->ExtName << endl;
+    cout << "---> Limit optimisation:" << endl;
+    PrintYields(iUAS,9);
+    cout << "---> CutBased optimisation:" << endl;
+    PrintYields(iUAS,10);
+  }
+
+}
+
+//-------------------------------- BestMVA()
+
+int UATmvaSummary::GetBestLimitMVAID(){
+  Double_t bestlimit = 999. ;
+  Int_t    id = 0 ;
+  int iLim  = 7 ;
+  for ( int iUAS = 0 ; iUAS !=  (signed) vUASummary.size() ; ++iUAS ) {
+    if( vUASummary.at(iUAS)->Limit->GetBinContent(iLim+2) < bestlimit) {
+       bestlimit = vUASummary.at(iUAS)->Limit->GetBinContent(iLim+2);
+       id = iUAS ;
+    }
+  }
+  return id;
+}
+
+double UATmvaSummary::GetBestLimitMVAVAL(){
+  Double_t bestlimit = 999. ;
+  Int_t    id = 0 ;
+  int iLim  = 7 ;
+  for ( int iUAS = 0 ; iUAS !=  (signed) vUASummary.size() ; ++iUAS ) {
+    if( vUASummary.at(iUAS)->Limit->GetBinContent(iLim+2) < bestlimit) {
+       bestlimit = vUASummary.at(iUAS)->Limit->GetBinContent(iLim+2);
+       id = iUAS ;
+    }
+  }
+  return bestlimit;
+}
+
+void UATmvaSummary::BestMVA() {
+  int    iUAS      = GetBestLimitMVAID();
+  double bestlimit = GetBestLimitMVAVAL();
+  cout << "BEST MVA LIMIT: " << endl; 
+  cout << " --> MVA Name      = " << vUASummary.at(iUAS)->ExtName << endl;
+  cout << " --> MVA BestLimit = " << bestlimit << endl;
+  cout << " --> MVA Yields    : " << endl;
+  PrintYields( iUAS , 9 );
+}
+
 //-------------------------------- PlottStack()
 
 void UATmvaSummary::PlotStack( TH1F* hData , TH1F* hSign , vector<TH1F*> vBkgd , TString XAxisTitle , TString GlobalTitle , int iUAS , bool kLogY ){
@@ -658,6 +716,7 @@ void UATmvaSummary::PlotMVAStack(int iUAS ){
      cout << endl;
      iStack->SetLineColor(iD+2);
      iStack->SetFillColor(iD+2);
+     iStack->Rebin(MVARebinFac);
      vStack.push_back( (TH1D*) iStack->Clone() );
      delete iStack;
    }
@@ -677,8 +736,16 @@ void UATmvaSummary::PlotMVAStack(int iUAS ){
 
    vStack.at(0)->DrawCopy("hist"); 
    for (int iD=1 ; iD < (signed) vStack.size()  ; ++iD ) vStack.at(iD)->DrawCopy("histsame");
-   vUASummary.at(iUAS)->SCut->DrawCopy("histsame");
-   vUASummary.at(iUAS)->DCut->DrawCopy("esame");
+   //vUASummary.at(iUAS)->SCut->DrawCopy("histsame");
+   //vUASummary.at(iUAS)->DCut->DrawCopy("esame");
+   TH1D* SCut = (TH1D*) (vUASummary.at(iUAS)->SCut)->Clone() ;
+   TH1D* DCut = (TH1D*) (vUASummary.at(iUAS)->DCut)->Clone() ;
+   SCut->Rebin(MVARebinFac);
+   DCut->Rebin(MVARebinFac);
+   SCut->DrawCopy("histsame");
+   DCut->DrawCopy("esame");
+   delete SCut;
+   delete DCut;
 
    int nLegEntry = 2 + (signed) vStack.size();
    TLegend* Legend = new TLegend (.18,.85-nLegEntry*.035,.5,.85);
@@ -841,3 +908,27 @@ void UATmvaSummary::PlotEff ( int iUAS ) {
     
 }
 
+
+// --------------------------- PrintYields ()
+
+void UATmvaSummary::PrintYields ( int iUAS , int iOptim ) {
+
+  Double_t          Data   ;  
+  Double_t          Signal ;
+  vector<Double_t>  Background ;
+
+  int iBin = vUASummary.at(iUAS)->Bin->GetBinContent(iOptim)  ;
+  Data    =  vUASummary.at(iUAS)->DCut->Integral(iBin,vUASummary.at(iUAS)->DCut->GetNbinsX());
+  Signal  =  vUASummary.at(iUAS)->SCut->Integral(iBin,vUASummary.at(iUAS)->SCut->GetNbinsX());
+  cout << "Yields: Data   = " << Data   << endl;
+  cout << "Yields: Signal = " << Signal << endl;
+
+  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) {
+    Background.push_back( vUASummary.at(iUAS)->vBCut.at(iD)->Integral(iBin,vUASummary.at(iUAS)->vBCut.at(iD)->GetNbinsX()) );
+    cout << "Yields: Bkgd " <<  vUASummary.at(iUAS)->vBName.at(iD) << " = " << Background.at(iD) << endl;
+  }
+
+
+
+
+}

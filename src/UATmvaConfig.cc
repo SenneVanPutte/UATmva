@@ -53,6 +53,11 @@ void UATmvaConfig::Reset(){
   BDTPruneMethod   .push_back("CostComplexity");
   BDTPruneStrength .push_back(12) ;
 
+  TmvaRespNBins     = 440 ;
+  TmvaRespXMin      = -1.1 ;
+  TmvaRespXMax      =  1.1 ;
+  TmvaRespRebinFac  =  10 ;
+
   CutBasedHistName   = "NULL" ;
   CutBasedHistBin    = -1 ;
 
@@ -257,6 +262,18 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
      else UAError("[UATmvaConfig] Wrong BDTPruneStrength Input !"); 
    }
 
+
+    // ------------------------------- Reader MVA Output binning
+
+    if ( Elements.at(0) == "TmvaRespBinning" ) {
+      if   ( Elements.size() == 5 ) {
+         TmvaRespNBins = atoi(Elements.at(1).c_str());
+         TmvaRespXMin  = atof(Elements.at(2).c_str());
+         TmvaRespXMax  = atof(Elements.at(3).c_str()); 
+         TmvaRespRebinFac = atoi(Elements.at(4).c_str());
+      }
+      else UAError("[UATmvaConfig] Wrong TmvaResBinning Input !");
+    }  
 
 
     // ------------------------------ Cut Based Yield

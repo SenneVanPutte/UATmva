@@ -6,8 +6,21 @@
 #include "src/UATmvaReader.cc"
 #include "src/UATmvaSummary.cc"
 
+/*
 
-void UATmva(TString Cfg = "Config.cfg" , TString Steps = "TRS" ){
+  T = Train all MVA
+  R = Read back all MVA and evaluate best one and cut value
+  S = Print all MVA summary (significance , limit, ... )
+  Y = Print all MVA Yields (for best cut)
+  B = Print MVA summary and Yields for best one
+  P = Inpect MVA plots
+  C = Plot Input Variables Control Plots 
+
+*/
+
+
+
+void UATmva(TString Cfg = "Config.cfg" , TString Steps = "TRSB" ){
 
   Steps.ToUpper();
 
@@ -28,16 +41,20 @@ void UATmva(TString Cfg = "Config.cfg" , TString Steps = "TRS" ){
   // MVA Reading (Evaluation)
   if ( Steps.Contains ('R') ) {
     UATmvaReader Reader;
-    Reader.SetNbin(44); 
-    //Reader.SetNbin(1);
     Reader.Do(Config,Tree); 
   }  
 
   // Summary & Plots
-  if ( Steps.Contains ('S') || Steps.Contains ('C') || Steps.Contains ('P') ) {
+  if (    Steps.Contains ('S') 
+       || Steps.Contains ('Y') 
+       || Steps.Contains ('B') 
+       || Steps.Contains ('C') 
+       || Steps.Contains ('P') ) {
     UATmvaSummary Summary;
     Summary.Init(Config);
     if ( Steps.Contains ('S') ) Summary.Print();
+    if ( Steps.Contains ('Y') ) Summary.Yields();
+    if ( Steps.Contains ('B') ) Summary.BestMVA();
     if ( Steps.Contains ('C') ) Summary.CPlots();
     if ( Steps.Contains ('P') ) Summary.Plots();
   }

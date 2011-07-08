@@ -100,6 +100,13 @@ class UATmvaConfig {
   vector<TString>      BDTPruneMethod     ;
   vector<Int_t>        BDTPruneStrength   ;
 
+  // Reader Basic Options
+
+  Int_t                TmvaRespNBins      ;
+  Float_t              TmvaRespXMin       ;
+  Float_t              TmvaRespXMax       ; 
+  Int_t                TmvaRespRebinFac   ;     
+
   // Cut Based Yields
   TString              CutBasedHistName   ;
   Int_t                CutBasedHistBin    ;  
@@ -153,6 +160,11 @@ class UATmvaConfig {
   vector<TString>*     GetBDTPruneMethod()     { return &BDTPruneMethod    ; }
   vector<Int_t>*       GetBDTPruneStrength()   { return &BDTPruneStrength  ; } 
 
+  Int_t                GetTmvaRespNBins()      { return TmvaRespNBins      ; }
+  Float_t              GetTmvaRespXMin()       { return TmvaRespXMin       ; }
+  Float_t              GetTmvaRespXMax()       { return TmvaRespXMax       ; }
+  Int_t                GetTmvaRespRebinFac()   { return TmvaRespRebinFac   ; }
+ 
   TString              GetCutBasedHistName()   { return CutBasedHistName ; }
   Int_t                GetCutBasedHistBin()    { return CutBasedHistBin  ; }
 
