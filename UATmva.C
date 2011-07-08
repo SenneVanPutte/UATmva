@@ -11,7 +11,7 @@
   T = Train all MVA
   R = Read back all MVA and evaluate best one and cut value
   S = Print all MVA summary (significance , limit, ... )
-  Y = Print all MVA Yields (for best cut)
+  Y = Print all MVA Yields (for best Limit)
   B = Print MVA summary and Yields for best one
   P = Inpect MVA plots
   C = Plot Input Variables Control Plots 
@@ -20,7 +20,7 @@
 
 
 
-void UATmva(TString Cfg = "Config.cfg" , TString Steps = "TRSB" ){
+void UATmva(TString Cfg = "Config.cfg" , TString Steps = "TRS" ){
 
   Steps.ToUpper();
 
