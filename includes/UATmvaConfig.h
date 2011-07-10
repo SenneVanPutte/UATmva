@@ -78,6 +78,7 @@ class UATmvaConfig {
   TString              TmvaType    ;  
   TString              TmvaWeight  ;    
   vector<InputVar_t>   TmvaVar     ;
+  string               TmvaPreCut  ;  
   Int_t                TmvaVarNumRemove    ;
   
   // TMVA ANN Specific
@@ -141,6 +142,7 @@ class UATmvaConfig {
   TString              GetTmvaType()       { return TmvaType      ; }
   TString              GetTmvaWeight()     { return TmvaWeight    ; }
   vector<InputVar_t>*  GetTmvaVar()        { return &TmvaVar      ; }
+  string               GetTmvaPreCut()     { return TmvaPreCut    ; }
   Int_t                GetTmvaVarNumRemove()   { return TmvaVarNumRemove   ; }
 
   Int_t                GetANNCycles()          { return ANNCycles          ; }

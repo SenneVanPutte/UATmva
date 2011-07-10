@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <TH1D.h>
+#include <TTreeFormula.h>
 
 
 // ---------------------------- Init()
@@ -96,15 +97,17 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
      UAReader->TmvaName = Name;
 
      // Load InputTrees branches
-     Double_t treeWeight ;
+     Double_t treeWeight=1.;
      Int_t    IVar[nVarMax];
      Float_t  FVar[nVarMax];
      Double_t DVar[nVarMax];
 
      for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
         (T.GetTree(iD->NickName))->SetBranchStatus("*",0);
-        (T.GetTree(iD->NickName))->SetBranchStatus(Cfg.GetTmvaWeight(),1);
-        (T.GetTree(iD->NickName))->SetBranchAddress(Cfg.GetTmvaWeight(),&treeWeight);
+        if ( Cfg.GetTmvaWeight() != "" ) {
+          (T.GetTree(iD->NickName))->SetBranchStatus(Cfg.GetTmvaWeight(),1);
+          (T.GetTree(iD->NickName))->SetBranchAddress(Cfg.GetTmvaWeight(),&treeWeight);
+        }
         Int_t nVar = 0;
         for (vector<InputVar_t>::iterator iVar = (Cfg.GetTmvaVar())->begin() ; iVar != (Cfg.GetTmvaVar())->end() ; ++iVar){
           if (++nVar <= nVarMax) {
@@ -115,6 +118,7 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
           } 
         } 
      }
+
 
 
      // Create TMVA Reader
@@ -180,8 +184,21 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
          hCtrl.push_back( new TH1F (HistName,HistName,Cfg.GetCtrlPlot()->at(iP).nBins,Cfg.GetCtrlPlot()->at(iP).xMin,Cfg.GetCtrlPlot()->at(iP).xMax) );
        } 
        Int_t nEntries = (T.GetTree(iD->NickName))->GetEntries(); 
+       // Recreate Tmva Preselection Cut
+       TTreeFormula* Presel = 0 ; 
+       if ( Cfg.GetTmvaPreCut() != "" ) {
+         // define cut
+         Presel = new TTreeFormula("Presel",(Cfg.GetTmvaPreCut()).c_str(),T.GetTree(iD->NickName));
+         // Enable needed branches 
+         for (Int_t bi = 0; bi<Presel->GetNcodes(); bi++) {
+            T.GetTree(iD->NickName)->SetBranchStatus( Presel->GetLeaf(bi)->GetBranch()->GetName(), 1 );
+         }
+       }
+       // Tree Loop
        for (Int_t jEntry = 0 ;  jEntry < nEntries ; ++jEntry) {
          (T.GetTree(iD->NickName))->GetEntry(jEntry);
+         // Apply Tmva Preselection Cut
+         if ( Presel && !(Presel->EvalInstance()) ) continue; 
          // ... convert everything to Float_t
          nVar = 0;     
          for (vector<InputVar_t>::iterator iVar = (Cfg.GetTmvaVar())->begin() ; iVar != (Cfg.GetTmvaVar())->end() ; ++iVar){

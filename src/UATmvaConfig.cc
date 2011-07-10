@@ -28,6 +28,7 @@ void UATmvaConfig::Reset(){
   TmvaType           = "ANN" ;
   TmvaWeight         = "" ;
   TmvaVar.clear();
+  TmvaPreCut         = "" ;
   TmvaVarNumRemove   = 0   ;
 
   ANNCycles          = 500 ;
@@ -166,6 +167,12 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
       if   ( Elements.size() == 2 ) SetInputVar(Elements.at(1),TmvaVar) ;
       else UAError("[UATmvaConfig] Wrong TmvaVar Input !");
     }
+
+    if ( Elements.at(0) == "TmvaPreCut" ) {
+      if   ( Elements.size() == 2 ) TmvaPreCut = Elements.at(1) ;
+      else UAError("[UATmvaConfig] Wrong TmvaPreCut Input !");
+    }
+
 
     if ( Elements.at(0) == "TmvaVarNumRemove") {
       if   ( Elements.size() == 2 ) TmvaVarNumRemove = atoi(Elements.at(1).c_str()) ;

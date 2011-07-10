@@ -139,7 +139,8 @@ void UATmvaClassification::Train(UATmvaConfig& Cfg, UATmvaTree& T , string Name 
      }
   
      // Set training options
-     UAFactory->TmvaFactory->PrepareTrainingAndTestTree("","");
+     TCut Cut = (Cfg.GetTmvaPreCut()).c_str() ;
+     UAFactory->TmvaFactory->PrepareTrainingAndTestTree(Cut,"");
   
      // BookMethod
      if ( Cfg.GetTmvaType() == "ANN" ) UAFactory->TmvaFactory->BookMethod( TMVA::Types::kMLP, UAFactory->TmvaName , Method );
