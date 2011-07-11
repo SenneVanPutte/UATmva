@@ -493,9 +493,9 @@ void UATmvaSummary::Plots( ){
     cin  >> ID; 
     if ( ID > 0 && ID <= (signed)  vUASummary.size() ) {
       cout << "  --> Plotting: " << vUASummary.at(ID-1)->TmvaName << endl ;
-      cout << " For Limit optimisation:" << endl;
-      PrintYields(ID-1,9);
-      cout << " For Cutbased optimisation:" << endl;
+      //cout << " For Limit optimisation:" << endl;
+      //PrintYields(ID-1,9);
+      //cout << " For Cutbased optimisation:" << endl;
       //PrintYields(ID,10);
 
       TCanvas* Canvas = new TCanvas(vUASummary.at(ID-1)->TmvaName,vUASummary.at(ID-1)->TmvaName,950,700);
@@ -734,7 +734,7 @@ void UATmvaSummary::PlotMVAStack(int iUAS ){
    vStack.at(0)->GetXaxis()->SetTitle("MVA Output");
    vStack.at(0)->GetYaxis()->SetTitle("Events");
 
-   vStack.at(0)->DrawCopy("hist"); 
+   vStack.at(0)->DrawCopy("histe"); 
    for (int iD=1 ; iD < (signed) vStack.size()  ; ++iD ) vStack.at(iD)->DrawCopy("histsame");
    //vUASummary.at(iUAS)->SCut->DrawCopy("histsame");
    //vUASummary.at(iUAS)->DCut->DrawCopy("esame");
@@ -744,6 +744,9 @@ void UATmvaSummary::PlotMVAStack(int iUAS ){
    DCut->Rebin(MVARebinFac);
    SCut->DrawCopy("histsame");
    DCut->DrawCopy("esame");
+   //TH1D* BCut = (TH1D*) (vUASummary.at(iUAS)->BCutAll)->Clone() ;
+   //BCut->Rebin(MVARebinFac);
+   //BCut->DrawCopy("histsame");
    delete SCut;
    delete DCut;
 
@@ -915,20 +918,27 @@ void UATmvaSummary::PrintYields ( int iUAS , int iOptim ) {
 
   Double_t          Data   ;  
   Double_t          Signal ;
+  Double_t          BkgdTot;
+  Double_t          EStatData  ;
+  Double_t          EStatSignal;
+  Double_t          EStatBkgdTot; 
   vector<Double_t>  Background ;
+  vector<Double_t>  EStatBkgd ;
 
   int iBin = vUASummary.at(iUAS)->Bin->GetBinContent(iOptim)  ;
-  Data    =  vUASummary.at(iUAS)->DCut->Integral(iBin,vUASummary.at(iUAS)->DCut->GetNbinsX());
-  Signal  =  vUASummary.at(iUAS)->SCut->Integral(iBin,vUASummary.at(iUAS)->SCut->GetNbinsX());
-  cout << "Yields: Data   = " << Data   << endl;
-  cout << "Yields: Signal = " << Signal << endl;
+  Data    =  vUASummary.at(iUAS)->DCut->IntegralAndError(iBin,vUASummary.at(iUAS)->DCut->GetNbinsX(),EStatData);
+  Signal  =  vUASummary.at(iUAS)->SCut->IntegralAndError(iBin,vUASummary.at(iUAS)->SCut->GetNbinsX(),EStatSignal);
+  BkgdTot =  vUASummary.at(iUAS)->BCutAll->IntegralAndError(iBin,vUASummary.at(iUAS)->BCutAll->GetNbinsX(),EStatBkgdTot);
+
+  cout << "Yields: Data    = " << Data    << " +- " << EStatData    << endl;
+  cout << "Yields: Signal  = " << Signal  << " +- " << EStatSignal  << endl;
+  cout << "Yields: BkgdTot = " << BkgdTot << " +- " << EStatBkgdTot << endl;
 
   for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) {
-    Background.push_back( vUASummary.at(iUAS)->vBCut.at(iD)->Integral(iBin,vUASummary.at(iUAS)->vBCut.at(iD)->GetNbinsX()) );
-    cout << "Yields: Bkgd " <<  vUASummary.at(iUAS)->vBName.at(iD) << " = " << Background.at(iD) << endl;
+    Double_t EStat;
+    Background.push_back( vUASummary.at(iUAS)->vBCut.at(iD)->IntegralAndError(iBin,vUASummary.at(iUAS)->vBCut.at(iD)->GetNbinsX(),EStat) );
+    EStatBkgd.push_back(EStat);
+    cout << "Yields: Bkgd " <<  vUASummary.at(iUAS)->vBName.at(iD) << " = " << Background.at(iD) << " +- " << EStat << endl;
   }
-
-
-
 
 }

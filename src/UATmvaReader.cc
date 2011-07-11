@@ -83,6 +83,8 @@ void UATmvaReader::DoBDT( UATmvaConfig& Cfg, UATmvaTree& T) {
 
 void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVarMax, int iLumi ) {
 
+     TH1::SetDefaultSumw2(1);
+
      // Basic Reader Settings -> MVA Out Binning
 
      nbins  = Cfg.GetTmvaRespNBins() ; 
