@@ -19,6 +19,7 @@ class InputData_t {
   Bool_t  TrueData  ;
   Bool_t  BkgdData  ;    
   Float_t Lumi      ;
+  Float_t ScaleFac  ;
 };
 
 class PlotGroup_t {

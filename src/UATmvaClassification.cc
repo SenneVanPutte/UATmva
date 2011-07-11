@@ -131,9 +131,11 @@ void UATmvaClassification::Train(UATmvaConfig& Cfg, UATmvaTree& T , string Name 
      // Add Tree
      for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
        if(iD->SigTrain ) {
+         SgWeight = iD->ScaleFac;
          UAFactory->TmvaFactory->AddSignalTree     ( T.GetTree(iD->NickName) , SgWeight ) ;
        }
        if(iD->BkgdTrain) {
+         BgWeight = iD->ScaleFac;
          UAFactory->TmvaFactory->AddBackgroundTree ( T.GetTree(iD->NickName) , BgWeight ) ;
        }
      }

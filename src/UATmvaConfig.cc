@@ -133,15 +133,16 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
 
     // InputData
     if ( Elements.at(0) == "InputData" ) {
-       if  ( Elements.size() == 8 ) {
+       if  ( Elements.size() == 9 ) {
           InputData_t InDat;
           InDat.NickName  = Elements.at(1);
-          InDat.FileName  = Elements.at(7);
+          InDat.FileName  = Elements.at(8);
           InDat.SigTrain  = atoi(Elements.at(2).c_str()) ;
           InDat.BkgdTrain = atoi(Elements.at(3).c_str()) ;
           InDat.TrueData  = atoi(Elements.at(4).c_str()) ;
           InDat.BkgdData  = atoi(Elements.at(5).c_str()) ;
           InDat.Lumi      = atof(Elements.at(6).c_str()) ;
+          InDat.ScaleFac  = atof(Elements.at(7).c_str()) ;
           InputData.push_back(InDat);
        }
        else UAError("[UATmvaConfig] Wrong InputData Input !");

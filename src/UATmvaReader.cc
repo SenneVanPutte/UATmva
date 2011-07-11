@@ -169,8 +169,8 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
        Double_t Weight=1.0;
        // Set TargetLumi
        Double_t LumiScale = 1.;
-       LumiScale = Cfg.GetTargetLumi()->at(iLumi).Lumi / iD->Lumi ;
-       cout << iD->NickName << " : SampleLumi= " << iD->Lumi<< " TargetLumi= " << Cfg.GetTargetLumi()->at(iLumi).Lumi << " --> LumiScale = " << LumiScale << endl;
+       LumiScale = Cfg.GetTargetLumi()->at(iLumi).Lumi / (iD->Lumi/iD->ScaleFac) ;
+       cout << iD->NickName << " : SampleLumi= " << iD->Lumi/iD->ScaleFac << " TargetLumi= " << Cfg.GetTargetLumi()->at(iLumi).Lumi << " --> LumiScale = " << LumiScale << endl;
        if ( Cfg.GetTargetLumi()->at(iLumi).useData ) {  
          if ( iD->TrueData &&  LumiScale != 1. ) cout << "[UATmvaReade::DoMLP] WARNING: Rescaling Data Luminosity" << endl; 
          DaWeight *= LumiScale;
@@ -259,8 +259,8 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
          Double_t BgWeight=1.0;
          // Set TargetLumi
          Double_t LumiScale = 1.;
-         LumiScale = Cfg.GetTargetLumi()->at(iLumi).Lumi / iD->Lumi ;
-         cout << iD->NickName << " : SampleLumi= " << iD->Lumi<< " TargetLumi= " << Cfg.GetTargetLumi()->at(iLumi).Lumi << " --> LumiScale = " << LumiScale << endl;
+         LumiScale = Cfg.GetTargetLumi()->at(iLumi).Lumi / (iD->Lumi/iD->ScaleFac) ;
+         cout << iD->NickName << " : SampleLumi= " << iD->Lumi/iD->ScaleFac << " TargetLumi= " << Cfg.GetTargetLumi()->at(iLumi).Lumi << " --> LumiScale = " << LumiScale << endl;
          if ( Cfg.GetTargetLumi()->at(iLumi).useData ) {  
            if ( iD->TrueData &&  LumiScale != 1. ) cout << "[UATmvaReade::DoMLP] WARNING: Rescaling Data Luminosity" << endl; 
            DaWeight *= LumiScale;
