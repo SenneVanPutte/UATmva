@@ -106,6 +106,7 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
 
      for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
         (T.GetTree(iD->NickName))->SetBranchStatus("*",0);
+        (T.GetTree(iD->NickName))->SetBranchStatus("*",1); // Enable all branch for now (helps for definint Presel cut anyway)
         if ( Cfg.GetTmvaWeight() != "" ) {
           (T.GetTree(iD->NickName))->SetBranchStatus(Cfg.GetTmvaWeight(),1);
           (T.GetTree(iD->NickName))->SetBranchAddress(Cfg.GetTmvaWeight(),&treeWeight);
