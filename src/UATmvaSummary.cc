@@ -105,8 +105,10 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
         for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
           TString HistName = iD->NickName+"_"+Cfg.GetCtrlPlot()->at(iP).VarName ; 
           for ( int iGM=0 ; iGM < (signed) iG->PlotGroupMember.size() ; ++iGM ) {
-            if ( CPlotBkgd_ == NULL ) CPlotBkgd_ = (TH1F*) ((TH1F*) File->Get(TSDirectory+"/"+HistName))->Clone() ;
-            else                      CPlotBkgd_ -> Add    ((TH1F*) File->Get(TSDirectory+"/"+HistName))          ;    
+            if ( iG->PlotGroupMember.at(iGM) == iD->NickName ) {
+              if ( CPlotBkgd_ == NULL ) CPlotBkgd_ = (TH1F*) ((TH1F*) File->Get(TSDirectory+"/"+HistName))->Clone() ;
+              else                      CPlotBkgd_ -> Add    ((TH1F*) File->Get(TSDirectory+"/"+HistName))          ;
+            }    
           } 
         }
         //if ( CPlotBkgd_ == NULL ) CPlotBkgd_ = new TH1D(
