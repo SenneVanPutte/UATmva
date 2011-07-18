@@ -70,6 +70,8 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   TString TSDirectory = Directory.str();
   cout << TSDirectory << endl;
 
+  cout << "[UATmvaSummary_t] Fetching Control Plots" << endl;
+
   vector< TH1F* >             CPlotsData_ ;
   vector< TH1F* >             CPlotsSign_ ;  
   vector< vector< TH1F* > >  vCPlotsBkgd_ ;
@@ -124,9 +126,11 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
     vCPlotsBkgd_.push_back(CPlotsBkgd_); 
   }  
  
+  cout << "[UATmvaSummary_t] Fetching CorrelationMatrix" << endl;
   TH2F* CorrMtxS_ = (TH2F*) File->Get("CorrelationMatrixS");
   TH2F* CorrMtxB_ = (TH2F*) File->Get("CorrelationMatrixB");  
 
+  cout << "[UATmvaSummary_t] Fetching estimatorHist" << endl;
   TH1F* D2Train_  ;
   TH1F* D2Test_   ;
   if ( Cfg.GetTmvaType() == "ANN" ) {
@@ -138,11 +142,13 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   }
 
 
+  cout << "[UATmvaSummary_t] Fetching TMVA Hist" << endl;
   TH1F* STrain_   = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_Train_S");
   TH1F* BTrain_   = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_Train_B");
   TH1F* STest_    = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_S");
   TH1F* BTest_    = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_B");
 
+  cout << "[UATmvaSummary_t] Fetching MVA outputs" << endl;
   TH1D* DCut_     = (TH1D*) File->Get(TSDirectory+"/Data");
   TH1D* SCut_     = (TH1D*) File->Get(TSDirectory+"/Signal");
   TH1D* BCutTr_   = (TH1D*) File->Get(TSDirectory+"/BkgdTrain");
@@ -175,21 +181,26 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
     }
   }
 
+  cout << "[UATmvaSummary_t] Fetching S/B & Limit optim hist" << endl;
   TH1D* SignCutTr_   = (TH1D*) File->Get(TSDirectory+"/bgTr_SoverSqrtBPlusDeltaB");
   TH1D* SignCutAll_  = (TH1D*) File->Get(TSDirectory+"/bkgd_SoverSqrtBPlusDeltaB");
   TH1D* LimitCutTr_  = (TH1D*) File->Get(TSDirectory+"/bgTr_BayesLimit");
   TH1D* LimitCutAll_ = (TH1D*) File->Get(TSDirectory+"/bkgd_BayesLimit");
 
+  cout << "[UATmvaSummary_t] Fetching S/B & Limit result hist" << endl;
   TH1D* Bin_      = (TH1D*) File->Get(TSDirectory+"/Bin");   
   TH1D* Cut_      = (TH1D*) File->Get(TSDirectory+"/Cut");   
   TH1D* Sign_     = (TH1D*) File->Get(TSDirectory+"/Sign");
   TH1D* Limit_    = (TH1D*) File->Get(TSDirectory+"/Limit");
+  TH1D* DataLimit_= (TH1D*) File->Get(TSDirectory+"/DataLimit");
 
+  cout << "[UATmvaSummary_t] Fetching CutBased hist" << endl;
   TH1D* CutBased_ = (TH1D*) File->Get(TSDirectory+"/CutBased");
 
   // Have to create the new object outside of gDirectory from File
   gROOT->cd(); 
 
+  cout << "[UATmvaSummary_t] Copying Control Plots" << endl;
   for ( vector< TH1F* >::iterator iCP = CPlotsData_.begin() ; iCP != CPlotsData_.end() ; ++iCP ) CPlotsData.push_back( (TH1F*) (*iCP)->Clone() ) ;
   for ( vector< TH1F* >::iterator iCP = CPlotsSign_.begin() ; iCP != CPlotsSign_.end() ; ++iCP ) CPlotsSign.push_back( (TH1F*) (*iCP)->Clone() ) ;
   for ( vector<vector<TH1F*> >::iterator ivCP  = vCPlotsBkgd_.begin() ; ivCP !=  vCPlotsBkgd_.end() ; ++ivCP ) {
@@ -198,33 +209,41 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
     vCPlotsBkgd.push_back(CPlotsBkgd) ;
   }
 
+  cout << "[UATmvaSummary_t] Copying CorrelationMatrix" << endl;
   CorrMtxS = (TH2F*) CorrMtxS_ ->Clone();
   CorrMtxB = (TH2F*) CorrMtxB_ ->Clone();
 
+  cout << "[UATmvaSummary_t] Copying estimatorHist" << endl;
   D2Train  = (TH1F*) D2Train_ ->Clone();
   D2Test   = (TH1F*) D2Test_  ->Clone();
 
+  cout << "[UATmvaSummary_t] Copying TMVA hist" << endl;
   STrain   = (TH1F*) STrain_ ->Clone();
   BTrain   = (TH1F*) BTrain_ ->Clone();
   STest    = (TH1F*) STest_  ->Clone();
   BTest    = (TH1F*) BTest_  ->Clone();
 
+  cout << "[UATmvaSummary_t] Copying MVA outputs" << endl;
   DCut     = (TH1D*) DCut_    ->Clone() ;
   SCut     = (TH1D*) SCut_    ->Clone() ;
   BCutTr   = (TH1D*) BCutTr_  ->Clone() ;
   BCutAll  = (TH1D*) BCutAll_ ->Clone();
   for ( int iD = 0 ; iD < (signed) vBCut_.size() ; ++iD ) vBCut.push_back( (TH1D*) vBCut_.at(iD)->Clone() ) ;
 
+  cout << "[UATmvaSummary_t] Copying S/B & Limit optim hist" << endl;
   SignCutTr   = (TH1D*) SignCutTr_   ->Clone() ;
   SignCutAll  = (TH1D*) SignCutAll_  ->Clone() ;
   LimitCutTr  = (TH1D*) LimitCutTr_  ->Clone() ;
   LimitCutAll = (TH1D*) LimitCutAll_ ->Clone() ;
 
+  cout << "[UATmvaSummary_t] Copying S/B & Limit result hist" << endl;
   Bin      = (TH1D*) Bin_    ->Clone();
   Cut      = (TH1D*) Cut_    ->Clone();
   Sign     = (TH1D*) Sign_   ->Clone();
   Limit    = (TH1D*) Limit_  ->Clone();
+  DataLimit= (TH1D*) DataLimit_  ->Clone();
 
+  cout << "[UATmvaSummary_t] Copying CutBased hist" << endl;
   CutBased = (TH1D*) CutBased_  ->Clone();
 
   for ( vector< TH1F* >::iterator iCP = CPlotsData.begin() ; iCP != CPlotsData.end() ; ++iCP ) SetGoodAxis(*iCP);
@@ -233,6 +252,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
     for ( vector< TH1F* >::iterator iCP = ivCP->begin() ; iCP != ivCP->end() ; ++iCP ) SetGoodAxis(*iCP); 
   }
 
+  cout << "[UATmvaSummary_t] SetGoodAxis" << endl;
 
   SetGoodAxis(CorrMtxS);
   SetGoodAxis(CorrMtxB);
@@ -259,11 +279,13 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   SetGoodAxis(Cut);
   SetGoodAxis(Sign);
   SetGoodAxis(Limit);
+  SetGoodAxis(DataLimit);
 
   SetGoodAxis(CutBased);
 
   // Delete tmp objects
 
+  cout << "[UATmvaSummary_t] Deleting pointers" << endl;
   for ( vector< TH1F* >::iterator iCP = CPlotsData_.begin() ; iCP != CPlotsData_.end() ; ++iCP ) delete (*iCP);
   for ( vector< TH1F* >::iterator iCP = CPlotsSign_.begin() ; iCP != CPlotsSign_.end() ; ++iCP ) delete (*iCP);
   for ( vector<vector<TH1F*> >::iterator ivCP  = vCPlotsBkgd_.begin() ; ivCP !=  vCPlotsBkgd_.end() ; ++ivCP ) {
@@ -301,6 +323,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   delete Cut_    ;
   delete Sign_   ; 
   delete Limit_  ;
+  delete DataLimit_  ;
 
   delete CutBased_ ;
 
@@ -312,6 +335,8 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
 
 
 UATmvaSummary_t::~UATmvaSummary_t(){
+
+  cout << "[~UATmvaSummary_t()]" << endl;
 
   CPlotsXAxis.clear();
   for ( vector< TH1F* >::iterator iCP = CPlotsData.begin() ; iCP != CPlotsData.end() ; ++iCP ) delete (*iCP);
@@ -353,6 +378,7 @@ UATmvaSummary_t::~UATmvaSummary_t(){
   delete Cut;    
   delete Sign;
   delete Limit;
+  delete DataLimit;
 }
 
 
@@ -434,9 +460,13 @@ void UATmvaSummary::Print( ){
 
   cout << endl;
   cout << "  -------> BaseName = " << vUASummary.at(0)->BaseName << endl; 
+  cout << "  -------> Cut Based Data         = " << vUASummary.at(0)->CutBased->GetBinContent(1) << endl; 
+  cout << "  -------> Cut Based Signal       = " << vUASummary.at(0)->CutBased->GetBinContent(2) << endl; 
+  cout << "  -------> Cut Based Bkgd         = " << vUASummary.at(0)->CutBased->GetBinContent(3) << endl; 
   cout << "  -------> Cut Based S/Sqrt(S+B)  = " << vUASummary.at(0)->CutBased->GetBinContent(4) << endl; 
   cout << "  -------> Cut Based S/Sqrt(B+dB) = " << vUASummary.at(0)->CutBased->GetBinContent(5) << endl; 
-  cout << "  -------> Cut Based Limit        = " << vUASummary.at(0)->CutBased->GetBinContent(6) << endl; 
+  cout << "  -------> Cut Based Limit MC     = " << vUASummary.at(0)->CutBased->GetBinContent(6) << endl; 
+  cout << "  -------> Cut Based Limit Data   = " << vUASummary.at(0)->CutBased->GetBinContent(7) << endl; 
   cout << "  ------------------------------------------------------------------------------------------------------" << endl ;
   cout << "  | ID | NAME                |" ;
   cout << " S/Sqrt(B+dB):        |";
@@ -464,9 +494,9 @@ void UATmvaSummary::Print( ){
        vUASummary.at(iUAS)->Sign ->GetBinContent(iSign),
        vUASummary.at(iUAS)->Cut  ->GetBinContent(iSign+2),
        vUASummary.at(iUAS)->Sign ->GetBinContent(iSign+2),
-       vUASummary.at(iUAS)->Cut  ->GetBinContent(iLim),
+       vUASummary.at(iUAS)->Cut  ->GetBinContent(iLim), 
        vUASummary.at(iUAS)->Limit->GetBinContent(iLim),   
-       vUASummary.at(iUAS)->Cut  ->GetBinContent(iLim+2),
+       vUASummary.at(iUAS)->Cut  ->GetBinContent(iLim+2), 
        vUASummary.at(iUAS)->Limit->GetBinContent(iLim+2),
        vUASummary.at(iUAS)->D2Train ->GetBinContent( vUASummary.at(iUAS)->D2Train->GetNbinsX() ) ,
        vUASummary.at(iUAS)->D2Test  ->GetBinContent( vUASummary.at(iUAS)->D2Train->GetNbinsX() ) ,
@@ -607,12 +637,28 @@ double UATmvaSummary::GetBestLimitMVAVAL(){
   return bestlimit;
 }
 
+double UATmvaSummary::GetBestDataLimitMVAVAL(){
+  Double_t bestlimit = 999. ;
+  Int_t    id = 0 ;
+  int iLim  = 7 ;
+  for ( int iUAS = 0 ; iUAS !=  (signed) vUASummary.size() ; ++iUAS ) {
+    if( vUASummary.at(iUAS)->Limit->GetBinContent(iLim+2) < bestlimit) {
+       bestlimit = vUASummary.at(iUAS)->DataLimit->GetBinContent(iLim+2);
+       id = iUAS ;
+    }
+  }
+  return bestlimit;
+}
+
+
 void UATmvaSummary::BestMVA() {
   int    iUAS      = GetBestLimitMVAID();
   double bestlimit = GetBestLimitMVAVAL();
+  double datalimit = GetBestDataLimitMVAVAL();
   cout << "BEST MVA LIMIT: " << endl; 
   cout << " --> MVA Name      = " << vUASummary.at(iUAS)->ExtName << endl;
   cout << " --> MVA BestLimit = " << bestlimit << endl;
+  cout << " --> MVA DataLimit = " << datalimit << endl;
   cout << " --> MVA Yields    : " << endl;
   PrintYields( iUAS , 9 );
 }

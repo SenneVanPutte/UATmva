@@ -246,6 +246,7 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
      Double_t CutBased_Signal               = 0.;
      Double_t CutBased_Bkgd                 = 0.;
      Double_t CutBased_Limit                = 100. ;
+     Double_t CutBased_Limit_Data           = 100. ;
      Double_t CutBased_SoverSqrtSPlusB      = 0. ;
      Double_t CutBased_SoverSqrtBPlusDeltaB = 0. ;
 
@@ -283,15 +284,20 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
        init();
        CutBased_Limit = limitBayesian(CutBased_Bkgd,.35,CutBased_Signal,.2);
        delete wRoo;
+       init();
+       CutBased_Limit_Data = limitBayesian(CutBased_Bkgd,.35,CutBased_Data-CutBased_Bkgd,.2);
+       delete wRoo;
+
      }
 
-     TH1D* CutBased = new TH1D("CutBased","CutBased",6,0.5,6.5);
+     TH1D* CutBased = new TH1D("CutBased","CutBased",7,0.5,7.5);
      CutBased->SetBinContent(1,CutBased_Data );
      CutBased->SetBinContent(2,CutBased_Signal );
      CutBased->SetBinContent(3,CutBased_Bkgd );
      CutBased->SetBinContent(4,CutBased_SoverSqrtSPlusB  );
      CutBased->SetBinContent(5,CutBased_SoverSqrtBPlusDeltaB );
      CutBased->SetBinContent(6,CutBased_Limit );
+     CutBased->SetBinContent(7,CutBased_Limit_Data );
      UAReader->TmvaFile->cd();
      UAReader->TmvaFile->cd(Directory.str().c_str());
      CutBased->Write();
@@ -407,12 +413,16 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
      Sign->Write();
 
      // Keep Cut Limit values
-     
+     Double_t S = 0.;
+     Double_t B = 0.;
+     Double_t D = 0.;
+
      TH1D* Limit = new TH1D("Limit","Limit",10,0.5,10.5);
+
      for (Int_t iBin = 1 ; iBin < 9 ; ) {
       // Training Only
-      Double_t S = hMVA_sig->Integral(Bin->GetBinContent(iBin),hMVA_sig->GetNbinsX());
-      Double_t B = hMVA_bgTr->Integral(Bin->GetBinContent(iBin),hMVA_bgTr->GetNbinsX());
+      S = hMVA_sig->Integral(Bin->GetBinContent(iBin),hMVA_sig->GetNbinsX());
+      B = hMVA_bgTr->Integral(Bin->GetBinContent(iBin),hMVA_bgTr->GetNbinsX());
       init();
       Limit->SetBinContent(iBin,limitBayesian(B,.35,S,.2));
       delete wRoo;
@@ -430,13 +440,64 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
       delete wRoo;
       iBin+=3;
      }
-     Double_t S = hMVA_sig->Integral(Bin->GetBinContent(10),hMVA_sig->GetNbinsX());
-     Double_t B = hMVA_bkgd->Integral(Bin->GetBinContent(10),hMVA_bkgd->GetNbinsX());
+     S = hMVA_sig->Integral(Bin->GetBinContent(10),hMVA_sig->GetNbinsX());
+     B = hMVA_bkgd->Integral(Bin->GetBinContent(10),hMVA_bkgd->GetNbinsX());
      init();
      Limit->SetBinContent(10,limitBayesian(B,.35,S,.2));
      delete wRoo;
 
      Limit->Write();
+
+     // Data Limit
+     TH1D* DataLimit = new TH1D("DataLimit","DataLimit",10,0.5,10.5);
+
+     for (Int_t iBin = 1 ; iBin < 9 ; ) {
+       // Training Only
+       D = hMVA_data->Integral(Bin->GetBinContent(iBin),hMVA_data->GetNbinsX());
+       //S = hMVA_sig->Integral(Bin->GetBinContent(iBin),hMVA_sig->GetNbinsX());
+       B = hMVA_bgTr->Integral(Bin->GetBinContent(iBin),hMVA_bgTr->GetNbinsX());
+       S = D-B;
+       if(S<0) S=0.;
+       init();
+//       cout << "[DataLimit] = " << limitBayesian(B,.35,S,.2) << endl;
+       DataLimit->SetBinContent(iBin,limitBayesian(B,.35,S,.2));
+       delete wRoo;
+       // Spectator Only
+       D = hMVA_data->Integral(Bin->GetBinContent(iBin+1),hMVA_data->GetNbinsX());
+       //S = hMVA_sig->Integral(Bin->GetBinContent(iBin+1),hMVA_sig->GetNbinsX());
+       B = hMVA_bgSp->Integral(Bin->GetBinContent(iBin+1),hMVA_bgSp->GetNbinsX());
+       S = D-B;
+       if(S<0) S=0.;
+       init();
+//       cout << "[DataLimit] = " << limitBayesian(B,.35,S,.2) << endl;
+       DataLimit->SetBinContent(iBin+1,limitBayesian(B,.35,S,.2));
+       delete wRoo;
+       // All
+       D = hMVA_data->Integral(Bin->GetBinContent(iBin+2),hMVA_data->GetNbinsX());
+       //S = hMVA_sig->Integral(Bin->GetBinContent(iBin+2),hMVA_sig->GetNbinsX());
+       B = hMVA_bkgd->Integral(Bin->GetBinContent(iBin+2),hMVA_bkgd->GetNbinsX());
+       S = D-B;
+       if(S<0) S=0.;
+       init();
+//       cout << "[DataLimit] = " << limitBayesian(B,.35,S,.2) << endl;
+       DataLimit->SetBinContent(iBin+2,limitBayesian(B,.35,S,.2));
+       delete wRoo; 
+       iBin+=3;
+     }
+     D = hMVA_data->Integral(Bin->GetBinContent(10),hMVA_data->GetNbinsX());
+     //S = hMVA_sig->Integral(Bin->GetBinContent(10),hMVA_sig->GetNbinsX());
+     B = hMVA_bkgd->Integral(Bin->GetBinContent(10),hMVA_bkgd->GetNbinsX());
+     S = D-B;
+     if(S<0) S=0.;
+     init();
+//       cout << "[DataLimit] = " << limitBayesian(B,.35,S,.2) << endl;
+     DataLimit->SetBinContent(10,limitBayesian(B,.35,S,.2));
+     delete wRoo;
+
+     DataLimit->Write();
+
+
+
 
 
      // clean histo's 
@@ -466,6 +527,7 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
      delete Bin ;
      delete Sign ;
      delete Limit ;
+     delete DataLimit ;
 
      // Clean UAReader
      delete UAReader ; 

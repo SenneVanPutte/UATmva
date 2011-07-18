@@ -57,6 +57,7 @@ class UATmvaSummary_t {
   TH1D*               Cut; 
   TH1D*               Sign; 
   TH1D*               Limit; 
+  TH1D*               DataLimit; 
 
   TH1D*               CutBased;
 
@@ -97,6 +98,8 @@ class UATmvaSummary {
   void PrintYields ( int , int );
   int    GetBestLimitMVAID ();
   double GetBestLimitMVAVAL ();
+  double GetBestDataLimitMVAVAL ();
+
 
 };
 
