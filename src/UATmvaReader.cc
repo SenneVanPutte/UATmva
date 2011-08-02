@@ -292,7 +292,8 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
        CutBased_Limit = limitBayesian(CutBased_Bkgd,.35,CutBased_Signal,.2);
        delete wRoo;
        init();
-       CutBased_Limit_Data = limitBayesian(CutBased_Bkgd,.35,CutBased_Data-CutBased_Bkgd,.2);
+       //CutBased_Limit_Data = limitBayesian(CutBased_Bkgd,.35,CutBased_Data-CutBased_Bkgd,.2);
+       CutBased_Limit_Data = limitBayesian(CutBased_Data,.35,CutBased_Signal,.2);
        delete wRoo;
 
      }
