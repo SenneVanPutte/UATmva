@@ -77,7 +77,7 @@ class UATmvaConfig {
   // TMVA Method:
 
   TString              TmvaType    ;  
-  TString              TmvaWeight  ;    
+  string               TmvaWeight  ;    
   vector<InputVar_t>   TmvaVar     ;
   string               TmvaPreCut  ;  
   Int_t                TmvaVarNumRemove    ;
@@ -141,7 +141,7 @@ class UATmvaConfig {
   vector<InputVar_t>*  GetInputVar()       { return &InputVar     ; }
  
   TString              GetTmvaType()       { return TmvaType      ; }
-  TString              GetTmvaWeight()     { return TmvaWeight    ; }
+  string               GetTmvaWeight()     { return TmvaWeight    ; }
   vector<InputVar_t>*  GetTmvaVar()        { return &TmvaVar      ; }
   string               GetTmvaPreCut()     { return TmvaPreCut    ; }
   Int_t                GetTmvaVarNumRemove()   { return TmvaVarNumRemove   ; }
