@@ -54,6 +54,14 @@ class TargetLumi_t {
   Bool_t  useData ; 
 };
 
+class CutBased_t {
+  public:
+  string NickName ;
+  string File     ;
+  string Hist     ;
+  Int_t  Bin      ;
+};
+
 class UATmvaConfig {
 
   private:
@@ -110,8 +118,9 @@ class UATmvaConfig {
   Int_t                TmvaRespRebinFac   ;     
 
   // Cut Based Yields
-  TString              CutBasedHistName   ;
-  Int_t                CutBasedHistBin    ;  
+  //TString              CutBasedHistName   ;
+  //Int_t                CutBasedHistBin    ;  
+  vector <CutBased_t>  CutBased ; 
 
   // Final Plots 
   vector<TargetLumi_t> TargetLumi;
@@ -168,8 +177,9 @@ class UATmvaConfig {
   Float_t              GetTmvaRespXMax()       { return TmvaRespXMax       ; }
   Int_t                GetTmvaRespRebinFac()   { return TmvaRespRebinFac   ; }
  
-  TString              GetCutBasedHistName()   { return CutBasedHistName ; }
-  Int_t                GetCutBasedHistBin()    { return CutBasedHistBin  ; }
+  //TString              GetCutBasedHistName()   { return CutBasedHistName ; }
+  //Int_t                GetCutBasedHistBin()    { return CutBasedHistBin  ; }
+  vector<CutBased_t>*  GetCutBased()           { return &CutBased ; } 
 
   vector<TargetLumi_t>*  GetTargetLumi()       { return &TargetLumi ; }
   vector<PlotGroup_t>*   GetPlotGroup()        { return &PlotGroup  ; }     

@@ -59,8 +59,9 @@ void UATmvaConfig::Reset(){
   TmvaRespXMax      =  1.1 ;
   TmvaRespRebinFac  =  10 ;
 
-  CutBasedHistName   = "NULL" ;
-  CutBasedHistBin    = -1 ;
+  //CutBasedHistName   = "NULL" ;
+  //CutBasedHistBin    = -1 ;
+  CutBased         .clear();
 
   PlotGroup.clear() ;
   CtrlPlot.clear()  ;
@@ -287,11 +288,21 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
     // ------------------------------ Cut Based Yield
 
    if ( Elements.at(0) == "CutBased" ) {
+/*
       if   ( Elements.size() == 3 ) {
         CutBasedHistName = Elements.at(1) ;
         CutBasedHistBin  = atoi(Elements.at(2).c_str()) ;
+*/
+      if   ( Elements.size() == 5 ) {
+        CutBased_t CB;
+        CB.NickName = Elements.at(1) ;
+        CB.File     = Elements.at(2) ;
+        CB.Hist     = Elements.at(3) ;
+        CB.Bin      = atoi(Elements.at(4).c_str());
+        CutBased.push_back(CB);
       }
       else UAError("[UATmvaConfig] Wrong CutBased Input !");
+
    }
  
    // Final Plot group ( for bkgd only )
@@ -426,11 +437,13 @@ void UATmvaConfig::Print(){
      cout << "BDTPruneStrength = " ; for (int iE = 0 ; iE<(signed)BDTPruneStrength.size()  ; ++iE ) cout << BDTPruneStrength.at(iE)  << " " ; cout << endl;
   }
 
+/*
   if ( CutBasedHistName != "NULL" ) {
     cout << "--------------------- Cut Based Limit ---------------------" << endl;
     cout << "CutBasedHistName = " << CutBasedHistName<< endl;
     cout << "CutBasedHistBin  = " << CutBasedHistBin<< endl;
   }
+*/
 
   if ( PlotGroup.size() > 0 ) {
     cout << "--------------------- Plot Group ( for bkgd only ) --------" << endl;
