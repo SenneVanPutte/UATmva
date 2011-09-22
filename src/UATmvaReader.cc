@@ -13,6 +13,10 @@ void UATmvaReader::Do( UATmvaConfig& Cfg, UATmvaTree& T) {
 
    if ( Cfg.GetTmvaType() == "ANN" ) DoMLP(Cfg,T);
    if ( Cfg.GetTmvaType() == "BDT" ) DoBDT(Cfg,T);
+   if ( Cfg.GetTmvaType() == "LH"  ) DoLH (Cfg,T);
+   if ( Cfg.GetTmvaType() == "PDERS" ) DoPDERS (Cfg,T);
+   if ( Cfg.GetTmvaType() == "PDEFoam" ) DoPDEFoam (Cfg,T);
+   if ( Cfg.GetTmvaType() == "XML" ) DoXML(Cfg,T);
 
 }
 
@@ -46,12 +50,17 @@ void UATmvaReader::DoBDT( UATmvaConfig& Cfg, UATmvaTree& T) {
    for (Int_t nVarRem  = 0 ; nVarRem <= Cfg.GetANNVarNumRemove()   ; ++nVarRem) {
    Int_t nVarMax = (Cfg.GetTmvaVar())->size() - nVarRem ; 
 
-   for( int iBDTNTrees         = 0 ; iBDTNTrees         < (signed) (Cfg.GetBDTNTrees())->size()         ; ++iBDTNTrees         ) {
-   for( int iBDTBoostType      = 0 ; iBDTBoostType      < (signed) (Cfg.GetBDTBoostType())->size()      ; ++iBDTBoostType      ) {
-   for( int iBDTSeparationType = 0 ; iBDTSeparationType < (signed) (Cfg.GetBDTSeparationType())->size() ; ++iBDTSeparationType ) {
-   for( int iBDTnCuts          = 0 ; iBDTnCuts          < (signed) (Cfg.GetBDTnCuts())->size()          ; ++iBDTnCuts          ) {
-   for( int iBDTPruneMethod    = 0 ; iBDTPruneMethod    < (signed) (Cfg.GetBDTPruneMethod())->size()    ; ++iBDTPruneMethod    ) {
-   for( int iBDTPruneStrength  = 0 ; iBDTPruneStrength  < (signed) (Cfg.GetBDTPruneStrength())->size()  ; ++iBDTPruneStrength  ) {
+   for( int iBDTNTrees             = 0 ; iBDTNTrees              < (signed) (Cfg.GetBDTNTrees())->size()              ; ++iBDTNTrees              ) {
+   for( int iBDTBoostType          = 0 ; iBDTBoostType           < (signed) (Cfg.GetBDTBoostType())->size()           ; ++iBDTBoostType           ) {
+//   for( int iBDTAdaBoostR2Loss     = 0 ; iBDTAdaBoostR2Loss      < (signed) (Cfg.GetBDTAdaBoostR2Loss())->size()      ; ++iBDTAdaBoostR2Loss      ) {
+   for( int iBDTUseBaggedGrad      = 0 ; iBDTUseBaggedGrad       < (signed) (Cfg.GetBDTUseBaggedGrad())->size()       ; ++iBDTUseBaggedGrad       ) {
+   for( int iBDTGradBaggingFraction= 0 ; iBDTGradBaggingFraction < (signed) (Cfg.GetBDTGradBaggingFraction())->size() ; ++iBDTGradBaggingFraction ) {
+   for( int iBDTShrinkage          = 0 ; iBDTShrinkage           < (signed) (Cfg.GetBDTShrinkage())->size()           ; ++iBDTShrinkage           ) {
+   for( int iBDTSeparationType     = 0 ; iBDTSeparationType      < (signed) (Cfg.GetBDTSeparationType())->size()      ; ++iBDTSeparationType      ) {
+   for( int iBDTnCuts              = 0 ; iBDTnCuts               < (signed) (Cfg.GetBDTnCuts())->size()               ; ++iBDTnCuts               ) {
+   for( int iBDTPruneMethod        = 0 ; iBDTPruneMethod         < (signed) (Cfg.GetBDTPruneMethod())->size()         ; ++iBDTPruneMethod         ) {
+   for( int iBDTPruneStrength      = 0 ; iBDTPruneStrength       < (signed) (Cfg.GetBDTPruneStrength())->size()       ; ++iBDTPruneStrength       ) {
+   for( int iBDTNNodesMax          = 0 ; iBDTNNodesMax           < (signed) (Cfg.GetBDTNNodesMax())->size()           ; ++iBDTNNodesMax           ) {
 
 
      // Build Name
@@ -59,10 +68,16 @@ void UATmvaReader::DoBDT( UATmvaConfig& Cfg, UATmvaTree& T) {
      Name << Cfg.GetTmvaName() << "_BDT_" ;
      Name << Cfg.GetBDTNTrees()->at(iBDTNTrees) << "Trees_" ;
      Name << Cfg.GetBDTBoostType()->at(iBDTBoostType) << "_" ;
+     if ( Cfg.GetBDTBoostType()->at(iBDTBoostType) == "Grad" ) {
+       Name << Cfg.GetBDTUseBaggedGrad()->at(iBDTUseBaggedGrad) << "Bagged_" ;
+       Name << Cfg.GetBDTGradBaggingFraction()->at(iBDTGradBaggingFraction) << "BagFrac_" ;
+       Name << Cfg.GetBDTShrinkage()->at(iBDTShrinkage) << "BagShrink_" ;
+     }
      Name << Cfg.GetBDTSeparationType()->at(iBDTSeparationType) << "_" ;
      Name << Cfg.GetBDTnCuts()->at(iBDTnCuts) << "Cuts_" ;
      Name << Cfg.GetBDTPruneMethod()->at(iBDTPruneMethod) << "_" ;
      Name << Cfg.GetBDTPruneStrength()->at(iBDTPruneStrength) << "PruneStrength_" ;
+     Name << Cfg.GetBDTNNodesMax()->at(iBDTNNodesMax) << "NodesMax_" ;
      Name << nVarMax << "Var" ;
      NAME =  Name.str();
 
@@ -70,16 +85,97 @@ void UATmvaReader::DoBDT( UATmvaConfig& Cfg, UATmvaTree& T) {
 
    } // BDTNTrees
    } // BDTBoostType
+//   } // BDTAdaBoostR2Loss
+   } // BDTUseBaggedGrad
+   } // BDTGradBaggingFraction
+   } // BDTShrinkage
    } // BDTSeparationType
    } // BDTnCuts
    } // BDTPruneMethod
    } // BDTPruneStrength
+   } // BDTNNodesMax
+
+   } // Variables
+   } // TargetLumi
+
+}
+
+
+
+void UATmvaReader::DoLH( UATmvaConfig& Cfg, UATmvaTree& T) {
+
+   for (Int_t iLumi    = 0 ; iLumi   < (signed) Cfg.GetTargetLumi()->size() ; ++iLumi  ) {
+   for (Int_t nVarRem  = 0 ; nVarRem <= Cfg.GetANNVarNumRemove()   ; ++nVarRem) {
+   Int_t nVarMax = (Cfg.GetTmvaVar())->size() - nVarRem ; 
+
+
+     // Build Name
+     ostringstream Name;
+     Name << Cfg.GetTmvaName() << "_Likelihood_" << nVarMax << "Var" ;
+     NAME =  Name.str();
+
+     Read(Cfg,T,Name.str(),nVarMax,iLumi) ;
  
    } // Variables
    } // TargetLumi
 
 }
 
+void UATmvaReader::DoPDERS( UATmvaConfig& Cfg, UATmvaTree& T) {
+
+   for (Int_t iLumi    = 0 ; iLumi   < (signed) Cfg.GetTargetLumi()->size() ; ++iLumi  ) {
+   for (Int_t nVarRem  = 0 ; nVarRem <= Cfg.GetANNVarNumRemove()   ; ++nVarRem) {
+   Int_t nVarMax = (Cfg.GetTmvaVar())->size() - nVarRem ;
+
+
+     // Build Name
+     ostringstream Name;
+     Name << Cfg.GetTmvaName() << "_PDERS_" << nVarMax << "Var" ;
+     NAME =  Name.str();
+
+     Read(Cfg,T,Name.str(),nVarMax,iLumi) ;
+
+   } // Variables
+   } // TargetLumi
+
+}
+
+void UATmvaReader::DoPDEFoam( UATmvaConfig& Cfg, UATmvaTree& T) {
+
+   for (Int_t iLumi    = 0 ; iLumi   < (signed) Cfg.GetTargetLumi()->size() ; ++iLumi  ) {
+   for (Int_t nVarRem  = 0 ; nVarRem <= Cfg.GetANNVarNumRemove()   ; ++nVarRem) {
+   Int_t nVarMax = (Cfg.GetTmvaVar())->size() - nVarRem ;
+
+
+     // Build Name
+     ostringstream Name;
+     Name << Cfg.GetTmvaName() << "_PDEFoam_" << nVarMax << "Var" ;
+     NAME =  Name.str();
+
+     Read(Cfg,T,Name.str(),nVarMax,iLumi) ;
+
+   } // Variables
+   } // TargetLumi
+
+}
+
+
+
+void UATmvaReader::DoXML( UATmvaConfig& Cfg, UATmvaTree& T) {
+
+   for (Int_t iLumi    = 0 ; iLumi   < (signed) Cfg.GetTargetLumi()->size() ; ++iLumi  ) {
+   Int_t nVarMax = (Cfg.GetTmvaVar())->size() ; 
+
+     // Build Name
+     ostringstream Name;
+     Name << Cfg.GetTmvaName() ;
+     NAME =  Name.str();
+   
+     Read(Cfg,T,Name.str(),nVarMax,iLumi) ;
+
+   } // TargetLumi 
+
+}
 
 void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVarMax, int iLumi ) {
 
@@ -127,7 +223,7 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
 
 
      // Create TMVA Reader
-     cout << "[UATmvaReader::DoMLP()] Create: " << UAReader->TmvaName << endl;
+     cout << "[UATmvaReader::Read()] Create: " << UAReader->TmvaName << endl;
      UAReader->TmvaReader = new Reader( "!Color:!Silent" );
 
      // Add VariablesCfg.GetTmvaVar())
@@ -141,13 +237,23 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
      }
 
      // Fetch TMVA weights
-     TString TmvaWeightFile = "weights/"+UAReader->TmvaName+"_"+UAReader->TmvaName+".weights.xml" ;
-     
+     //TString TmvaWeightFile = "weights/"+UAReader->TmvaName+"_"+UAReader->TmvaName+".weights.xml" ;
+     TString TmvaWeightFile ; 
+     if ( Cfg.GetTmvaType() == "XML" ) { 
+       TmvaWeightFile = Cfg.GetXMLFile() ; 
+     } else {
+       TmvaWeightFile = "weights/UATmva_"+UAReader->TmvaName+".weights.xml" ;     
+     } 
+
      // BookMethod
      UAReader->TmvaReader->BookMVA( UAReader->TmvaName , TmvaWeightFile ) ;
 
      // Re-Open TMVA output file
-     UAReader->TmvaFile  = TFile::Open("rootfiles/" + UAReader->TmvaName  + ".root","UPDATE" );
+     if ( Cfg.GetTmvaType() == "XML" ) { 
+       UAReader->TmvaFile  = TFile::Open("rootfiles/" + UAReader->TmvaName  + ".root","RECREATE" );
+     } else {
+       UAReader->TmvaFile  = TFile::Open("rootfiles/" + UAReader->TmvaName  + ".root","UPDATE" );
+     }
      //string Directory("OutputHistograms");
      ostringstream Directory;
      Directory << "OutputHistograms_" << Cfg.GetTargetLumi()->at(iLumi).Lumi << "pbinv" ;
@@ -164,6 +270,7 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
      TH1D* hMVA_bgTr = new TH1D ("BkgdTrain","BkgdTrain",nbins,minBin,maxBin) ;
      TH1D* hMVA_bgSp = new TH1D ("BkgdSpect","BkgdSpect",nbins,minBin,maxBin) ;
 
+     cout <<(Cfg.GetInputData())->size() << endl;  
      for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
        Double_t DaWeight=1.0; 
        Double_t SgWeight=1.0;
@@ -203,6 +310,7 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
          }
        }
        // Tree Loop
+       cout << "[UATmvaReade::Read] Loop on tree:" << iD->NickName << endl; 
        for (Int_t jEntry = 0 ;  jEntry < nEntries ; ++jEntry) {
          (T.GetTree(iD->NickName))->GetEntry(jEntry);
          // Apply Tmva Preselection Cut
@@ -213,7 +321,17 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
            if (++nVar <= nVarMax) {
              if ( iVar->VarType == 'I' ) FVar[nVar] = IVar[nVar] ; 
              if ( iVar->VarType == 'D' ) FVar[nVar] = DVar[nVar] ;  
+            /* if ( iVar->VarName == "type" && Cfg.GetTmvaType() == "XML" ) {
+               int itypeNew = -1 ;
+               if ( IVar[nVar] == 0 ) itypeNew = 3 ;  
+               if ( IVar[nVar] == 1 ) itypeNew = 2 ;  
+               if ( IVar[nVar] == 2 ) itypeNew = 1 ;  
+               if ( IVar[nVar] == 3 ) itypeNew = 0 ;  
+               FVar[nVar] = itypeNew ;
+             }  */ 
+             //cout <<  FVar[nVar] << " " ;
            }
+           //cout << endl;
          }
          // ... Evaluate
          treeWeight  = 1.;
@@ -233,6 +351,7 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
          // Var Control Plots 
          for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) hCtrl.at(iP)->Fill( FVar[((Cfg.GetCtrlPlot())->at(iP)).iVarPos+1] , Weight);
        }
+       cout << "[UATmvaReade::Read] Loop End for tree:" << iD->NickName << endl; 
        UAReader->TmvaFile->cd(Directory.str().c_str());
        hMVA->Write();
        for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) { hCtrl.at(iP)->Write(); delete hCtrl.at(iP) ; } // hCtrl.clear() ; }
@@ -291,7 +410,7 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
            if ( itCB->NickName == iD->NickName ) {
              cout << "[UATmvaReader::CutBased] File = " << (itCB->File).c_str() << endl;
              TFile* File = new TFile((itCB->File).c_str(),"READ");
-             cout << "[UATmvaReader::CutBased] Hist = " << (itCB->Hist).c_str() << endl;
+             cout << "[UATmvaReader::CutBased] Hist = " << (itCB->Hist).c_str() << " " << ( (TH1F*) File->Get((itCB->Hist).c_str()) ) -> GetBinContent(itCB->Bin) << endl;
              // Assuming the normalisation is done externally for cut based analysis:
              //if (iD->TrueData                ) CutBased_Data   += DaWeight * ( (TH1F*) File->Get((itCB->Hist).c_str()) ) -> GetBinContent(itCB->Bin) ;
              //if (iD->SigTrain                ) CutBased_Signal += SgWeight * ( (TH1F*) File->Get((itCB->Hist).c_str()) ) -> GetBinContent(itCB->Bin) ;
@@ -447,27 +566,27 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
 
      for (Int_t iBin = 1 ; iBin < 9 ; ) {
       // Training Only
-      S = hMVA_sig->Integral(Bin->GetBinContent(iBin),hMVA_sig->GetNbinsX());
-      B = hMVA_bgTr->Integral(Bin->GetBinContent(iBin),hMVA_bgTr->GetNbinsX());
+      S = hMVA_sig->Integral((int) Bin->GetBinContent(iBin),hMVA_sig->GetNbinsX());
+      B = hMVA_bgTr->Integral((int) Bin->GetBinContent(iBin),hMVA_bgTr->GetNbinsX());
       init();
       Limit->SetBinContent(iBin,limitBayesian(B,.35,S,.2));
       delete wRoo;
       // Spectator Only
-      S = hMVA_sig->Integral(Bin->GetBinContent(iBin+1),hMVA_sig->GetNbinsX());
-      B = hMVA_bgSp->Integral(Bin->GetBinContent(iBin+1),hMVA_bgSp->GetNbinsX());
+      S = hMVA_sig->Integral((int) Bin->GetBinContent(iBin+1),hMVA_sig->GetNbinsX());
+      B = hMVA_bgSp->Integral((int) Bin->GetBinContent(iBin+1),hMVA_bgSp->GetNbinsX());
       init();
       Limit->SetBinContent(iBin+1,limitBayesian(B,.35,S,.2));
       delete wRoo;
       // All
-      S = hMVA_sig->Integral(Bin->GetBinContent(iBin+2),hMVA_sig->GetNbinsX());
-      B = hMVA_bkgd->Integral(Bin->GetBinContent(iBin+2),hMVA_bkgd->GetNbinsX());
+      S = hMVA_sig->Integral((int) Bin->GetBinContent(iBin+2),hMVA_sig->GetNbinsX());
+      B = hMVA_bkgd->Integral((int) Bin->GetBinContent(iBin+2),hMVA_bkgd->GetNbinsX());
       init();
       Limit->SetBinContent(iBin+2,limitBayesian(B,.35,S,.2));
       delete wRoo;
       iBin+=3;
      }
-     S = hMVA_sig->Integral(Bin->GetBinContent(10),hMVA_sig->GetNbinsX());
-     B = hMVA_bkgd->Integral(Bin->GetBinContent(10),hMVA_bkgd->GetNbinsX());
+     S = hMVA_sig->Integral((int) Bin->GetBinContent(10),hMVA_sig->GetNbinsX());
+     B = hMVA_bkgd->Integral((int) Bin->GetBinContent(10),hMVA_bkgd->GetNbinsX());
      init();
      Limit->SetBinContent(10,limitBayesian(B,.35,S,.2));
      delete wRoo;
@@ -479,9 +598,9 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
 
      for (Int_t iBin = 1 ; iBin < 9 ; ) {
        // Training Only
-       D = hMVA_data->Integral(Bin->GetBinContent(iBin),hMVA_data->GetNbinsX());
-       S = hMVA_sig->Integral(Bin->GetBinContent(iBin),hMVA_sig->GetNbinsX());
-       B = hMVA_bgTr->Integral(Bin->GetBinContent(iBin),hMVA_bgTr->GetNbinsX());
+       D = hMVA_data->Integral((int) Bin->GetBinContent(iBin),hMVA_data->GetNbinsX());
+       S = hMVA_sig->Integral((int) Bin->GetBinContent(iBin),hMVA_sig->GetNbinsX());
+       B = hMVA_bgTr->Integral((int) Bin->GetBinContent(iBin),hMVA_bgTr->GetNbinsX());
        //S = D-B;
        //if(S<0) S=0.;
        init();
@@ -490,9 +609,9 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
        DataLimit->SetBinContent(iBin,limitBayesian(D,.35,S,.2));
        delete wRoo;
        // Spectator Only
-       D = hMVA_data->Integral(Bin->GetBinContent(iBin+1),hMVA_data->GetNbinsX());
-       S = hMVA_sig->Integral(Bin->GetBinContent(iBin+1),hMVA_sig->GetNbinsX());
-       B = hMVA_bgSp->Integral(Bin->GetBinContent(iBin+1),hMVA_bgSp->GetNbinsX());
+       D = hMVA_data->Integral((int) Bin->GetBinContent(iBin+1),hMVA_data->GetNbinsX());
+       S = hMVA_sig->Integral((int) Bin->GetBinContent(iBin+1),hMVA_sig->GetNbinsX());
+       B = hMVA_bgSp->Integral((int) Bin->GetBinContent(iBin+1),hMVA_bgSp->GetNbinsX());
        //S = D-B;
        //if(S<0) S=0.;
        init();
@@ -501,9 +620,9 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
        DataLimit->SetBinContent(iBin+1,limitBayesian(D,.35,S,.2));
        delete wRoo;
        // All
-       D = hMVA_data->Integral(Bin->GetBinContent(iBin+2),hMVA_data->GetNbinsX());
-       S = hMVA_sig->Integral(Bin->GetBinContent(iBin+2),hMVA_sig->GetNbinsX());
-       B = hMVA_bkgd->Integral(Bin->GetBinContent(iBin+2),hMVA_bkgd->GetNbinsX());
+       D = hMVA_data->Integral((int) Bin->GetBinContent(iBin+2),hMVA_data->GetNbinsX());
+       S = hMVA_sig->Integral((int) Bin->GetBinContent(iBin+2),hMVA_sig->GetNbinsX());
+       B = hMVA_bkgd->Integral((int) Bin->GetBinContent(iBin+2),hMVA_bkgd->GetNbinsX());
        //S = D-B;
        //if(S<0) S=0.;
        init();
@@ -513,9 +632,9 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
        delete wRoo; 
        iBin+=3;
      }
-     D = hMVA_data->Integral(Bin->GetBinContent(10),hMVA_data->GetNbinsX());
-     S = hMVA_sig->Integral(Bin->GetBinContent(10),hMVA_sig->GetNbinsX());
-     B = hMVA_bkgd->Integral(Bin->GetBinContent(10),hMVA_bkgd->GetNbinsX());
+     D = hMVA_data->Integral((int) Bin->GetBinContent(10),hMVA_data->GetNbinsX());
+     S = hMVA_sig->Integral((int) Bin->GetBinContent(10),hMVA_sig->GetNbinsX());
+     B = hMVA_bkgd->Integral((int) Bin->GetBinContent(10),hMVA_bkgd->GetNbinsX());
      //S = D-B;
      //if(S<0) S=0.;
      init();

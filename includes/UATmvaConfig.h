@@ -105,10 +105,19 @@ class UATmvaConfig {
 
   vector<Int_t>        BDTNTrees          ;
   vector<TString>      BDTBoostType       ;
+  vector<TString>      BDTAdaBoostR2Loss  ;
+  vector<TString>      BDTUseBaggedGrad      ;
+  vector<Float_t>      BDTGradBaggingFraction;
+  vector<Float_t>      BDTShrinkage       ;
   vector<TString>      BDTSeparationType  ;
   vector<Int_t>        BDTnCuts           ;
   vector<TString>      BDTPruneMethod     ;
   vector<Int_t>        BDTPruneStrength   ;
+  vector<Int_t>        BDTNNodesMax       ;
+
+  // TMVA External XML
+
+  string               XMLFile            ;
 
   // Reader Basic Options
 
@@ -167,10 +176,17 @@ class UATmvaConfig {
 
   vector<Int_t>*       GetBDTNTrees()          { return &BDTNTrees         ; }
   vector<TString>*     GetBDTBoostType()       { return &BDTBoostType      ; }
+  vector<TString>*     GetBDTAdaBoostR2Loss()  { return &BDTAdaBoostR2Loss ; } 
+  vector<TString>*     GetBDTUseBaggedGrad()   { return &BDTUseBaggedGrad  ; } 
+  vector<Float_t>*     GetBDTGradBaggingFraction() { return &BDTGradBaggingFraction ; }
+  vector<Float_t>*     GetBDTShrinkage()       { return &BDTShrinkage      ; } 
   vector<TString>*     GetBDTSeparationType()  { return &BDTSeparationType ; }
   vector<Int_t>*       GetBDTnCuts()           { return &BDTnCuts          ; }
   vector<TString>*     GetBDTPruneMethod()     { return &BDTPruneMethod    ; }
   vector<Int_t>*       GetBDTPruneStrength()   { return &BDTPruneStrength  ; } 
+  vector<Int_t>*       GetBDTNNodesMax()       { return &BDTNNodesMax      ; } 
+
+  string               GetXMLFile()            { return XMLFile            ; }
 
   Int_t                GetTmvaRespNBins()      { return TmvaRespNBins      ; }
   Float_t              GetTmvaRespXMin()       { return TmvaRespXMin       ; }

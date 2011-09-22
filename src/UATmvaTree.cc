@@ -23,8 +23,9 @@ void UATmvaTree::Open (UATmvaConfig& Cfg){
     for (vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
       TString NickName = iD->NickName; 
       TString FileName = iD->FileName;
-      cout << "Opening TTree: " << NickName << " " << FileName << endl;
+      cout << "Opening TTree: " << NickName << " " << FileName << " " << Cfg.GetTreeName() << endl;
       TFile* File = new TFile(FileName,"READ");
+      File->ls();
       TTree* Tree = (TTree*) File->Get(Cfg.GetTreeName());
       gROOT->cd(); // Have to create the new object outside of gDirectory from File
       InputTree_t InTree;

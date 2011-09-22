@@ -42,17 +42,29 @@ void UATmvaConfig::Reset(){
 
   BDTNTrees        .clear();
   BDTBoostType     .clear();
+  BDTAdaBoostR2Loss.clear();
+  BDTUseBaggedGrad .clear();
+  BDTGradBaggingFraction.clear();
+  BDTShrinkage     .clear();
   BDTSeparationType.clear();
   BDTnCuts         .clear();
   BDTPruneMethod   .clear();
   BDTPruneStrength .clear();
+  BDTNNodesMax     .clear();
 
   BDTNTrees        .push_back(400)             ;
   BDTBoostType     .push_back("AdaBoost")      ;    
   BDTSeparationType.push_back("GiniIndex")     ;
+  BDTAdaBoostR2Loss.push_back("Quadratic")     ;
+  BDTUseBaggedGrad .push_back("False")         ;
+  BDTGradBaggingFraction.push_back(0.6)        ;
+  BDTShrinkage     .push_back(1.0)             ;  
   BDTnCuts         .push_back(20)              ;
   BDTPruneMethod   .push_back("CostComplexity");
   BDTPruneStrength .push_back(12) ;
+  BDTNNodesMax     .push_back(100000) ;
+
+  XMLFile           = "NULL" ;
 
   TmvaRespNBins     = 440 ;
   TmvaRespXMin      = -1.1 ;
@@ -239,6 +251,39 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
      else UAError("[UATmvaConfig] Wrong BDTBoostType Input !"); 
    }
 
+   if ( Elements.at(0) == "BDTAdaBoostR2Loss") {
+     if   ( Elements.size() >= 2 ) {
+       BDTAdaBoostR2Loss.clear();
+       for ( int iE = 1 ; iE < (signed) Elements.size() ; ++iE ) BDTAdaBoostR2Loss.push_back(Elements.at(iE));
+     }
+     else UAError("[UATmvaConfig] Wrong BDTAdaBoostR2Loss Input !");
+   }
+
+   if ( Elements.at(0) == "BDTUseBaggedGrad") {
+     if   ( Elements.size() >= 2 ) {
+       BDTUseBaggedGrad.clear();
+       for ( int iE = 1 ; iE < (signed) Elements.size() ; ++iE ) BDTUseBaggedGrad.push_back(Elements.at(iE));
+     }
+     else UAError("[UATmvaConfig] Wrong BDTUseBaggedGrad Input !");
+   }
+
+   if ( Elements.at(0) == "BDTGradBaggingFraction") {
+     if   ( Elements.size() >= 2 ) {
+       BDTGradBaggingFraction.clear();
+       for ( int iE = 1 ; iE < (signed) Elements.size() ; ++iE ) BDTGradBaggingFraction.push_back(atof(Elements.at(iE).c_str()));
+     }
+     else UAError("[UATmvaConfig] Wrong BDTGradBaggingFraction Input !");
+   }
+
+   if ( Elements.at(0) == "BDTShrinkage") {
+     if   ( Elements.size() >= 2 ) {
+       BDTShrinkage.clear();
+       for ( int iE = 1 ; iE < (signed) Elements.size() ; ++iE ) BDTShrinkage.push_back(atof(Elements.at(iE).c_str()));
+     }
+     else UAError("[UATmvaConfig] Wrong BDTShrinkage Input !");
+   }
+
+
    if ( Elements.at(0) == "BDTSeparationType") {
      if   ( Elements.size() >= 2 ) {
        BDTSeparationType.clear();
@@ -270,6 +315,21 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
      }
      else UAError("[UATmvaConfig] Wrong BDTPruneStrength Input !"); 
    }
+
+   if ( Elements.at(0) == "BDTNNodesMax") {
+     if   ( Elements.size() >= 2 ) {
+       BDTNNodesMax.clear();
+       for ( int iE = 1 ; iE < (signed) Elements.size() ; ++iE ) BDTNNodesMax.push_back(atoi(Elements.at(iE).c_str()));
+     }
+     else UAError("[UATmvaConfig] Wrong BDTNNodesMax Input !");
+   }
+
+
+    // ------------------------------- External XML weights
+
+    if ( Elements.at(0) == "XMLFile") {
+      XMLFile = Elements.at(1) ; 
+    }
 
 
     // ------------------------------- Reader MVA Output binning
@@ -431,10 +491,20 @@ void UATmvaConfig::Print(){
      cout << "--------------------- TMVA: BDT ---------------------------" << endl;
      cout << "BDTNTrees        = " ; for (int iE = 0 ; iE<(signed)BDTNTrees.size()         ; ++iE ) cout << BDTNTrees.at(iE)         << " " ; cout << endl;
      cout << "BDTBoostType     = " ; for (int iE = 0 ; iE<(signed)BDTBoostType.size()      ; ++iE ) cout << BDTBoostType.at(iE)      << " " ; cout << endl;
+     cout << "BDTAdaBoostR2Loss= " ; for (int iE = 0 ; iE<(signed)BDTAdaBoostR2Loss.size() ; ++iE ) cout << BDTAdaBoostR2Loss.at(iE) << " " ; cout << endl;
+     cout << "BDTUseBaggedGrad = " ; for (int iE = 0 ; iE<(signed)BDTUseBaggedGrad.size()  ; ++iE ) cout << BDTUseBaggedGrad.at(iE)  << " " ; cout << endl;
+     cout << "BDTGradBaggingFraction = " ; for (int iE = 0 ; iE<(signed)BDTGradBaggingFraction.size()      ; ++iE ) cout << BDTGradBaggingFraction.at(iE)      << " " ; cout << endl;
+     cout << "BDTShrinkage     = " ; for (int iE = 0 ; iE<(signed)BDTShrinkage.size()      ; ++iE ) cout << BDTShrinkage.at(iE)      << " " ; cout << endl;
      cout << "BDTSeparationType= " ; for (int iE = 0 ; iE<(signed)BDTSeparationType.size() ; ++iE ) cout << BDTSeparationType.at(iE) << " " ; cout << endl;
      cout << "BDTnCuts         = " ; for (int iE = 0 ; iE<(signed)BDTnCuts.size()          ; ++iE ) cout << BDTnCuts.at(iE)          << " " ; cout << endl;
      cout << "BDTPruneMethod   = " ; for (int iE = 0 ; iE<(signed)BDTPruneMethod.size()    ; ++iE ) cout << BDTPruneMethod.at(iE)    << " " ; cout << endl;
      cout << "BDTPruneStrength = " ; for (int iE = 0 ; iE<(signed)BDTPruneStrength.size()  ; ++iE ) cout << BDTPruneStrength.at(iE)  << " " ; cout << endl;
+     cout << "BDTNNodesMax     = " ; for (int iE = 0 ; iE<(signed)BDTNNodesMax.size()      ; ++iE ) cout << BDTNNodesMax.at(iE)      << " " ; cout << endl;
+  }
+
+  if ( TmvaType == "XML" ) {
+     cout << "--------------------- TMVA: XML ---------------------------" << endl;
+     cout << "XMLFile  = " << XMLFile << endl;
   }
 
 /*

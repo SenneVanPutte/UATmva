@@ -54,6 +54,10 @@ class UATmvaReader {
 
   void DoMLP ( UATmvaConfig&, UATmvaTree&);
   void DoBDT ( UATmvaConfig&, UATmvaTree&);
+  void DoLH  ( UATmvaConfig&, UATmvaTree&);
+  void DoPDERS ( UATmvaConfig&, UATmvaTree&);
+  void DoPDEFoam ( UATmvaConfig&, UATmvaTree&);
+  void DoXML ( UATmvaConfig&, UATmvaTree&);
   void Read  ( UATmvaConfig&, UATmvaTree&, string, int, int );
 
 

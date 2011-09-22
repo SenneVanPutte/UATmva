@@ -58,12 +58,17 @@ UATmvaSummary_t::UATmvaSummary_t(){
 
 UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString NameExt , UATmvaConfig& Cfg , int iLumi ){
  
-  BaseName = NameBase+"_"+MethodName;
-  ExtName  = NameExt;
-  TmvaName = BaseName+"_"+NameExt;
+  if ( NameExt != "NULL" ) {
+    BaseName = NameBase+"_"+MethodName;
+    ExtName  = NameExt;
+    TmvaName = BaseName+"_"+NameExt;
+  } else {
+    BaseName = NameBase ;
+    TmvaName = BaseName ;
+  }
 
   // Open File $ fetc objects
-  // cout << "[UATmvaSummary_t] Reading File: " << TmvaName << endl;
+  cout << "[UATmvaSummary_t] Reading File: " << TmvaName << endl;
   TFile*   File     = new TFile("rootfiles/" + TmvaName  + ".root","READ" );
   ostringstream Directory;
   Directory << "OutputHistograms_" << Cfg.GetTargetLumi()->at(iLumi).Lumi << "pbinv" ;
@@ -127,8 +132,16 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   }  
  
   cout << "[UATmvaSummary_t] Fetching CorrelationMatrix" << endl;
-  TH2F* CorrMtxS_ = (TH2F*) File->Get("CorrelationMatrixS");
-  TH2F* CorrMtxB_ = (TH2F*) File->Get("CorrelationMatrixB");  
+
+  TH2F* CorrMtxS_ ; 
+  TH2F* CorrMtxB_ ;
+  if ( Cfg.GetTmvaType() != "XML" ) {
+    CorrMtxS_ = (TH2F*) File->Get("CorrelationMatrixS");
+    CorrMtxB_ = (TH2F*) File->Get("CorrelationMatrixB");  
+  } else {
+    CorrMtxS_ = new TH2F();
+    CorrMtxB_ = new TH2F();
+  }
 
   cout << "[UATmvaSummary_t] Fetching estimatorHist" << endl;
   TH1F* D2Train_  ;
@@ -143,10 +156,21 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
 
 
   cout << "[UATmvaSummary_t] Fetching TMVA Hist" << endl;
-  TH1F* STrain_   = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_Train_S");
-  TH1F* BTrain_   = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_Train_B");
-  TH1F* STest_    = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_S");
-  TH1F* BTest_    = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_B");
+  TH1F* STrain_  ;
+  TH1F* BTrain_  ;
+  TH1F* STest_   ;
+  TH1F* BTest_   ;
+  if ( Cfg.GetTmvaType() != "XML" ) {
+    STrain_   = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_Train_S");
+    BTrain_   = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_Train_B");
+    STest_    = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_S");
+    BTest_    = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_B");
+  } else {
+    STrain_   = new TH1F();
+    BTrain_   = new TH1F();
+    STest_    = new TH1F();
+    BTest_    = new TH1F();
+  }
 
   cout << "[UATmvaSummary_t] Fetching MVA outputs" << endl;
   TH1D* DCut_     = (TH1D*) File->Get(TSDirectory+"/Data");
@@ -404,10 +428,32 @@ void UATmvaSummary::Init( UATmvaConfig& Cfg ) {
   TString MethodName;
   if ( Cfg.GetTmvaType() == "ANN" )  MethodName = "MLP" ;
   if ( Cfg.GetTmvaType() == "BDT" )  MethodName = "BDT" ;
+  if ( Cfg.GetTmvaType() == "LH"  )  MethodName = "Likelihood"  ;
+  if ( Cfg.GetTmvaType() == "PDERS"  )  MethodName = "PDERS"  ;
+  if ( Cfg.GetTmvaType() == "PDEFoam"  )  MethodName = "PDEFoam"  ;
+  if ( Cfg.GetTmvaType() == "XML" )  MethodName = "XML" ;
 
   // Open All files and Load Histos
   for (Int_t nVarRem  = 0 ; nVarRem <= Cfg.GetANNVarNumRemove() ; ++nVarRem) {
   Int_t nVarMax = (Cfg.GetTmvaVar())->size() - nVarRem ;
+
+    if ( Cfg.GetTmvaType() == "XML" ) {
+         // Build Name
+         ostringstream Name;
+         Name << "NULL" ;
+         //Name << nHLayers << "Layers_" << nHNodes << "Nodes_" << nVarMax << "Var" ;
+         // Read
+         vUASummary.push_back (new UATmvaSummary_t(Cfg.GetTmvaName(),MethodName,Name.str(), Cfg , 0 ));
+    }
+
+
+    if ( Cfg.GetTmvaType() == "LH" ) {
+         // Build Name
+         ostringstream Name;
+         Name << nVarMax << "Var" ;
+         // Read
+         vUASummary.push_back (new UATmvaSummary_t(Cfg.GetTmvaName(),MethodName,Name.str(), Cfg , 0 ));
+    }
 
     if ( Cfg.GetTmvaType() == "ANN" ) {
       for (Int_t nHLayers = Cfg.GetANNHiddenLayersMin() ; nHLayers <= Cfg.GetANNHiddenLayersMax() ; ++nHLayers ) {
@@ -422,31 +468,50 @@ void UATmvaSummary::Init( UATmvaConfig& Cfg ) {
     }
 
     if ( Cfg.GetTmvaType() == "BDT" ) {
-      for( int iBDTNTrees         = 0 ; iBDTNTrees         < (signed) (Cfg.GetBDTNTrees())->size()         ; ++iBDTNTrees         ) {
-      for( int iBDTBoostType      = 0 ; iBDTBoostType      < (signed) (Cfg.GetBDTBoostType())->size()      ; ++iBDTBoostType      ) {
-      for( int iBDTSeparationType = 0 ; iBDTSeparationType < (signed) (Cfg.GetBDTSeparationType())->size() ; ++iBDTSeparationType ) {
-      for( int iBDTnCuts          = 0 ; iBDTnCuts          < (signed) (Cfg.GetBDTnCuts())->size()          ; ++iBDTnCuts          ) {
-      for( int iBDTPruneMethod    = 0 ; iBDTPruneMethod    < (signed) (Cfg.GetBDTPruneMethod())->size()    ; ++iBDTPruneMethod    ) {
-      for( int iBDTPruneStrength  = 0 ; iBDTPruneStrength  < (signed) (Cfg.GetBDTPruneStrength())->size()  ; ++iBDTPruneStrength  ) {
+      for( int iBDTNTrees             = 0 ; iBDTNTrees              < (signed) (Cfg.GetBDTNTrees())->size()              ; ++iBDTNTrees              ) {
+      for( int iBDTBoostType          = 0 ; iBDTBoostType           < (signed) (Cfg.GetBDTBoostType())->size()           ; ++iBDTBoostType           ) {
+//      for( int iBDTAdaBoostR2Loss     = 0 ; iBDTAdaBoostR2Loss      < (signed) (Cfg.GetBDTAdaBoostR2Loss())->size()      ; ++iBDTAdaBoostR2Loss      ) {
+      for( int iBDTUseBaggedGrad      = 0 ; iBDTUseBaggedGrad       < (signed) (Cfg.GetBDTUseBaggedGrad())->size()       ; ++iBDTUseBaggedGrad       ) {
+      for( int iBDTGradBaggingFraction= 0 ; iBDTGradBaggingFraction < (signed) (Cfg.GetBDTGradBaggingFraction())->size() ; ++iBDTGradBaggingFraction ) {
+      for( int iBDTShrinkage          = 0 ; iBDTShrinkage           < (signed) (Cfg.GetBDTShrinkage())->size()           ; ++iBDTShrinkage           ) {
+      for( int iBDTSeparationType     = 0 ; iBDTSeparationType      < (signed) (Cfg.GetBDTSeparationType())->size()      ; ++iBDTSeparationType      ) {
+      for( int iBDTnCuts              = 0 ; iBDTnCuts               < (signed) (Cfg.GetBDTnCuts())->size()               ; ++iBDTnCuts               ) {
+      for( int iBDTPruneMethod        = 0 ; iBDTPruneMethod         < (signed) (Cfg.GetBDTPruneMethod())->size()         ; ++iBDTPruneMethod         ) {
+      for( int iBDTPruneStrength      = 0 ; iBDTPruneStrength       < (signed) (Cfg.GetBDTPruneStrength())->size()       ; ++iBDTPruneStrength       ) {
+      for( int iBDTNNodesMax          = 0 ; iBDTNNodesMax           < (signed) (Cfg.GetBDTNNodesMax())->size()           ; ++iBDTNNodesMax           ) {
+
+
 
         // Build Name
         ostringstream Name;
         Name << Cfg.GetBDTNTrees()->at(iBDTNTrees) << "Trees_" ;
         Name << Cfg.GetBDTBoostType()->at(iBDTBoostType) << "_" ;
+        if ( Cfg.GetBDTBoostType()->at(iBDTBoostType) == "Grad" ) {
+         Name << Cfg.GetBDTUseBaggedGrad()->at(iBDTUseBaggedGrad) << "Bagged_" ;
+         Name << Cfg.GetBDTGradBaggingFraction()->at(iBDTGradBaggingFraction) << "BagFrac_" ;
+         Name << Cfg.GetBDTShrinkage()->at(iBDTShrinkage) << "BagShrink_" ;
+        }
         Name << Cfg.GetBDTSeparationType()->at(iBDTSeparationType) << "_" ;
         Name << Cfg.GetBDTnCuts()->at(iBDTnCuts) << "Cuts_" ;
         Name << Cfg.GetBDTPruneMethod()->at(iBDTPruneMethod) << "_" ;
         Name << Cfg.GetBDTPruneStrength()->at(iBDTPruneStrength) << "PruneStrength_" ;
+        Name << Cfg.GetBDTNNodesMax()->at(iBDTNNodesMax) << "NodesMax_" ;
         Name << nVarMax << "Var" ;
         // Read
         vUASummary.push_back (new UATmvaSummary_t(Cfg.GetTmvaName(),MethodName,Name.str(), Cfg , 0 ));
 
       } // BDTNTrees
       } // BDTBoostType
+//      } // BDTAdaBoostR2Loss
+      } // BDTUseBaggedGrad
+      } // BDTGradBaggingFraction
+      } // BDTShrinkage
       } // BDTSeparationType
       } // BDTnCuts
       } // BDTPruneMethod
       } // BDTPruneStrength
+      } // BDTNNodesMax
+
     }
 
   } // Variables
@@ -973,7 +1038,7 @@ void UATmvaSummary::PrintYields ( int iUAS , int iOptim ) {
   vector<Double_t>  Background ;
   vector<Double_t>  EStatBkgd ;
 
-  int iBin = vUASummary.at(iUAS)->Bin->GetBinContent(iOptim)  ;
+  int iBin = (int) vUASummary.at(iUAS)->Bin->GetBinContent(iOptim)  ;
   Data    =  vUASummary.at(iUAS)->DCut->IntegralAndError(iBin,vUASummary.at(iUAS)->DCut->GetNbinsX(),EStatData);
   Signal  =  vUASummary.at(iUAS)->SCut->IntegralAndError(iBin,vUASummary.at(iUAS)->SCut->GetNbinsX(),EStatSignal);
   BkgdTot =  vUASummary.at(iUAS)->BCutAll->IntegralAndError(iBin,vUASummary.at(iUAS)->BCutAll->GetNbinsX(),EStatBkgdTot);
