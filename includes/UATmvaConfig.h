@@ -12,7 +12,7 @@ class InputData_t {
   InputData_t(){;}
   virtual ~InputData_t(){;}
   //Int_t   IsOpen    ;
-  TString NickName  ;
+  string NickName  ;
   TString FileName  ;
   Bool_t  SigTrain  ;
   Bool_t  BkgdTrain ;
@@ -24,7 +24,7 @@ class InputData_t {
 
 class PlotGroup_t {
   public:
-  TString          PlotGroupName   ;
+  string           PlotGroupName   ;
   Int_t            PlotGroupColor  ;
   vector<TString>  PlotGroupMember ;
 };
@@ -62,6 +62,15 @@ class CutBased_t {
   Int_t  Bin      ;
 };
 
+class Systematic_t {
+  public:
+  string systName ;
+  string systType ;
+  float  systVal  ;
+  vector <string> systMember ;
+};
+
+
 class UATmvaConfig {
 
   private:
@@ -85,10 +94,16 @@ class UATmvaConfig {
   // TMVA Method:
 
   TString              TmvaType    ;  
+  Bool_t               TmvaOptim   ;
+  vector<string>       TmvaVarTrans; 
   string               TmvaWeight  ;    
   vector<InputVar_t>   TmvaVar     ;
   string               TmvaPreCut  ;  
   Int_t                TmvaVarNumRemove    ;
+
+  // TMVA Cut Specific
+
+  string               CUTOptions  ;
   
   // TMVA ANN Specific
   
@@ -136,6 +151,9 @@ class UATmvaConfig {
   vector<PlotGroup_t>  PlotGroup ;
   vector<CtrlPlot_t>   CtrlPlot  ;
 
+  // Systematics
+  vector<Systematic_t> Systematic;
+
   public:
  
   UATmvaConfig(){ Reset() ; InitDone = false ; }  
@@ -159,10 +177,14 @@ class UATmvaConfig {
   vector<InputVar_t>*  GetInputVar()       { return &InputVar     ; }
  
   TString              GetTmvaType()       { return TmvaType      ; }
+  Bool_t               GetTmvaOptim()      { return TmvaOptim     ; } 
+  vector<string>*      GetTmvaVarTrans()   { return &TmvaVarTrans ; }
   string               GetTmvaWeight()     { return TmvaWeight    ; }
   vector<InputVar_t>*  GetTmvaVar()        { return &TmvaVar      ; }
   string               GetTmvaPreCut()     { return TmvaPreCut    ; }
   Int_t                GetTmvaVarNumRemove()   { return TmvaVarNumRemove   ; }
+
+  string               GetCUTOptions()         {return  CUTOptions ; }
 
   Int_t                GetANNCycles()          { return ANNCycles          ; }
   Int_t                GetANNVarNumRemove()    { return TmvaVarNumRemove   ; }
@@ -200,6 +222,8 @@ class UATmvaConfig {
   vector<TargetLumi_t>*  GetTargetLumi()       { return &TargetLumi ; }
   vector<PlotGroup_t>*   GetPlotGroup()        { return &PlotGroup  ; }     
   vector<CtrlPlot_t>*    GetCtrlPlot()         { return &CtrlPlot  ; }     
+
+  vector<Systematic_t>*  GetSystematic()       { return &Systematic ; }
 
 };
 

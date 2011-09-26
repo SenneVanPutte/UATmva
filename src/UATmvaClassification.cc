@@ -10,6 +10,7 @@
 
 void UATmvaClassification::Do( UATmvaConfig& Cfg, UATmvaTree& T) {
 
+   if ( Cfg.GetTmvaType() == "CUT" )    DoCUT(Cfg,T);
    if ( Cfg.GetTmvaType() == "ANN" )    DoMLP(Cfg,T);
    if ( Cfg.GetTmvaType() == "BDT" )    DoBDT(Cfg,T);
    if ( Cfg.GetTmvaType() == "LH" )     DoLH(Cfg,T);
@@ -32,11 +33,14 @@ void UATmvaClassification::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
      // Build Name
      ostringstream Name;
      Name << Cfg.GetTmvaName() << "_MLP_" << nHLayers << "Layers_" << nHNodes << "Nodes_" << nVarMax << "Var" ;
+     if (Cfg.GetTmvaOptim()) Name << "_Optim" ;
      NAME =  Name.str();
+
 
      // Create ethod Options
      ostringstream Method;
-     Method << "H:!V:NeuronType=tanh:VarTransform=N:NCycles=" << Cfg.GetANNCycles() << ":HiddenLayers=" ;
+     //Method << "H:!V:NeuronType=tanh:VarTransform=N:NCycles=" << Cfg.GetANNCycles() << ":HiddenLayers=" ;
+     Method << "H:!V:NeuronType=tanh:NCycles=" << Cfg.GetANNCycles() << ":HiddenLayers=" ;
      for ( Int_t iHLayer = 1 ; iHLayer <= nHLayers ; ++iHLayer ) {
        Method << "N+" << nHNodes ; 
        if ( iHLayer != nHLayers ) Method << "," ;
@@ -90,6 +94,7 @@ void UATmvaClassification::DoBDT( UATmvaConfig& Cfg, UATmvaTree& T) {
      Name << Cfg.GetBDTPruneStrength()->at(iBDTPruneStrength) << "PruneStrength_" ;
      Name << Cfg.GetBDTNNodesMax()->at(iBDTNNodesMax) << "NodesMax_" ;
      Name << nVarMax << "Var" ;    
+     if (Cfg.GetTmvaOptim()) Name << "_Optim" ;
      NAME =  Name.str();
 
      // Create ethod Options
@@ -166,7 +171,7 @@ void UATmvaClassification::DoPDERS( UATmvaConfig& Cfg, UATmvaTree& T) {
 
      // Create Method Options
      ostringstream Method;
-     Method << "H:!V" ;
+     Method << "H:!V:VolumeRangeMode=RMS" ;
 
      // Create and Train MVA
      Train(Cfg,T,Name.str(),Method.str(),nVarMax);
@@ -191,7 +196,8 @@ void UATmvaClassification::DoPDEFoam( UATmvaConfig& Cfg, UATmvaTree& T) {
 
      // Create Method Options
      ostringstream Method;
-     Method << "H:!V" ;
+     //Method << "H:!V" ;
+     Method << "H:!V:SigBgSeparate=F:TailCut=0.001:VolFrac=0.5333:nActiveCells=500:nSampl=100:nBin=5:Nmin=100:Kernel=None:Compress=T" ;
 
      // Create and Train MVA
      Train(Cfg,T,Name.str(),Method.str(),nVarMax);
@@ -202,6 +208,32 @@ void UATmvaClassification::DoPDEFoam( UATmvaConfig& Cfg, UATmvaTree& T) {
    } // Variables
 
 }
+
+void UATmvaClassification::DoCUT( UATmvaConfig& Cfg, UATmvaTree& T) {
+
+   for (Int_t nVarRem  = 0 ; nVarRem <= Cfg.GetTmvaVarNumRemove() ; ++nVarRem) {
+   Int_t nVarMax = (Cfg.GetTmvaVar())->size() - nVarRem ;
+
+     // Build Name
+     ostringstream Name;
+     Name << Cfg.GetTmvaName() << "_CUT_" << nVarMax << "Var" ;
+     NAME =  Name.str();
+
+     // Create Method Options
+     ostringstream Method;
+     //Method << "H:!V" ;
+     Method << "H:!V:" << Cfg.GetCUTOptions() ;
+
+     // Create and Train MVA
+     Train(Cfg,T,Name.str(),Method.str(),nVarMax);
+
+     // Making some basic plots
+     Plot(0);
+
+   } // Variables
+
+}
+
 
 
 
@@ -251,14 +283,25 @@ void UATmvaClassification::Train(UATmvaConfig& Cfg, UATmvaTree& T , string Name 
      UAFactory->TmvaFactory->PrepareTrainingAndTestTree(Cut,"");
   
      // BookMethod
-     if ( Cfg.GetTmvaType() == "ANN" )  UAFactory->TmvaFactory->BookMethod( TMVA::Types::kMLP,        UAFactory->TmvaName , Method );
-     if ( Cfg.GetTmvaType() == "BDT" )  UAFactory->TmvaFactory->BookMethod( TMVA::Types::kBDT,        UAFactory->TmvaName , Method );
-     if ( Cfg.GetTmvaType() == "LH"  )  UAFactory->TmvaFactory->BookMethod( TMVA::Types::kLikelihood, UAFactory->TmvaName , Method );
-     if ( Cfg.GetTmvaType() == "PDERS") UAFactory->TmvaFactory->BookMethod( TMVA::Types::kPDERS     , UAFactory->TmvaName , Method );
+     string VarTrans = "";
+     if  ( (Cfg.GetTmvaVarTrans())->size() > 0 ) VarTrans = ":VarTransform=";
+     for ( int i = 0 ; i < (signed) (Cfg.GetTmvaVarTrans())->size() ; ++i ) {
+       VarTrans += (Cfg.GetTmvaVarTrans())->at(i) ;
+       if ( i+1 < (signed) (Cfg.GetTmvaVarTrans())->size() ) VarTrans += ";" ; 
+     } 
+     if  ( (Cfg.GetTmvaVarTrans())->size() > 0 ) Method += VarTrans ;
+
+     if ( Cfg.GetTmvaType() == "CUT" )    UAFactory->TmvaFactory->BookMethod( TMVA::Types::kCuts      , UAFactory->TmvaName , Method );
+     if ( Cfg.GetTmvaType() == "ANN" )    UAFactory->TmvaFactory->BookMethod( TMVA::Types::kMLP       , UAFactory->TmvaName , Method );
+     if ( Cfg.GetTmvaType() == "BDT" )    UAFactory->TmvaFactory->BookMethod( TMVA::Types::kBDT       , UAFactory->TmvaName , Method );
+     if ( Cfg.GetTmvaType() == "LH"  )    UAFactory->TmvaFactory->BookMethod( TMVA::Types::kLikelihood, UAFactory->TmvaName , Method );
+     if ( Cfg.GetTmvaType() == "PDERS")   UAFactory->TmvaFactory->BookMethod( TMVA::Types::kPDERS     , UAFactory->TmvaName , Method );
      if ( Cfg.GetTmvaType() == "PDEFoam") UAFactory->TmvaFactory->BookMethod( TMVA::Types::kPDEFoam   , UAFactory->TmvaName , Method );
 
+     // Tmva Optimisation
+     if (Cfg.GetTmvaOptim()) UAFactory->TmvaFactory->OptimizeAllMethods();
+
      // Train , Test, Validate
-     //UAFactory->TmvaFactory->OptimizeAllMethods();
      UAFactory->TmvaFactory->TrainAllMethods(); 
      UAFactory->TmvaFactory->TestAllMethods();
      UAFactory->TmvaFactory->EvaluateAllMethods();

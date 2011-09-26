@@ -11,6 +11,7 @@
 
 void UATmvaReader::Do( UATmvaConfig& Cfg, UATmvaTree& T) {
 
+   if ( Cfg.GetTmvaType() == "CUT" ) DoCUT(Cfg,T);
    if ( Cfg.GetTmvaType() == "ANN" ) DoMLP(Cfg,T);
    if ( Cfg.GetTmvaType() == "BDT" ) DoBDT(Cfg,T);
    if ( Cfg.GetTmvaType() == "LH"  ) DoLH (Cfg,T);
@@ -32,6 +33,7 @@ void UATmvaReader::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
      // Build Name
      ostringstream Name;
      Name << Cfg.GetTmvaName() << "_MLP_" << nHLayers << "Layers_" << nHNodes << "Nodes_" << nVarMax << "Var" ;
+     if (Cfg.GetTmvaOptim()) Name << "_Optim" ;
      NAME =  Name.str();
 
      Read(Cfg,T,Name.str(),nVarMax,iLumi) ;
@@ -79,6 +81,7 @@ void UATmvaReader::DoBDT( UATmvaConfig& Cfg, UATmvaTree& T) {
      Name << Cfg.GetBDTPruneStrength()->at(iBDTPruneStrength) << "PruneStrength_" ;
      Name << Cfg.GetBDTNNodesMax()->at(iBDTNNodesMax) << "NodesMax_" ;
      Name << nVarMax << "Var" ;
+     if (Cfg.GetTmvaOptim()) Name << "_Optim" ;
      NAME =  Name.str();
 
      Read(Cfg,T,Name.str(),nVarMax,iLumi) ;
@@ -139,6 +142,26 @@ void UATmvaReader::DoPDERS( UATmvaConfig& Cfg, UATmvaTree& T) {
    } // TargetLumi
 
 }
+
+void UATmvaReader::DoCUT( UATmvaConfig& Cfg, UATmvaTree& T) {
+
+   for (Int_t iLumi    = 0 ; iLumi   < (signed) Cfg.GetTargetLumi()->size() ; ++iLumi  ) {
+   for (Int_t nVarRem  = 0 ; nVarRem <= Cfg.GetANNVarNumRemove()   ; ++nVarRem) {
+   Int_t nVarMax = (Cfg.GetTmvaVar())->size() - nVarRem ;
+
+
+     // Build Name
+     ostringstream Name;
+     Name << Cfg.GetTmvaName() << "_CUT_" << nVarMax << "Var" ;
+     NAME =  Name.str();
+
+     Read(Cfg,T,Name.str(),nVarMax,iLumi) ;
+
+   } // Variables
+   } // TargetLumi
+
+}
+
 
 void UATmvaReader::DoPDEFoam( UATmvaConfig& Cfg, UATmvaTree& T) {
 
@@ -289,7 +312,7 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
        BgWeight *= LumiScale;
        cout << "------> DaWeight= " << DaWeight << " SgWeight= " << SgWeight << " BgWeight= " << BgWeight << endl;
        // File MVA Response
-       TH1D* hMVA = new TH1D (iD->NickName,iD->NickName,nbins,minBin,maxBin) ;
+       TH1D* hMVA = new TH1D ((iD->NickName).c_str(),(iD->NickName).c_str(),nbins,minBin,maxBin) ;
        vector<TH1F*> hCtrl ;
        for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) {
          TString HistName = iD->NickName+"_"+Cfg.GetCtrlPlot()->at(iP).VarName ;

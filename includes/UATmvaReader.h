@@ -52,6 +52,7 @@ class UATmvaReader {
 
   private:
 
+  void DoCUT ( UATmvaConfig&, UATmvaTree&);
   void DoMLP ( UATmvaConfig&, UATmvaTree&);
   void DoBDT ( UATmvaConfig&, UATmvaTree&);
   void DoLH  ( UATmvaConfig&, UATmvaTree&);

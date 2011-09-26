@@ -42,6 +42,7 @@ class UATmvaClassification {
   Bool_t IsInit() { return InitDone ; }
 
   void Do      ( UATmvaConfig&, UATmvaTree&);
+  void DoCUT   ( UATmvaConfig&, UATmvaTree&);
   void DoMLP   ( UATmvaConfig&, UATmvaTree&);
   void DoBDT   ( UATmvaConfig&, UATmvaTree&);
   void DoLH    ( UATmvaConfig&, UATmvaTree&);

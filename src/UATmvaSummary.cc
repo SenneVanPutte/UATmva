@@ -178,6 +178,43 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   TH1D* BCutTr_   = (TH1D*) File->Get(TSDirectory+"/BkgdTrain");
   TH1D* BCutAll_  = (TH1D*) File->Get(TSDirectory+"/BkgdTot");
 
+
+  vector <TH1D*>  vSCut_ ;
+//  if ( Cfg.GetPlotGroup()->size() == 0 ) {
+    for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+      if (iD->SigTrain) {
+        vSName.push_back(iD->NickName);
+        vSCut_.push_back( (TH1D*) ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName))->Clone() ) ;
+//         (vSCut_.at(0))->Draw();
+      } 
+    } 
+/*
+  } else {
+    for ( vector<PlotGroup_t>::iterator iG = (Cfg.GetPlotGroup())->begin() ; iG != (Cfg.GetPlotGroup())->end() ; ++iG) {
+      bool iSSignal = false ;
+      for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+        if ( iG->PlotGroupMember.at(0) == iD->NickName ) iSSignal = iD->SigTrain ;
+      }
+      if ( iSSignal ) {
+        vSName.push_back(iG->PlotGroupName) ;
+        TH1D* iGHist = NULL ;
+        for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+          if ( iG->PlotGroupMember.at(0) == iD->NickName ) iGHist = (TH1D*) ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName))->Clone()  ;
+        }
+        for ( int iGM=1 ; iGM < (signed) iG->PlotGroupMember.size() ; ++iGM ) {
+          for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+            if ( iG->PlotGroupMember.at(iGM) == iD->NickName ) iGHist->Add ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName));
+          }
+        }
+        if ( iGHist != NULL ) {
+          vSCut_.push_back( (TH1D*) iGHist->Clone() ) ;
+          delete iGHist ;
+        }
+      }  
+    }
+  }
+*/
+
   vector <TH1D*>  vBCut_ ;
   if ( Cfg.GetPlotGroup()->size() == 0 ) {
     for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
@@ -188,20 +225,26 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
     } 
   } else {
     for ( vector<PlotGroup_t>::iterator iG = (Cfg.GetPlotGroup())->begin() ; iG != (Cfg.GetPlotGroup())->end() ; ++iG) {
-      vBName.push_back(iG->PlotGroupName) ;
-      TH1D* iGHist = NULL ;
+      bool iSBkgd = false ;
       for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
-        if ( iG->PlotGroupMember.at(0) == iD->NickName ) iGHist = (TH1D*) ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName))->Clone()  ;
+        if ( iG->PlotGroupMember.at(0) == iD->NickName ) iSBkgd = iD->BkgdData ;
       }
-      for ( int iGM=1 ; iGM < (signed) iG->PlotGroupMember.size() ; ++iGM ) {
+      if ( iSBkgd ) {
+        vBName.push_back(iG->PlotGroupName) ;
+        TH1D* iGHist = NULL ;
         for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
-          if ( iG->PlotGroupMember.at(iGM) == iD->NickName ) iGHist->Add ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName));
+          if ( iG->PlotGroupMember.at(0) == iD->NickName ) iGHist = (TH1D*) ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName))->Clone()  ;
         }
+        for ( int iGM=1 ; iGM < (signed) iG->PlotGroupMember.size() ; ++iGM ) {
+          for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+            if ( iG->PlotGroupMember.at(iGM) == iD->NickName ) iGHist->Add ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName));
+          }
+        }
+        if ( iGHist != NULL ) {
+          vBCut_.push_back( (TH1D*) iGHist->Clone() ) ;
+          delete iGHist ;
+        } 
       }
-      if ( iGHist != NULL ) {
-        vBCut_.push_back( (TH1D*) iGHist->Clone() ) ;
-        delete iGHist ;
-      } 
     }
   }
 
@@ -252,7 +295,9 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   SCut     = (TH1D*) SCut_    ->Clone() ;
   BCutTr   = (TH1D*) BCutTr_  ->Clone() ;
   BCutAll  = (TH1D*) BCutAll_ ->Clone();
+  for ( int iD = 0 ; iD < (signed) vSCut_.size() ; ++iD ) vSCut.push_back( (TH1D*) vSCut_.at(iD)->Clone() ) ;
   for ( int iD = 0 ; iD < (signed) vBCut_.size() ; ++iD ) vBCut.push_back( (TH1D*) vBCut_.at(iD)->Clone() ) ;
+
 
   cout << "[UATmvaSummary_t] Copying S/B & Limit optim hist" << endl;
   SignCutTr   = (TH1D*) SignCutTr_   ->Clone() ;
@@ -293,6 +338,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   SetGoodAxis(SCut)   ;
   SetGoodAxis(BCutTr) ;
   SetGoodAxis(BCutAll);
+  for ( int iD = 0 ; iD < (signed) vSCut.size() ; ++iD ) SetGoodAxis(vSCut.at(iD));
   for ( int iD = 0 ; iD < (signed) vBCut.size() ; ++iD ) SetGoodAxis(vBCut.at(iD));
 
   SetGoodAxis(SignCutTr)  ;
@@ -335,7 +381,9 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   delete SCut_    ;
   delete BCutTr_  ;
   delete BCutAll_ ;
+  for ( int iD = 0 ; iD < (signed) vSCut.size() ; ++iD ) delete vSCut_.at(iD);
   for ( int iD = 0 ; iD < (signed) vBCut.size() ; ++iD ) delete vBCut_.at(iD);
+  vSCut_.clear();
   vBCut_.clear();
 
   delete SignCutTr_   ;
@@ -355,6 +403,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   File->Close();
   delete File;
   
+  // (vSCut.at(0))->DrawCopy();
 }
 
 
@@ -388,8 +437,11 @@ UATmvaSummary_t::~UATmvaSummary_t(){
   delete SCut   ;
   delete BCutTr ;
   delete BCutAll;
+  for ( int iD = 0 ; iD < (signed) vSCut.size() ; ++iD ) delete vSCut.at(iD);
   for ( int iD = 0 ; iD < (signed) vBCut.size() ; ++iD ) delete vBCut.at(iD);
+  vSCut.clear();
   vBCut.clear();
+  vSName.clear();
   vBName.clear();
 
 
@@ -461,6 +513,7 @@ void UATmvaSummary::Init( UATmvaConfig& Cfg ) {
          // Build Name
          ostringstream Name;
          Name << nHLayers << "Layers_" << nHNodes << "Nodes_" << nVarMax << "Var" ;
+         if (Cfg.GetTmvaOptim()) Name << "_Optim" ;
          // Read
          vUASummary.push_back (new UATmvaSummary_t(Cfg.GetTmvaName(),MethodName,Name.str(), Cfg , 0 ));
       } // Nodes
@@ -497,6 +550,7 @@ void UATmvaSummary::Init( UATmvaConfig& Cfg ) {
         Name << Cfg.GetBDTPruneStrength()->at(iBDTPruneStrength) << "PruneStrength_" ;
         Name << Cfg.GetBDTNNodesMax()->at(iBDTNNodesMax) << "NodesMax_" ;
         Name << nVarMax << "Var" ;
+        if (Cfg.GetTmvaOptim()) Name << "_Optim" ;
         // Read
         vUASummary.push_back (new UATmvaSummary_t(Cfg.GetTmvaName(),MethodName,Name.str(), Cfg , 0 ));
 
@@ -775,7 +829,7 @@ void UATmvaSummary::PlotStack( TH1F* hData , TH1F* hSign , vector<TH1F*> vBkgd ,
    Legend->SetTextSize(0.04);
    Legend->AddEntry( hData , "Data  " , "p");
    Legend->AddEntry( hSign , "Signal" , "l");
-   for (int iD=0 ; iD < (signed) vStack.size()  ; ++iD ) Legend->AddEntry( vStack.at(iD) , vUASummary.at(iUAS)->vBName.at(iD) , "f");
+   for (int iD=0 ; iD < (signed) vStack.size()  ; ++iD ) Legend->AddEntry( vStack.at(iD) , (vUASummary.at(iUAS)->vBName.at(iD)).c_str() , "f");
    Legend->Draw("same");
 
 }
@@ -821,7 +875,7 @@ void UATmvaSummary::PlotMVAStack(int iUAS ){
    vector<TH1D*> vStack;
    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) {
      cout << vUASummary.at(iUAS)->vBName.at(iD) << " = " ;
-     TH1D* iStack = (TH1D*) vUASummary.at(iUAS)->vBCut.at(iD)->Clone("s"+vUASummary.at(iUAS)->vBName.at(iD));
+     TH1D* iStack = (TH1D*) vUASummary.at(iUAS)->vBCut.at(iD)->Clone(("s"+vUASummary.at(iUAS)->vBName.at(iD)).c_str());
      for (int iD2Sum=iD+1 ; iD2Sum < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD2Sum ) {
         cout << vUASummary.at(iUAS)->vBName.at(iD2Sum) << " + " ;
        iStack->Add(vUASummary.at(iUAS)->vBCut.at(iD2Sum));
@@ -871,7 +925,7 @@ void UATmvaSummary::PlotMVAStack(int iUAS ){
    Legend->SetTextSize(0.04);
    Legend->AddEntry( vUASummary.at(iUAS)->DCut   , "Data  " , "p");
    Legend->AddEntry( vUASummary.at(iUAS)->SCut   , "Signal" , "l");
-   for (int iD=0 ; iD < (signed) vStack.size()  ; ++iD ) Legend->AddEntry( vStack.at(iD) , vUASummary.at(iUAS)->vBName.at(iD) , "f");
+   for (int iD=0 ; iD < (signed) vStack.size()  ; ++iD ) Legend->AddEntry( vStack.at(iD) , (vUASummary.at(iUAS)->vBName.at(iD)).c_str() , "f");
    Legend->Draw("same");
 
    //gPad->WaitPrimitive();
@@ -1055,3 +1109,118 @@ void UATmvaSummary::PrintYields ( int iUAS , int iOptim ) {
   }
 
 }
+
+// --------------------------- LimitCard ()
+
+void UATmvaSummary::LimitCard ( UATmvaConfig& Cfg ) {
+
+
+  string LimitCardName ; 
+
+  Double_t Data   , eStatData   ;  
+  vector<Double_t>  Signal ;
+  vector<Double_t>  eStatSignal ;
+  vector<Double_t>  Background ;
+  vector<Double_t>  eStatBkgd ;
+
+  vector<string> Proc;
+
+  // Select Best MVA 
+
+  int iOptim = 9 ;
+  int iUAS   = GetBestLimitMVAID() ;
+
+  // Cut Based MVA  
+
+  int iBin = (int) vUASummary.at(iUAS)->Bin->GetBinContent(iOptim)  ;
+  Data     =  vUASummary.at(iUAS)->DCut->IntegralAndError(iBin,vUASummary.at(iUAS)->DCut->GetNbinsX(),eStatData); 
+
+  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) {
+    Proc.push_back((vUASummary.at(iUAS)->vSName.at(iD)).c_str());
+    Double_t EStat;
+    Signal.push_back( vUASummary.at(iUAS)->vSCut.at(iD)->IntegralAndError(iBin,vUASummary.at(iUAS)->vSCut.at(iD)->GetNbinsX(),EStat) );
+    eStatSignal.push_back(EStat);
+  }          
+
+  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) {
+    Proc.push_back((vUASummary.at(iUAS)->vBName.at(iD)).c_str());
+    Double_t EStat;
+    Background.push_back( vUASummary.at(iUAS)->vBCut.at(iD)->IntegralAndError(iBin,vUASummary.at(iUAS)->vBCut.at(iD)->GetNbinsX(),EStat) );
+    eStatBkgd.push_back(EStat);
+  }          
+
+  LimitCardName = "LimitCards/" + vUASummary.at(iUAS)->TmvaName + "__MVACut.card" ;  
+
+  FILE *cFile; 
+  cFile = fopen (LimitCardName.c_str(),"w");
+
+  fprintf (cFile,"imax 1 number of channels\n"); 
+  fprintf (cFile,"jmax * number of background\n");
+  fprintf (cFile,"kmax * number of nuisance parameters\n");
+  fprintf (cFile,"Observation %-9.3f \n",Data);
+  fprintf (cFile,"bin ");
+  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) fprintf (cFile,"1 ") ; 
+  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) fprintf (cFile,"1 ") ; 
+  fprintf (cFile,"\n") ; 
+  fprintf (cFile,"process ") ; 
+  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) fprintf (cFile,"%s ", (vUASummary.at(iUAS)->vSName.at(iD)).c_str() ) ;
+  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) fprintf (cFile,"%s ", (vUASummary.at(iUAS)->vBName.at(iD)).c_str() ) ;
+  fprintf (cFile,"\n") ;
+  fprintf (cFile,"process ");
+  for (int iD=1 ; iD <= (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) fprintf (cFile,"%i ", - (signed) vUASummary.at(iUAS)->vSCut.size() + iD );
+  for (int iD=1 ; iD <= (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) fprintf (cFile,"%i ",iD);
+  fprintf (cFile,"\n") ;
+  fprintf (cFile,"rate ") ; 
+  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) fprintf (cFile,"%-9.3f ",Signal.at(iD)) ;
+  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) fprintf (cFile,"%-9.3f ",Background.at(iD)) ;
+  fprintf (cFile,"\n") ; 
+  // ... Syst Errors
+  for ( vector<Systematic_t>::iterator itSyst = (Cfg.GetSystematic())->begin() ; itSyst != (Cfg.GetSystematic())->end() ; ++ itSyst ) {
+    fprintf (cFile,"%-25s %-5s ",(itSyst->systName).c_str(),(itSyst->systType).c_str());
+    for ( vector<string>::iterator itProc =  Proc.begin() ; itProc != Proc.end() ; ++itProc) {
+      bool pFound = false ;
+      for ( vector<string>::iterator itSM  = (itSyst->systMember).begin() ; itSM != (itSyst->systMember).end() ; ++itSM ) {
+        if ( (*itSM) == (*itProc) )  pFound = true ;
+      }
+      if ( pFound )  fprintf (cFile,"%-5.3f ",itSyst->systVal);
+      else           fprintf (cFile,"  -   "); 
+    }
+    fprintf (cFile,"\n") ; 
+  }
+  // ... Stat Errors
+  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) {
+    double eStaRel = 1. ;
+    if (Signal.at(iD)>0.) eStaRel += eStatSignal.at(iD) / Signal.at(iD) ;
+    string statName = "stat_" + vUASummary.at(iUAS)->vSName.at(iD);  
+    string statType = "lnN" ;   
+    fprintf (cFile,"%-25s %-5s ",statName.c_str() , statType.c_str() ) ; 
+    for ( vector<string>::iterator itProc =  Proc.begin() ; itProc != Proc.end() ; ++itProc) {
+      if ( (vUASummary.at(iUAS)->vSName.at(iD)) == (*itProc) ) fprintf (cFile,"%-5.3f ",eStaRel) ;
+      else                                                   fprintf (cFile,"  -   "); 
+    }
+    fprintf (cFile,"\n") ;
+  }
+
+  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) {
+    double eStaRel = 1. ;
+    if (Background.at(iD)>0.) eStaRel += eStatBkgd.at(iD) / Background.at(iD) ;
+    string statName = "stat_" + vUASummary.at(iUAS)->vBName.at(iD);  
+    string statType = "lnN" ;   
+    fprintf (cFile,"%-25s %-5s ",statName.c_str() , statType.c_str() ) ; 
+    for ( vector<string>::iterator itProc =  Proc.begin() ; itProc != Proc.end() ; ++itProc) {
+      if ( (vUASummary.at(iUAS)->vBName.at(iD)) == (*itProc) ) fprintf (cFile,"%-5.3f ",eStaRel) ;
+      else                                                   fprintf (cFile,"  -   "); 
+    }
+    fprintf (cFile,"\n") ;
+  }
+
+  fclose(cFile);
+
+  // Shape Based MVA
+
+
+
+  return ;
+}
+
+

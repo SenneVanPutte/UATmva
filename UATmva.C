@@ -15,6 +15,7 @@
   B = Print MVA summary and Yields for best one
   P = Inpect MVA plots
   C = Plot Input Variables Control Plots 
+  L = Prepare Limit Input Cards
 
 */
 
@@ -49,7 +50,8 @@ void UATmva(TString Cfg = "Config.cfg" , TString Steps = "TRS" ){
        || Steps.Contains ('Y') 
        || Steps.Contains ('B') 
        || Steps.Contains ('C') 
-       || Steps.Contains ('P') ) {
+       || Steps.Contains ('P') 
+       || Steps.Contains ('L') ) {
     UATmvaSummary Summary;
     Summary.Init(Config);
     if ( Steps.Contains ('S') ) Summary.Print();
@@ -57,6 +59,7 @@ void UATmva(TString Cfg = "Config.cfg" , TString Steps = "TRS" ){
     if ( Steps.Contains ('B') ) Summary.BestMVA();
     if ( Steps.Contains ('C') ) Summary.CPlots();
     if ( Steps.Contains ('P') ) Summary.Plots();
+    if ( Steps.Contains ('L') ) Summary.LimitCard(Config);
   }
 
 }

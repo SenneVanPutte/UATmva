@@ -45,8 +45,10 @@ class UATmvaSummary_t {
   TH1D*               SCut   ;
   TH1D*               BCutTr ;
   TH1D*               BCutAll;
+  vector<TH1D*>       vSCut  ;
+  vector<string>      vSName ;
   vector<TH1D*>       vBCut  ;
-  vector<TString>     vBName ;
+  vector<string>      vBName ;
 
   TH1D*               SignCutTr;
   TH1D*               SignCutAll;
@@ -88,6 +90,7 @@ class UATmvaSummary {
   void CPlots();
   void Yields();
   void BestMVA();
+  void LimitCard(  UATmvaConfig&  );
 
   void PlotCorrMtx    ( int , bool = true);
   void PlotEpoch      ( int );

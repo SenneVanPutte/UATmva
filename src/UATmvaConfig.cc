@@ -26,10 +26,14 @@ void UATmvaConfig::Reset(){
   InputVar.clear();
 
   TmvaType           = "ANN" ;
+  TmvaOptim          = false ;
+  TmvaVarTrans.clear();
   TmvaWeight         = "" ;
   TmvaVar.clear();
   TmvaPreCut         = "" ;
   TmvaVarNumRemove   = 0   ;
+
+  CUTOptions         = "" ;
 
   ANNCycles          = 500 ;
   ANNHiddenLayersMin = 1   ;
@@ -77,6 +81,8 @@ void UATmvaConfig::Reset(){
 
   PlotGroup.clear() ;
   CtrlPlot.clear()  ;
+
+  Systematic.clear() ;
 
 }
 
@@ -172,6 +178,14 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
       else UAError("[UATmvaConfig] Wrong TmvaType Input !");
     }
 
+    if ( Elements.at(0) == "TmvaOptim" ) {
+      if   ( Elements.size() == 2 ) TmvaOptim = atoi(Elements.at(1).c_str()) ;
+    }
+
+    if ( Elements.at(0) == "TmvaVarTrans" ) {
+      for ( int i=1 ; i < (signed) Elements.size() ; ++i ) TmvaVarTrans.push_back( Elements.at(i) ) ;
+    }
+
     if ( Elements.at(0) == "TmvaWeight" ) {
       if   ( Elements.size() == 2 ) TmvaWeight = Elements.at(1) ;
       else UAError("[UATmvaConfig] Wrong TmvaWeight Input !");
@@ -191,6 +205,12 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
     if ( Elements.at(0) == "TmvaVarNumRemove") {
       if   ( Elements.size() == 2 ) TmvaVarNumRemove = atoi(Elements.at(1).c_str()) ;
       else UAError("[UATmvaConfig] Wrong TmvaVarNumRemove Input !");
+    }
+
+    // ------------------ CUT Inputs -------------------------
+
+    if ( Elements.at(0) == "CUTOptions") {
+      if   ( Elements.size() == 2 ) CUTOptions = Elements.at(1) ;
     }
 
  
@@ -412,6 +432,18 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
      else UAError("[UATmvaConfig] Wrong TargetLumi Input !");    
    }
 
+
+    // Sytematics
+    if ( Elements.at(0) == "Systematic" ) {
+      Systematic_t Syst ;
+      Syst.systName = Elements.at(1) ;
+      Syst.systType = Elements.at(2) ;
+      Syst.systVal  = atof((Elements.at(3)).c_str()) ;
+      vector<string> Member = UATokenize( Elements.at(4) , ':' );
+      for ( int iM = 0 ; iM < (signed) Member.size() ; ++iM ) (Syst.systMember).push_back(Member.at(iM)) ;
+      Systematic.push_back(Syst);
+    }
+
   }
 
   // Dummy TargetLumi if needed --> 1fb-1
@@ -470,6 +502,11 @@ void UATmvaConfig::Print(){
   }
   cout << "----------------------------------------------------------" << endl;
   cout << "TmvaType    = " << TmvaType << endl;
+  if ( TmvaVarTrans.size() > 0 ) {
+    cout << "TmvaVarTrans : " ;
+    for ( int i = 0 ; i < (signed) TmvaVarTrans.size() ; ++i ) cout << " " << TmvaVarTrans.at(i) ;
+    cout << endl;
+  }
   cout << "TmvaWeight  = " << TmvaWeight << endl;
   for (vector<InputVar_t> ::iterator iVar = TmvaVar.begin() ; iVar != TmvaVar.end() ; ++iVar ) {
      cout << "TmvaVar : " << iVar->VarName << " " << iVar->VarType << " " << iVar->Active << endl;
