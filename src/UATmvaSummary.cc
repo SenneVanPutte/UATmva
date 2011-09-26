@@ -1116,6 +1116,7 @@ void UATmvaSummary::LimitCard ( UATmvaConfig& Cfg ) {
 
 
   string LimitCardName ; 
+  string LimitRootName ; 
 
   Double_t Data   , eStatData   ;  
   vector<Double_t>  Signal ;
@@ -1130,95 +1131,131 @@ void UATmvaSummary::LimitCard ( UATmvaConfig& Cfg ) {
   int iOptim = 9 ;
   int iUAS   = GetBestLimitMVAID() ;
 
-  // Cut Based MVA  
+  // 0: Cut Based MVA / 1: Shape Based MVA 
 
-  int iBin = (int) vUASummary.at(iUAS)->Bin->GetBinContent(iOptim)  ;
-  Data     =  vUASummary.at(iUAS)->DCut->IntegralAndError(iBin,vUASummary.at(iUAS)->DCut->GetNbinsX(),eStatData); 
+  for (int iMethod = 0 ; iMethod < 2 ; ++iMethod ) {
 
-  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) {
-    Proc.push_back((vUASummary.at(iUAS)->vSName.at(iD)).c_str());
-    Double_t EStat;
-    Signal.push_back( vUASummary.at(iUAS)->vSCut.at(iD)->IntegralAndError(iBin,vUASummary.at(iUAS)->vSCut.at(iD)->GetNbinsX(),EStat) );
-    eStatSignal.push_back(EStat);
-  }          
+    int iBin = 1 ;
+    if ( iMethod == 0 ) iBin = (int) vUASummary.at(iUAS)->Bin->GetBinContent(iOptim)  ;
+    Data     =  vUASummary.at(iUAS)->DCut->IntegralAndError(iBin,vUASummary.at(iUAS)->DCut->GetNbinsX(),eStatData); 
 
-  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) {
-    Proc.push_back((vUASummary.at(iUAS)->vBName.at(iD)).c_str());
-    Double_t EStat;
-    Background.push_back( vUASummary.at(iUAS)->vBCut.at(iD)->IntegralAndError(iBin,vUASummary.at(iUAS)->vBCut.at(iD)->GetNbinsX(),EStat) );
-    eStatBkgd.push_back(EStat);
-  }          
+    Proc.clear();
 
-  LimitCardName = "LimitCards/" + vUASummary.at(iUAS)->TmvaName + "__MVACut.card" ;  
+    Signal.clear();
+    eStatSignal.clear();
+    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) {
+      Proc.push_back((vUASummary.at(iUAS)->vSName.at(iD)).c_str());
+      Double_t EStat;
+      Signal.push_back( vUASummary.at(iUAS)->vSCut.at(iD)->IntegralAndError(iBin,vUASummary.at(iUAS)->vSCut.at(iD)->GetNbinsX(),EStat) );
+      eStatSignal.push_back(EStat);
+    }          
 
-  FILE *cFile; 
-  cFile = fopen (LimitCardName.c_str(),"w");
-
-  fprintf (cFile,"imax 1 number of channels\n"); 
-  fprintf (cFile,"jmax * number of background\n");
-  fprintf (cFile,"kmax * number of nuisance parameters\n");
-  fprintf (cFile,"Observation %-9.3f \n",Data);
-  fprintf (cFile,"bin ");
-  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) fprintf (cFile,"1 ") ; 
-  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) fprintf (cFile,"1 ") ; 
-  fprintf (cFile,"\n") ; 
-  fprintf (cFile,"process ") ; 
-  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) fprintf (cFile,"%s ", (vUASummary.at(iUAS)->vSName.at(iD)).c_str() ) ;
-  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) fprintf (cFile,"%s ", (vUASummary.at(iUAS)->vBName.at(iD)).c_str() ) ;
-  fprintf (cFile,"\n") ;
-  fprintf (cFile,"process ");
-  for (int iD=1 ; iD <= (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) fprintf (cFile,"%i ", - (signed) vUASummary.at(iUAS)->vSCut.size() + iD );
-  for (int iD=1 ; iD <= (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) fprintf (cFile,"%i ",iD);
-  fprintf (cFile,"\n") ;
-  fprintf (cFile,"rate ") ; 
-  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) fprintf (cFile,"%-9.3f ",Signal.at(iD)) ;
-  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) fprintf (cFile,"%-9.3f ",Background.at(iD)) ;
-  fprintf (cFile,"\n") ; 
-  // ... Syst Errors
-  for ( vector<Systematic_t>::iterator itSyst = (Cfg.GetSystematic())->begin() ; itSyst != (Cfg.GetSystematic())->end() ; ++ itSyst ) {
-    fprintf (cFile,"%-25s %-5s ",(itSyst->systName).c_str(),(itSyst->systType).c_str());
-    for ( vector<string>::iterator itProc =  Proc.begin() ; itProc != Proc.end() ; ++itProc) {
-      bool pFound = false ;
-      for ( vector<string>::iterator itSM  = (itSyst->systMember).begin() ; itSM != (itSyst->systMember).end() ; ++itSM ) {
-        if ( (*itSM) == (*itProc) )  pFound = true ;
-      }
-      if ( pFound )  fprintf (cFile,"%-5.3f ",itSyst->systVal);
-      else           fprintf (cFile,"  -   "); 
+    Background.clear(); 
+    eStatBkgd.clear();
+    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) {
+      Proc.push_back((vUASummary.at(iUAS)->vBName.at(iD)).c_str());
+      Double_t EStat;
+      Background.push_back( vUASummary.at(iUAS)->vBCut.at(iD)->IntegralAndError(iBin,vUASummary.at(iUAS)->vBCut.at(iD)->GetNbinsX(),EStat) );
+      eStatBkgd.push_back(EStat);
+    }          
+  
+    if ( iMethod == 0 ) LimitCardName = "LimitCards/" + vUASummary.at(iUAS)->TmvaName + "__MVACut.card" ;  
+    if ( iMethod == 1 ) { 
+       LimitCardName = "LimitCards/" + vUASummary.at(iUAS)->TmvaName + "__MVAShape.card" ;  
+       LimitRootName = "LimitCards/" + vUASummary.at(iUAS)->TmvaName + "__MVAShape.root" ;  
     }
+  
+    FILE *cFile; 
+    cFile = fopen (LimitCardName.c_str(),"w");
+  
+    fprintf (cFile,"imax 1 number of channels\n"); 
+    fprintf (cFile,"jmax * number of background\n");
+    fprintf (cFile,"kmax * number of nuisance parameters\n");
+    fprintf (cFile,"Observation %-9.3f \n",Data);
+    if ( iMethod == 1 ) {
+      fprintf (cFile,"shapes *         * %s histo_$PROCESS \n",LimitRootName.c_str());
+      fprintf (cFile,"shapes data_obs  * %s histo_Data\n",LimitRootName.c_str());
+    }
+    fprintf (cFile,"bin ");
+    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) fprintf (cFile,"1 ") ; 
+    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) fprintf (cFile,"1 ") ; 
     fprintf (cFile,"\n") ; 
-  }
-  // ... Stat Errors
-  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) {
-    double eStaRel = 1. ;
-    if (Signal.at(iD)>0.) eStaRel += eStatSignal.at(iD) / Signal.at(iD) ;
-    string statName = "stat_" + vUASummary.at(iUAS)->vSName.at(iD);  
-    string statType = "lnN" ;   
-    fprintf (cFile,"%-25s %-5s ",statName.c_str() , statType.c_str() ) ; 
-    for ( vector<string>::iterator itProc =  Proc.begin() ; itProc != Proc.end() ; ++itProc) {
-      if ( (vUASummary.at(iUAS)->vSName.at(iD)) == (*itProc) ) fprintf (cFile,"%-5.3f ",eStaRel) ;
-      else                                                   fprintf (cFile,"  -   "); 
-    }
+    fprintf (cFile,"process ") ; 
+    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) fprintf (cFile,"%s ", (vUASummary.at(iUAS)->vSName.at(iD)).c_str() ) ;
+    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) fprintf (cFile,"%s ", (vUASummary.at(iUAS)->vBName.at(iD)).c_str() ) ;
     fprintf (cFile,"\n") ;
-  }
-
-  for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) {
-    double eStaRel = 1. ;
-    if (Background.at(iD)>0.) eStaRel += eStatBkgd.at(iD) / Background.at(iD) ;
-    string statName = "stat_" + vUASummary.at(iUAS)->vBName.at(iD);  
-    string statType = "lnN" ;   
-    fprintf (cFile,"%-25s %-5s ",statName.c_str() , statType.c_str() ) ; 
-    for ( vector<string>::iterator itProc =  Proc.begin() ; itProc != Proc.end() ; ++itProc) {
-      if ( (vUASummary.at(iUAS)->vBName.at(iD)) == (*itProc) ) fprintf (cFile,"%-5.3f ",eStaRel) ;
-      else                                                   fprintf (cFile,"  -   "); 
-    }
+    fprintf (cFile,"process ");
+    for (int iD=1 ; iD <= (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) fprintf (cFile,"%i ", - (signed) vUASummary.at(iUAS)->vSCut.size() + iD );
+    for (int iD=1 ; iD <= (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) fprintf (cFile,"%i ",iD);
     fprintf (cFile,"\n") ;
+    fprintf (cFile,"rate ") ; 
+    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) fprintf (cFile,"%-9.3f ",Signal.at(iD)) ;
+    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) fprintf (cFile,"%-9.3f ",Background.at(iD)) ;
+    fprintf (cFile,"\n") ; 
+    // ... Syst Errors
+    for ( vector<Systematic_t>::iterator itSyst = (Cfg.GetSystematic())->begin() ; itSyst != (Cfg.GetSystematic())->end() ; ++ itSyst ) {
+      fprintf (cFile,"%-25s %-5s ",(itSyst->systName).c_str(),(itSyst->systType).c_str());
+      for ( vector<string>::iterator itProc =  Proc.begin() ; itProc != Proc.end() ; ++itProc) {
+        bool pFound = false ;
+        for ( vector<string>::iterator itSM  = (itSyst->systMember).begin() ; itSM != (itSyst->systMember).end() ; ++itSM ) {
+          if ( (*itSM) == (*itProc) )  pFound = true ;
+        }
+        if ( pFound )  fprintf (cFile,"%-5.3f ",itSyst->systVal);
+        else           fprintf (cFile,"  -   "); 
+      }
+      fprintf (cFile,"\n") ; 
+    }
+    // ... Stat Errors
+    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) {
+      double eStaRel = 1. ;
+      if (Signal.at(iD)>0.) eStaRel += eStatSignal.at(iD) / Signal.at(iD) ;
+      string statName = "stat_" + vUASummary.at(iUAS)->vSName.at(iD);  
+      string statType = "lnN" ;   
+      fprintf (cFile,"%-25s %-5s ",statName.c_str() , statType.c_str() ) ; 
+      for ( vector<string>::iterator itProc =  Proc.begin() ; itProc != Proc.end() ; ++itProc) {
+        if ( (vUASummary.at(iUAS)->vSName.at(iD)) == (*itProc) ) fprintf (cFile,"%-5.3f ",eStaRel) ;
+        else                                                   fprintf (cFile,"  -   "); 
+      }
+      fprintf (cFile,"\n") ;
+    }
+  
+    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) {
+      double eStaRel = 1. ;
+      if (Background.at(iD)>0.) eStaRel += eStatBkgd.at(iD) / Background.at(iD) ;
+      string statName = "stat_" + vUASummary.at(iUAS)->vBName.at(iD);  
+      string statType = "lnN" ;   
+      fprintf (cFile,"%-25s %-5s ",statName.c_str() , statType.c_str() ) ; 
+      for ( vector<string>::iterator itProc =  Proc.begin() ; itProc != Proc.end() ; ++itProc) {
+        if ( (vUASummary.at(iUAS)->vBName.at(iD)) == (*itProc) ) fprintf (cFile,"%-5.3f ",eStaRel) ;
+        else                                                   fprintf (cFile,"  -   "); 
+      }
+      fprintf (cFile,"\n") ;
+    }
+  
+    fclose(cFile);
+    
+
+    // Prepare shape rootfile
+    if ( iMethod == 1 ) {
+      TFile* fShape = TFile::Open(LimitRootName.c_str(),"RECREATE");
+      fShape->cd();
+      TH1F* data = (TH1F*) vUASummary.at(iUAS)->DCut->Clone("histo_Data");
+      data->Write();
+      for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) {
+        string hName = "histo_" + (vUASummary.at(iUAS)->vSName.at(iD));
+        TH1F* h = (TH1F*) vUASummary.at(iUAS)->vSCut.at(iD)->Clone(hName.c_str());
+        h->Write();
+      }
+      for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) {
+        string hName = "histo_" + (vUASummary.at(iUAS)->vBName.at(iD));
+        TH1F* h = (TH1F*) vUASummary.at(iUAS)->vBCut.at(iD)->Clone(hName.c_str());
+        h->Write();
+      }
+      fShape->Close();
+      delete fShape;
+    }
+
   }
-
-  fclose(cFile);
-
-  // Shape Based MVA
-
-
 
   return ;
 }
