@@ -1131,6 +1131,21 @@ void UATmvaSummary::LimitCard ( UATmvaConfig& Cfg ) {
   int iOptim = 9 ;
   int iUAS   = GetBestLimitMVAID() ;
 
+  // Build CardName
+
+  string CardName ;  
+  if ( Cfg.GetTmvaType() == "ANN" ) {
+    ostringstream Name;
+    Name << Cfg.GetTmvaName() << "_MLP_"   
+                              << Cfg.GetANNHiddenLayersMin() << "_" << Cfg.GetANNHiddenLayersMax() << "Layers_" 
+                              << Cfg.GetANNHiddenNodesMin()  << "_" << Cfg.GetANNHiddenNodesMax()  << "Nodes_" 
+                              << (Cfg.GetTmvaVar())->size()  << "Var" ;
+    if (Cfg.GetTmvaOptim()) Name << "_Optim" ;
+    CardName = Name.str();
+  } else {
+    CardName = vUASummary.at(iUAS)->TmvaName ;
+  } 
+
   // 0: Cut Based MVA / 1: Shape Based MVA 
 
   for (int iMethod = 0 ; iMethod < 2 ; ++iMethod ) {
@@ -1159,10 +1174,10 @@ void UATmvaSummary::LimitCard ( UATmvaConfig& Cfg ) {
       eStatBkgd.push_back(EStat);
     }          
   
-    if ( iMethod == 0 ) LimitCardName = "LimitCards/" + vUASummary.at(iUAS)->TmvaName + "__MVACut.card" ;  
+    if ( iMethod == 0 ) LimitCardName = "LimitCards/" + CardName + "__MVACut.card" ;  
     if ( iMethod == 1 ) { 
-       LimitCardName = "LimitCards/" + vUASummary.at(iUAS)->TmvaName + "__MVAShape.card" ;  
-       LimitRootName = "LimitCards/" + vUASummary.at(iUAS)->TmvaName + "__MVAShape.root" ;  
+       LimitCardName = "LimitCards/" + CardName + "__MVAShape.card" ;  
+       LimitRootName = "LimitCards/" + CardName + "__MVAShape.root" ;  
     }
   
     FILE *cFile; 
@@ -1237,18 +1252,22 @@ void UATmvaSummary::LimitCard ( UATmvaConfig& Cfg ) {
 
     // Prepare shape rootfile
     if ( iMethod == 1 ) {
+      MVARebinFac = Cfg.GetTmvaRespRebinFac();
       TFile* fShape = TFile::Open(LimitRootName.c_str(),"RECREATE");
       fShape->cd();
       TH1F* data = (TH1F*) vUASummary.at(iUAS)->DCut->Clone("histo_Data");
+      data->Rebin(MVARebinFac);
       data->Write();
       for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) {
         string hName = "histo_" + (vUASummary.at(iUAS)->vSName.at(iD));
         TH1F* h = (TH1F*) vUASummary.at(iUAS)->vSCut.at(iD)->Clone(hName.c_str());
+        h->Rebin(MVARebinFac);  
         h->Write();
       }
       for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) {
         string hName = "histo_" + (vUASummary.at(iUAS)->vBName.at(iD));
         TH1F* h = (TH1F*) vUASummary.at(iUAS)->vBCut.at(iD)->Clone(hName.c_str());
+        h->Rebin(MVARebinFac);  
         h->Write();
       }
       fShape->Close();

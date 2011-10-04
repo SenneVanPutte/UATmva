@@ -39,8 +39,8 @@ void UATmvaClassification::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
 
      // Create ethod Options
      ostringstream Method;
-     //Method << "H:!V:NeuronType=tanh:VarTransform=N:NCycles=" << Cfg.GetANNCycles() << ":HiddenLayers=" ;
-     Method << "H:!V:NeuronType=tanh:NCycles=" << Cfg.GetANNCycles() << ":HiddenLayers=" ;
+     Method << "H:!V:NeuronType=tanh:VarTransform=N:NCycles=" << Cfg.GetANNCycles() << ":HiddenLayers=" ;
+     //Method << "H:!V:NeuronType=tanh:NCycles=" << Cfg.GetANNCycles() << ":HiddenLayers=" ;
      for ( Int_t iHLayer = 1 ; iHLayer <= nHLayers ; ++iHLayer ) {
        Method << "N+" << nHNodes ; 
        if ( iHLayer != nHLayers ) Method << "," ;
