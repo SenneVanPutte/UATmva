@@ -507,6 +507,15 @@ void UATmvaSummary::Init( UATmvaConfig& Cfg ) {
          vUASummary.push_back (new UATmvaSummary_t(Cfg.GetTmvaName(),MethodName,Name.str(), Cfg , 0 ));
     }
 
+    if ( Cfg.GetTmvaType() == "PDEFoam" ) {
+         // Build Name
+         ostringstream Name;
+         Name << nVarMax << "Var" ;
+         // Read
+         vUASummary.push_back (new UATmvaSummary_t(Cfg.GetTmvaName(),MethodName,Name.str(), Cfg , 0 ));
+    }
+
+
     if ( Cfg.GetTmvaType() == "ANN" ) {
       for (Int_t nHLayers = Cfg.GetANNHiddenLayersMin() ; nHLayers <= Cfg.GetANNHiddenLayersMax() ; ++nHLayers ) {
       for (Int_t nHNodes  = Cfg.GetANNHiddenNodesMin()  ; nHNodes  <= Cfg.GetANNHiddenNodesMax()  ; ++nHNodes  ) {
@@ -635,13 +644,17 @@ void UATmvaSummary::Print( ){
 //-------------------------------- Plots()
 
 
-void UATmvaSummary::Plots( ){
+void UATmvaSummary::Plots( UATmvaConfig& Cfg , bool bBest ){
 
   Int_t ID = -1 ;
   while ( ID != 0 ) {
     Print();
-    cout << "  Enter ID of MVA to plot (0 to exit): ";
-    cin  >> ID; 
+    if ( bBest ) {
+      ID = 1 + GetBestLimitMVAID() ;
+    } else {
+      cout << "  Enter ID of MVA to plot (0 to exit): ";
+      cin  >> ID;
+    } 
     if ( ID > 0 && ID <= (signed)  vUASummary.size() ) {
       cout << "  --> Plotting: " << vUASummary.at(ID-1)->TmvaName << endl ;
       //cout << " For Limit optimisation:" << endl;
@@ -665,18 +678,34 @@ void UATmvaSummary::Plots( ){
       Canvas->cd(6);
       PlotMVAStack(ID-1 );
       //gPad->WaitPrimitive();
-      Canvas->SaveAs("plots/mvasummary_"+vUASummary.at(ID-1)->TmvaName+".eps");
-      Canvas->SaveAs("plots/mvasummaty_"+vUASummary.at(ID-1)->TmvaName+".png");
+
+      string PlotName ;
+      if ( Cfg.GetTmvaType() == "ANN" && bBest ) {
+        ostringstream Name;
+        Name << Cfg.GetTmvaName() << "_MLP_"
+                                << Cfg.GetANNHiddenLayersMin() << "_" << Cfg.GetANNHiddenLayersMax() << "Layers_"
+                                << Cfg.GetANNHiddenNodesMin()  << "_" << Cfg.GetANNHiddenNodesMax()  << "Nodes_" 
+                                << (Cfg.GetTmvaVar())->size()  << "Var" ;
+        if (Cfg.GetTmvaOptim()) Name << "_Optim" ;
+        PlotName = Name.str();
+      } else {
+        PlotName = vUASummary.at(ID-1)->TmvaName ;
+      } 
+  
+
+      Canvas->SaveAs("plots/mvasummary_"+TString(PlotName)+".eps");
+      Canvas->SaveAs("plots/mvasummaty_"+TString(PlotName)+".gif");
 
       TCanvas* CanvasStack = new TCanvas(vUASummary.at(ID-1)->TmvaName+"_Stack",vUASummary.at(ID-1)->TmvaName,600,600);
       CanvasStack->cd();
       PlotMVAStack(ID-1);
-      CanvasStack->SaveAs("plots/mvastack_"+vUASummary.at(ID-1)->TmvaName+".eps");
-      CanvasStack->SaveAs("plots/mvastack_"+vUASummary.at(ID-1)->TmvaName+".png");
+      CanvasStack->SaveAs("plots/mvastack_"+TString(PlotName)+".eps");
+      CanvasStack->SaveAs("plots/mvastack_"+TString(PlotName)+".gif");
 
     } else if ( ID != 0 ) {
       cout << "  --> Invalid ID !!!!!!!!!!! " << endl ;
     }
+    if ( bBest ) ID = 0 ;
   }
 
 }
@@ -707,7 +736,7 @@ void UATmvaSummary::CPlots() {
         }
         // gPad->WaitPrimitive();
         vCanvasCplot.at(iCanvas)->SaveAs("plots/cplot"+VarList+"_"+vUASummary.at(0)->TmvaName+".eps");
-        vCanvasCplot.at(iCanvas)->SaveAs("plots/cplot"+VarList+"_"+vUASummary.at(0)->TmvaName+".png");
+        vCanvasCplot.at(iCanvas)->SaveAs("plots/cplot"+VarList+"_"+vUASummary.at(0)->TmvaName+".gif");
 
       }
 
@@ -918,7 +947,7 @@ void UATmvaSummary::PlotMVAStack(int iUAS ){
    delete DCut;
 
    int nLegEntry = 2 + (signed) vStack.size();
-   TLegend* Legend = new TLegend (.18,.85-nLegEntry*.035,.5,.85);
+   TLegend* Legend = new TLegend (.75,.90-nLegEntry*.035,.9,.95);
    Legend->SetBorderSize(0);
    Legend->SetFillColor(0);
    Legend->SetFillStyle(0);

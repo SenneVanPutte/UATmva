@@ -51,6 +51,7 @@ void UATmva(TString Cfg = "Config.cfg" , TString Steps = "TRS" ){
        || Steps.Contains ('B') 
        || Steps.Contains ('C') 
        || Steps.Contains ('P') 
+       || Steps.Contains ('M') 
        || Steps.Contains ('L') ) {
     UATmvaSummary Summary;
     Summary.Init(Config);
@@ -58,7 +59,8 @@ void UATmva(TString Cfg = "Config.cfg" , TString Steps = "TRS" ){
     if ( Steps.Contains ('Y') ) Summary.Yields();
     if ( Steps.Contains ('B') ) Summary.BestMVA();
     if ( Steps.Contains ('C') ) Summary.CPlots();
-    if ( Steps.Contains ('P') ) Summary.Plots();
+    if ( Steps.Contains ('P') ) Summary.Plots(Config,0);
+    if ( Steps.Contains ('M') ) Summary.Plots(Config,1);
     if ( Steps.Contains ('L') ) Summary.LimitCard(Config);
   }
 

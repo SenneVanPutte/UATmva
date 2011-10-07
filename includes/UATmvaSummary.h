@@ -86,7 +86,7 @@ class UATmvaSummary {
 
   void Init ( UATmvaConfig& );
   void Print( );
-  void Plots( );
+  void Plots( UATmvaConfig& , bool = true );
   void CPlots();
   void Yields();
   void BestMVA();
