@@ -26,6 +26,7 @@ void UATmvaConfig::Reset(){
   InputVar.clear();
 
   TmvaType           = "ANN" ;
+  TmvaDim            = 1 ;
   TmvaOptim          = false ;
   TmvaVarTrans.clear();
   TmvaWeight         = "" ;
@@ -178,8 +179,14 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
       else UAError("[UATmvaConfig] Wrong TmvaType Input !");
     }
 
+    if ( Elements.at(0) == "TmvaDim" ) {
+      if   ( Elements.size() == 2 ) TmvaDim = atoi(Elements.at(1).c_str()) ;
+      else UAError("[UATmvaConfig] Wrong TmvaDim Input !");
+    }
+
     if ( Elements.at(0) == "TmvaOptim" ) {
       if   ( Elements.size() == 2 ) TmvaOptim = atoi(Elements.at(1).c_str()) ;
+      else UAError("[UATmvaConfig] Wrong TmvaOptim Input !");
     }
 
     if ( Elements.at(0) == "TmvaVarTrans" ) {

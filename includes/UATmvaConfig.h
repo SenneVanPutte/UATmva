@@ -15,7 +15,7 @@ class InputData_t {
   string NickName  ;
   TString FileName  ;
   Bool_t  SigTrain  ;
-  Bool_t  BkgdTrain ;
+  Int_t   BkgdTrain ;
   Bool_t  TrueData  ;
   Bool_t  BkgdData  ;    
   Float_t Lumi      ;
@@ -93,7 +93,8 @@ class UATmvaConfig {
   
   // TMVA Method:
 
-  TString              TmvaType    ;  
+  TString              TmvaType    ;
+  Int_t                TmvaDim     ;  
   Bool_t               TmvaOptim   ;
   vector<string>       TmvaVarTrans; 
   string               TmvaWeight  ;    
@@ -177,6 +178,7 @@ class UATmvaConfig {
   vector<InputVar_t>*  GetInputVar()       { return &InputVar     ; }
  
   TString              GetTmvaType()       { return TmvaType      ; }
+  Int_t                GetTmvaDim()        { return TmvaDim       ; } 
   Bool_t               GetTmvaOptim()      { return TmvaOptim     ; } 
   vector<string>*      GetTmvaVarTrans()   { return &TmvaVarTrans ; }
   string               GetTmvaWeight()     { return TmvaWeight    ; }

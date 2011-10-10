@@ -235,9 +235,21 @@ void UATmvaClassification::DoCUT( UATmvaConfig& Cfg, UATmvaTree& T) {
 }
 
 
-
-
 void UATmvaClassification::Train(UATmvaConfig& Cfg, UATmvaTree& T , string Name , string Method , int nVarMax ){
+
+  if ( Cfg.GetTmvaDim() == 1 ) {
+    Train1D(Cfg,T,Name,Method,nVarMax,1);
+  } else {
+    for ( int iDim = 1 ; iDim <= Cfg.GetTmvaDim() ; ++iDim ) {
+      ostringstream Name1D;
+      Name1D << Name << "_Dim" << iDim ;
+      Train1D(Cfg,T,Name1D.str(),Method,nVarMax,iDim);
+    }
+  }
+  
+}
+
+void UATmvaClassification::Train1D(UATmvaConfig& Cfg, UATmvaTree& T , string Name , string Method , int nVarMax , int iDim ){
 
      cout << "[UATmvaClassification::Train()] TmvaName = " << Name   << endl;
      cout << "[UATmvaClassification::Train()] Method   = " << Method << endl;
@@ -274,7 +286,10 @@ void UATmvaClassification::Train(UATmvaConfig& Cfg, UATmvaTree& T , string Name 
        }
        if(iD->BkgdTrain) {
          BgWeight = iD->ScaleFac;
-         UAFactory->TmvaFactory->AddBackgroundTree ( T.GetTree(iD->NickName) , BgWeight ) ;
+         if ( Cfg.GetTmvaDim() == 1 )     UAFactory->TmvaFactory->AddBackgroundTree ( T.GetTree(iD->NickName) , BgWeight ) ;
+         else {
+           if ( (iD->BkgdTrain) == iDim ) UAFactory->TmvaFactory->AddBackgroundTree ( T.GetTree(iD->NickName) , BgWeight ) ;
+         }
        }
      }
   

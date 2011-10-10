@@ -11,16 +11,17 @@ using namespace TMVA;
 #include <TString.h>
 #include <string>
 #include <vector>
+#include <math.h>
 using namespace std;
 
 
 class UATmvaReader_t {
   public:
-  UATmvaReader_t(){ TmvaFile = NULL ; TmvaReader = NULL; }
-  ~UATmvaReader_t(){ TmvaFile->Close(); delete TmvaFile ; delete TmvaReader ; }
+  UATmvaReader_t(){  TmvaReader = NULL; }
+  ~UATmvaReader_t(){ delete TmvaReader ; } // delete TmvaFile ; TmvaFile->Close()
    
-  TString             TmvaName ;
-  TFile*              TmvaFile ;
+  vector<TString>     TmvaName ;
+  vector<TFile*>      TmvaFile ;
   Reader*             TmvaReader ; 
 };
 

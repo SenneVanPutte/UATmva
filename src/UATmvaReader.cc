@@ -215,7 +215,18 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
      UAReader = new UATmvaReader_t() ; 
  
      cout << "[UATmvaReader] Reading: " << Name << endl;
-     UAReader->TmvaName = Name;
+     if ( Cfg.GetTmvaDim() == 1 ) {
+       (UAReader->TmvaName).push_back(Name);
+     } else {
+       ostringstream NameND;
+       NameND << Name << "_" << Cfg.GetTmvaDim() << "D" ;
+       (UAReader->TmvaName).push_back(NameND.str()); // Geberic Name
+       for ( int iDim = 1 ; iDim <= Cfg.GetTmvaDim() ; ++iDim ) {
+         ostringstream Name1D;
+         Name1D << Name << "_Dim" << iDim ;
+         (UAReader->TmvaName).push_back(Name1D.str()); 
+       }
+     }
 
      // Load InputTrees branches
      Double_t treeWeight=1.;
@@ -246,7 +257,7 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
 
 
      // Create TMVA Reader
-     cout << "[UATmvaReader::Read()] Create: " << UAReader->TmvaName << endl;
+     cout << "[UATmvaReader::Read()] Create: " << (UAReader->TmvaName).at(0) << endl;
      UAReader->TmvaReader = new Reader( "!Color:!Silent" );
 
      // Add VariablesCfg.GetTmvaVar())
@@ -261,31 +272,60 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
 
      // Fetch TMVA weights
      //TString TmvaWeightFile = "weights/"+UAReader->TmvaName+"_"+UAReader->TmvaName+".weights.xml" ;
-     TString TmvaWeightFile ; 
-     if ( Cfg.GetTmvaType() == "XML" ) { 
-       TmvaWeightFile = Cfg.GetXMLFile() ; 
+     vector<TString> TmvaWeightFile ; 
+     if ( Cfg.GetTmvaDim() == 1 ) {
+       if ( Cfg.GetTmvaType() == "XML" ) { 
+         TmvaWeightFile.push_back(Cfg.GetXMLFile()) ; 
+       } else {
+         TmvaWeightFile.push_back( "weights/UATmva_"+(UAReader->TmvaName).at(0)+".weights.xml" ) ;     
+       } 
      } else {
-       TmvaWeightFile = "weights/UATmva_"+UAReader->TmvaName+".weights.xml" ;     
-     } 
+        if ( Cfg.GetTmvaType() == "XML" ) { 
+          cout << "[UATmvaReader::Read()] XML Input not implemented for mutlidimension MVA !!! " << endl;
+          return;
+        } else { 
+          for ( int iDim = 1 ; iDim <= Cfg.GetTmvaDim() ; ++iDim ) 
+            TmvaWeightFile.push_back( "weights/UATmva_"+(UAReader->TmvaName).at(iDim)+".weights.xml" ) ; 
+        }
+     }
 
      // BookMethod
-     UAReader->TmvaReader->BookMVA( UAReader->TmvaName , TmvaWeightFile ) ;
+     if ( Cfg.GetTmvaDim() == 1 ) {
+       UAReader->TmvaReader->BookMVA( (UAReader->TmvaName).at(0) , TmvaWeightFile.at(0) ) ;
+     } else {
+       for ( int iDim = 1 ; iDim <= Cfg.GetTmvaDim() ; ++iDim ) 
+         UAReader->TmvaReader->BookMVA( (UAReader->TmvaName).at(iDim) , TmvaWeightFile.at(iDim-1) ) ;
+     }
 
      // Re-Open TMVA output file
-     if ( Cfg.GetTmvaType() == "XML" ) { 
-       UAReader->TmvaFile  = TFile::Open("rootfiles/" + UAReader->TmvaName  + ".root","RECREATE" );
+     if ( Cfg.GetTmvaDim() == 1 ) {
+       if ( Cfg.GetTmvaType() == "XML" ) { 
+         (UAReader->TmvaFile).push_back( TFile::Open("rootfiles/" + (UAReader->TmvaName).at(0)  + ".root","RECREATE" ) );
+       } else {
+         (UAReader->TmvaFile).push_back( TFile::Open("rootfiles/" + (UAReader->TmvaName).at(0)  + ".root","UPDATE" )   );
+       }
      } else {
-       UAReader->TmvaFile  = TFile::Open("rootfiles/" + UAReader->TmvaName  + ".root","UPDATE" );
+       (UAReader->TmvaFile).push_back( TFile::Open("rootfiles/" + (UAReader->TmvaName).at(0)  + ".root","RECREATE" ) );
+        if ( Cfg.GetTmvaType() == "XML" ) { 
+          for ( int iDim = 1 ; iDim <= Cfg.GetTmvaDim() ; ++iDim ) 
+            (UAReader->TmvaFile).push_back( TFile::Open("rootfiles/" + (UAReader->TmvaName).at(iDim)  + ".root","RECREATE" )   );
+        } else {
+          for ( int iDim = 1 ; iDim <= Cfg.GetTmvaDim() ; ++iDim ) 
+            (UAReader->TmvaFile).push_back( TFile::Open("rootfiles/" + (UAReader->TmvaName).at(iDim)  + ".root","UPDATE" )   );
+        } 
+ 
      }
+
      //string Directory("OutputHistograms");
      ostringstream Directory;
      Directory << "OutputHistograms_" << Cfg.GetTargetLumi()->at(iLumi).Lumi << "pbinv" ;
-     UAReader->TmvaFile->mkdir(Directory.str().c_str()); 
-     UAReader->TmvaFile->cd(Directory.str().c_str());    
+     for ( int iFile = 0 ; iFile < (signed) (UAReader->TmvaFile).size() ; ++iFile ) ((UAReader->TmvaFile).at(iFile))->mkdir(Directory.str().c_str()); 
+
+     //UAReader->TmvaFile->cd(Directory.str().c_str());    
 
 
      // Fill Output for each tree
-     cout << "[UATmvaReader::DoMLP()] Fill: " << UAReader->TmvaName << endl;
+     cout << "[UATmvaReader::DoMLP()] Fill: " << (UAReader->TmvaName).at(0) << endl;
 
      TH1D* hMVA_data = new TH1D ("Data"     ,"Data"     ,nbins,minBin,maxBin) ;
      TH1D* hMVA_sig  = new TH1D ("Signal"   ,"Signal"   ,nbins,minBin,maxBin) ;
@@ -313,6 +353,14 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
        cout << "------> DaWeight= " << DaWeight << " SgWeight= " << SgWeight << " BgWeight= " << BgWeight << endl;
        // File MVA Response
        TH1D* hMVA = new TH1D ((iD->NickName).c_str(),(iD->NickName).c_str(),nbins,minBin,maxBin) ;
+       vector<TH1D*> hMVA_ND ;
+       if ( Cfg.GetTmvaDim() != 1 ) {
+         for ( int iDim = 1 ; iDim <= Cfg.GetTmvaDim() ; ++iDim ) {
+           ostringstream hName;
+           hName << iD->NickName << "_Dim" << iDim ;
+           hMVA_ND.push_back ( new TH1D (hName.str().c_str(),hName.str().c_str(),nbins,minBin,maxBin) ) ;
+         }
+       }  
        vector<TH1F*> hCtrl ;
        for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) {
          TString HistName = iD->NickName+"_"+Cfg.GetCtrlPlot()->at(iP).VarName ;
@@ -363,9 +411,26 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
          if (iD->SigTrain               ) Weight *= SgWeight;
          if (iD->BkgdData||iD->BkgdTrain) Weight *= BgWeight;
          if (iD->TrueData               ) Weight *= DaWeight;
-         Double_t result = UAReader->TmvaReader->EvaluateMVA(UAReader->TmvaName); 
+         Double_t result = -99. ; 
+         vector<Double_t> RESULTS ;
+         if ( Cfg.GetTmvaDim() == 1 ) { 
+           UAReader->TmvaReader->EvaluateMVA((UAReader->TmvaName).at(0));
+         } else {
+           // result for each separated MVA
+           for ( int iDim = 1 ; iDim <=  Cfg.GetTmvaDim() ; ++iDim ) {
+             RESULTS.push_back ( UAReader->TmvaReader->EvaluateMVA((UAReader->TmvaName).at(iDim)) ) ;
+           }
+           // and combine
+           double r2 = 0. ;
+           for ( int iDim = 0 ; iDim < Cfg.GetTmvaDim() ; ++iDim ) r2 += pow((1.+RESULTS.at(iDim)),2)  ;
+           if (r2>=0.) result = sqrt(r2)-1.;
+           //result = RESULTS.at(0) ; 
+         } 
 //         cout << result << " " << Weight << endl;
          hMVA -> Fill( result , Weight);
+         if ( Cfg.GetTmvaDim() != 1 ) {
+           for ( int iDim = 0 ; iDim < Cfg.GetTmvaDim() ; ++iDim ) (hMVA_ND.at(iDim))->Fill( RESULTS.at(iDim) , Weight ) ;
+         }
          if (iD->TrueData                ) hMVA_data -> Fill( result , Weight);
          if (iD->SigTrain                ) hMVA_sig  -> Fill( result , Weight);
          if (iD->BkgdData||iD->BkgdTrain ) hMVA_bkgd -> Fill( result , Weight);
@@ -375,13 +440,27 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
          for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) hCtrl.at(iP)->Fill( FVar[((Cfg.GetCtrlPlot())->at(iP)).iVarPos+1] , Weight);
        }
        cout << "[UATmvaReade::Read] Loop End for tree:" << iD->NickName << endl; 
-       UAReader->TmvaFile->cd(Directory.str().c_str());
+       ((UAReader->TmvaFile).at(0))->cd(Directory.str().c_str());
        hMVA->Write();
-       for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) { hCtrl.at(iP)->Write(); delete hCtrl.at(iP) ; } // hCtrl.clear() ; }
+       if ( Cfg.GetTmvaDim() != 1 ) 
+         for ( int iDim = 0 ; iDim < Cfg.GetTmvaDim() ; ++iDim ) (hMVA_ND.at(iDim))->Write();
+       for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) { hCtrl.at(iP)->Write() ; } 
+       if ( Cfg.GetTmvaDim() != 1 ) {
+         for ( int iDim = 0 ; iDim < Cfg.GetTmvaDim() ; ++iDim ) {
+           ((UAReader->TmvaFile).at(iDim+1))->cd(Directory.str().c_str());
+           hMVA->Write();
+           (hMVA_ND.at(iDim))->Write(); 
+           for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) { hCtrl.at(iP)->Write() ; }  
+         }
+       }
+       for ( int iP = 0 ; iP < (signed) hMVA_ND.size()  ; ++iP ) { delete  hMVA_ND.at(iP) ; }
+       hMVA_ND.clear();
+       for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) { delete hCtrl.at(iP) ; } 
+       hCtrl.clear() ; 
        delete hMVA; 
      }     
 
-     //UAReader->TmvaFile->cd(Directory.str().c_str());
+     ((UAReader->TmvaFile).at(0))->cd(Directory.str().c_str());
      hMVA_data ->Write();
      hMVA_sig  ->Write();
      hMVA_bkgd ->Write(); 
@@ -466,13 +545,12 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
      CutBased->SetBinContent(5,CutBased_SoverSqrtBPlusDeltaB );
      CutBased->SetBinContent(6,CutBased_Limit );
      CutBased->SetBinContent(7,CutBased_Limit_Data );
-     UAReader->TmvaFile->cd();
-     UAReader->TmvaFile->cd(Directory.str().c_str());
+     ((UAReader->TmvaFile).at(0))->cd(Directory.str().c_str());
      CutBased->Write();
 
 
      // Build Significance
-     cout << "[UATmvaReader::DoMLP()] Evaluate: " << UAReader->TmvaName << endl;
+     cout << "[UATmvaReader::DoMLP()] Evaluate: " << (UAReader->TmvaName).at(0) << endl;
 
      TH1D* bgTr_SoverB = GetSoverB("bgTr_SoverB",hMVA_sig ,hMVA_bgTr); bgTr_SoverB->Write();
      TH1D* bgSp_SoverB = GetSoverB("bgSp_SoverB",hMVA_sig ,hMVA_bgSp); bgSp_SoverB->Write();
