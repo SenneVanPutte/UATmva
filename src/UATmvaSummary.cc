@@ -68,8 +68,20 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   }
 
   // Open File $ fetc objects
+  if ( Cfg.GetTmvaDim() != 1 ) {
+    ostringstream NameND;
+    NameND << TmvaName << "_" << Cfg.GetTmvaDim() << "D" ;
+    TmvaName = NameND.str();
+  }
   cout << "[UATmvaSummary_t] Reading File: " << TmvaName << endl;
   TFile*   File     = new TFile("rootfiles/" + TmvaName  + ".root","READ" );
+/*  if ( Cfg.GetTmvaDim() == 1 ) File = new TFile("rootfiles/" + TmvaName  + ".root","READ" );
+  else {
+    ostringstream NameND;
+    NameND << TmvaName << "_" << Cfg.GetTmvaDim() << "D" ;
+    File = new TFile("rootfiles/" + NameND.str().c_str()  + ".root","READ" );
+  }
+*/
   ostringstream Directory;
   Directory << "OutputHistograms_" << Cfg.GetTargetLumi()->at(iLumi).Lumi << "pbinv" ;
   TString TSDirectory = Directory.str();
@@ -135,7 +147,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
 
   TH2F* CorrMtxS_ ; 
   TH2F* CorrMtxB_ ;
-  if ( Cfg.GetTmvaType() != "XML" ) {
+  if ( Cfg.GetTmvaType() != "XML" && Cfg.GetTmvaDim() == 1   ) {
     CorrMtxS_ = (TH2F*) File->Get("CorrelationMatrixS");
     CorrMtxB_ = (TH2F*) File->Get("CorrelationMatrixB");  
   } else {
@@ -146,7 +158,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   cout << "[UATmvaSummary_t] Fetching estimatorHist" << endl;
   TH1F* D2Train_  ;
   TH1F* D2Test_   ;
-  if ( Cfg.GetTmvaType() == "ANN" ) {
+  if ( Cfg.GetTmvaType() == "ANN" && Cfg.GetTmvaDim() == 1  ) {
     D2Train_ = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/estimatorHistTrain");
     D2Test_  = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/estimatorHistTest");
   } else {
@@ -160,7 +172,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   TH1F* BTrain_  ;
   TH1F* STest_   ;
   TH1F* BTest_   ;
-  if ( Cfg.GetTmvaType() != "XML" ) {
+  if ( Cfg.GetTmvaType() != "XML" && Cfg.GetTmvaDim() == 1   ) {
     STrain_   = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_Train_S");
     BTrain_   = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_Train_B");
     STest_    = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName+"/MVA_"+TmvaName+"_S");
@@ -483,13 +495,13 @@ void UATmvaSummary::Init( UATmvaConfig& Cfg ) {
   if ( Cfg.GetTmvaType() == "LH"  )  MethodName = "Likelihood"  ;
   if ( Cfg.GetTmvaType() == "PDERS"  )  MethodName = "PDERS"  ;
   if ( Cfg.GetTmvaType() == "PDEFoam"  )  MethodName = "PDEFoam"  ;
-  if ( Cfg.GetTmvaType() == "XML" )  MethodName = "XML" ;
+  if ( Cfg.GetTmvaType() == "XML"  )  MethodName = "XML" ;
 
   // Open All files and Load Histos
   for (Int_t nVarRem  = 0 ; nVarRem <= Cfg.GetANNVarNumRemove() ; ++nVarRem) {
   Int_t nVarMax = (Cfg.GetTmvaVar())->size() - nVarRem ;
 
-    if ( Cfg.GetTmvaType() == "XML" ) {
+    if ( Cfg.GetTmvaType() == "XML"  ) {
          // Build Name
          ostringstream Name;
          Name << "NULL" ;
