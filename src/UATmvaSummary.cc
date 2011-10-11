@@ -71,6 +71,11 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   if ( Cfg.GetTmvaDim() != 1 ) {
     ostringstream NameND;
     NameND << TmvaName << "_" << Cfg.GetTmvaDim() << "D" ;
+    for ( int iDim = 1 ; iDim <= Cfg.GetTmvaDim() ; ++iDim ) {
+      ostringstream NameDim;
+      NameDim << TmvaName << "_Dim" << iDim ;
+      TmvaNameDim.push_back(NameDim.str());
+    } 
     TmvaName = NameND.str();
   }
   cout << "[UATmvaSummary_t] Reading File: " << TmvaName << endl;
@@ -423,6 +428,8 @@ UATmvaSummary_t::~UATmvaSummary_t(){
 
   cout << "[~UATmvaSummary_t()]" << endl;
 
+  TmvaNameDim.clear(); 
+
   CPlotsXAxis.clear();
   for ( vector< TH1F* >::iterator iCP = CPlotsData.begin() ; iCP != CPlotsData.end() ; ++iCP ) delete (*iCP);
   for ( vector< TH1F* >::iterator iCP = CPlotsSign.begin() ; iCP != CPlotsSign.end() ; ++iCP ) delete (*iCP);
@@ -674,21 +681,32 @@ void UATmvaSummary::Plots( UATmvaConfig& Cfg , bool bBest ){
       //cout << " For Cutbased optimisation:" << endl;
       //PrintYields(ID,10);
 
-      TCanvas* Canvas = new TCanvas(vUASummary.at(ID-1)->TmvaName,vUASummary.at(ID-1)->TmvaName,950,700);
+      TCanvas* Canvas = NULL ;
       
-      Canvas->Divide(3,2);
-      Canvas->cd(1);
-      PlotEpoch(ID-1);
-      Canvas->cd(2);
-      PlotOvertrain(ID-1);
-      Canvas->cd(4);
-      PlotCorrMtx(ID-1,1);   
-      Canvas->cd(5);
-      PlotCorrMtx(ID-1,0);   
-      Canvas->cd(3);
-      PlotEff(ID-1);
-      Canvas->cd(6);
-      PlotMVAStack(ID-1 );
+      if ( Cfg.GetTmvaDim() == 1 ) {
+        Canvas = new TCanvas(vUASummary.at(ID-1)->TmvaName,vUASummary.at(ID-1)->TmvaName,950,700);
+        Canvas->Divide(3,2);
+        Canvas->cd(1);
+        PlotEpoch(ID-1);
+        Canvas->cd(2);
+        PlotOvertrain(ID-1);
+        Canvas->cd(4);
+        PlotCorrMtx(ID-1,1);   
+        Canvas->cd(5);
+        PlotCorrMtx(ID-1,0);   
+        Canvas->cd(3);
+        PlotEff(ID-1);
+        Canvas->cd(6);
+        PlotMVAStack(ID-1 );
+      } else {
+        Canvas = new TCanvas(vUASummary.at(ID-1)->TmvaName,vUASummary.at(ID-1)->TmvaName,700,350);
+        Canvas->Divide(2,1);
+        Canvas->cd(1);
+        PlotEff(ID-1);
+        Canvas->cd(2);
+        PlotMVAStack(ID-1 );
+      }
+
       //gPad->WaitPrimitive();
 
       string PlotName ;
@@ -706,13 +724,17 @@ void UATmvaSummary::Plots( UATmvaConfig& Cfg , bool bBest ){
   
 
       Canvas->SaveAs("plots/mvasummary_"+TString(PlotName)+".eps");
-      Canvas->SaveAs("plots/mvasummaty_"+TString(PlotName)+".gif");
+      Canvas->SaveAs("plots/mvasummary_"+TString(PlotName)+".gif");
 
       TCanvas* CanvasStack = new TCanvas(vUASummary.at(ID-1)->TmvaName+"_Stack",vUASummary.at(ID-1)->TmvaName,600,600);
       CanvasStack->cd();
       PlotMVAStack(ID-1);
       CanvasStack->SaveAs("plots/mvastack_"+TString(PlotName)+".eps");
       CanvasStack->SaveAs("plots/mvastack_"+TString(PlotName)+".gif");
+
+      if ( Cfg.GetTmvaDim() > 1 ) {
+        for (int iDim = 1 ; iDim <= Cfg.GetTmvaDim() ; ++iDim ) PlotDimMVA(Cfg,ID-1,iDim) ;
+      }  
 
     } else if ( ID != 0 ) {
       cout << "  --> Invalid ID !!!!!!!!!!! " << endl ;
@@ -958,8 +980,9 @@ void UATmvaSummary::PlotMVAStack(int iUAS ){
    delete SCut;
    delete DCut;
 
-   int nLegEntry = 2 + (signed) vStack.size();
-   TLegend* Legend = new TLegend (.75,.90-nLegEntry*.035,.9,.95);
+   int nLegEntry = 2 + ((signed) vStack.size())/3;
+   TLegend* Legend = new TLegend (.20,.90-nLegEntry*.035,.8,.90);
+   Legend->SetNColumns(3);
    Legend->SetBorderSize(0);
    Legend->SetFillColor(0);
    Legend->SetFillStyle(0);
@@ -1119,6 +1142,222 @@ void UATmvaSummary::PlotEff ( int iUAS ) {
     
 }
 
+// --------------------------- PlotDimMVA ()
+
+void UATmvaSummary::PlotDimMVA ( UATmvaConfig& Cfg , int iUAS , int iDim) {
+
+
+  TString MethodName ;
+  if ( Cfg.GetTmvaType() == "ANN" )  MethodName = "MLP" ;
+  if ( Cfg.GetTmvaType() == "BDT" )  MethodName = "BDT" ;
+  if ( Cfg.GetTmvaType() == "LH"  )  MethodName = "Likelihood"  ;
+  if ( Cfg.GetTmvaType() == "PDERS"  )  MethodName = "PDERS"  ;
+  if ( Cfg.GetTmvaType() == "PDEFoam"  )  MethodName = "PDEFoam"  ;
+  if ( Cfg.GetTmvaType() == "XML"  )  MethodName = "XML" ;
+
+  TString TmvaName1D = ((vUASummary.at(iUAS))->TmvaNameDim).at(iDim-1) ;
+
+  ostringstream Directory;
+  Directory << "OutputHistograms_" << Cfg.GetTargetLumi()->at(0).Lumi << "pbinv" ;
+  TString TSDirectory = Directory.str();
+  cout << TSDirectory << endl;
+
+
+  // Read all Plots and store them in the main MVA structure
+  TFile* File = new TFile("rootfiles/" +  ((vUASummary.at(iUAS))->TmvaNameDim).at(iDim-1) + ".root","READ" );
+
+  cout << "[UATmvaSummary_t] Fetching CorrelationMatrix" << endl;
+  TH2F* CorrMtxS_ ;
+  TH2F* CorrMtxB_ ;
+  if ( Cfg.GetTmvaType() != "XML" ) { 
+    CorrMtxS_ = (TH2F*) File->Get("CorrelationMatrixS");
+    CorrMtxB_ = (TH2F*) File->Get("CorrelationMatrixB");
+  } else {
+    CorrMtxS_ = new TH2F();
+    CorrMtxB_ = new TH2F();
+  }
+
+  cout << "[UATmvaSummary_t] Fetching estimatorHist" << endl;
+  TH1F* D2Train_  ;
+  TH1F* D2Test_   ;
+  if ( Cfg.GetTmvaType() == "ANN" ) { 
+    D2Train_ = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName1D+"/estimatorHistTrain");
+    D2Test_  = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName1D+"/estimatorHistTest");
+  } else {
+    D2Train_ = new TH1F();
+    D2Test_  = new TH1F();
+  }
+
+  cout << "[UATmvaSummary_t] Fetching TMVA Hist" << endl;
+  TH1F* STrain_  ;
+  TH1F* BTrain_  ;
+  TH1F* STest_   ;
+  TH1F* BTest_   ;
+  if ( Cfg.GetTmvaType() != "XML" ) {
+    STrain_   = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName1D+"/MVA_"+TmvaName1D+"_Train_S");
+    BTrain_   = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName1D+"/MVA_"+TmvaName1D+"_Train_B");
+    STest_    = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName1D+"/MVA_"+TmvaName1D+"_S");
+    BTest_    = (TH1F*) File->Get("Method_"+MethodName+"/"+TmvaName1D+"/MVA_"+TmvaName1D+"_B");
+  } else {
+    STrain_   = new TH1F();
+    BTrain_   = new TH1F();
+    STest_    = new TH1F();
+    BTest_    = new TH1F();
+  }
+  
+  cout << "[UATmvaSummary_t] Fetching MVA outputs" << endl;
+  ostringstream OSDimName ;
+  OSDimName << "_Dim" << iDim ;
+  TString DimName = OSDimName.str() ;
+  vector <TH1D*>  vSCut_ ;
+  vector <TH1D*>  vDCut_ ;
+  TH1D* SCut_ = NULL ; 
+  TH1D* DCut_ = NULL ; 
+  for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+    if (iD->SigTrain) {
+      ((vUASummary.at(iUAS))->vSName).push_back(iD->NickName);
+      vSCut_.push_back( (TH1D*) ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName+DimName))->Clone() ) ;
+      if ( vSCut_.size() == 1 ) SCut_ = (TH1D*) (vSCut_.at(0))->Clone() ;
+      else                      SCut_ -> Add ( vSCut_.at ( vSCut_.size()-1 ) ) ;
+    }
+    if (iD->TrueData) {
+      vDCut_.push_back( (TH1D*) ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName+DimName))->Clone() ) ;
+      if ( vDCut_.size() == 1 ) DCut_ = (TH1D*) (vDCut_.at(0))->Clone() ;
+      else                      DCut_ -> Add ( vDCut_.at ( vDCut_.size()-1 ) ) ;
+    }
+  }
+
+  vector <TH1D*>  vBCut_ ;
+  if ( Cfg.GetPlotGroup()->size() == 0 ) {
+    for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+      if (iD->BkgdData) {
+        ((vUASummary.at(iUAS))->vBName).push_back(iD->NickName);
+        vBCut_.push_back( (TH1D*) ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName+DimName))->Clone() ) ;
+      }
+    }
+  } else {
+    for ( vector<PlotGroup_t>::iterator iG = (Cfg.GetPlotGroup())->begin() ; iG != (Cfg.GetPlotGroup())->end() ; ++iG) {
+      bool iSBkgd = false ;
+      for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+        if ( iG->PlotGroupMember.at(0) == iD->NickName ) iSBkgd = iD->BkgdData ;
+      }
+      if ( iSBkgd ) {
+        ((vUASummary.at(iUAS))->vBName).push_back(iG->PlotGroupName) ;
+        TH1D* iGHist = NULL ;
+        for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+          if ( iG->PlotGroupMember.at(0) == iD->NickName ) iGHist = (TH1D*) ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName+DimName))->Clone()  ;
+        }
+        for ( int iGM=1 ; iGM < (signed) iG->PlotGroupMember.size() ; ++iGM ) {
+          for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+            if ( iG->PlotGroupMember.at(iGM) == iD->NickName ) iGHist->Add ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName+DimName));
+          }
+        }
+        if ( iGHist != NULL ) {
+          vBCut_.push_back( (TH1D*) iGHist->Clone() ) ;
+          delete iGHist ;
+        }
+      }
+    }
+  }
+
+
+  delete (vUASummary.at(iUAS))->D2Train ;
+  delete (vUASummary.at(iUAS))->D2Test  ;
+  (vUASummary.at(iUAS))->D2Train = (TH1F*) D2Train_ ->Clone();  
+  (vUASummary.at(iUAS))->D2Test  = (TH1F*) D2Test_  ->Clone();
+  SetGoodAxis( (vUASummary.at(iUAS))->D2Train );
+  SetGoodAxis( (vUASummary.at(iUAS))->D2Test  ); 
+
+  delete (vUASummary.at(iUAS))->STrain ; 
+  delete (vUASummary.at(iUAS))->BTrain ;
+  delete (vUASummary.at(iUAS))->STest  ;
+  delete (vUASummary.at(iUAS))->BTest  ;
+  (vUASummary.at(iUAS))->STrain = (TH1F*) STrain_ ->Clone();
+  (vUASummary.at(iUAS))->BTrain = (TH1F*) BTrain_ ->Clone();
+  (vUASummary.at(iUAS))->STest  = (TH1F*) STest_  ->Clone();
+  (vUASummary.at(iUAS))->BTest  = (TH1F*) BTest_  ->Clone();
+  SetGoodAxis( (vUASummary.at(iUAS))->STrain );
+  SetGoodAxis( (vUASummary.at(iUAS))->BTrain );
+  SetGoodAxis( (vUASummary.at(iUAS))->STest  );
+  SetGoodAxis( (vUASummary.at(iUAS))->BTest  );
+
+  delete (vUASummary.at(iUAS))->CorrMtxS ;
+  delete (vUASummary.at(iUAS))->CorrMtxB ;
+  (vUASummary.at(iUAS))->CorrMtxS = (TH2F*) CorrMtxS_ ->Clone();
+  (vUASummary.at(iUAS))->CorrMtxB = (TH2F*) CorrMtxB_ ->Clone();
+  SetGoodAxis( (vUASummary.at(iUAS))->CorrMtxS ); 
+  SetGoodAxis( (vUASummary.at(iUAS))->CorrMtxB ); 
+
+  //TH1D* kDCut = (vUASummary.at(iUAS))-> DCut ;
+  //TH1D* kSCut = (vUASummary.at(iUAS))-> SCut ;
+  delete (vUASummary.at(iUAS))->DCut ;
+  delete (vUASummary.at(iUAS))->SCut ;
+  (vUASummary.at(iUAS))->DCut = (TH1D*) DCut_    ->Clone() ;
+  (vUASummary.at(iUAS))->SCut = (TH1D*) SCut_    ->Clone() ;
+  SetGoodAxis( (vUASummary.at(iUAS))->DCut );
+  SetGoodAxis( (vUASummary.at(iUAS))->SCut );
+
+  //vector <TH1D*>  kvSCut ;
+  //vector <TH1D*>  kvBCut ;
+  //for ( int iD = 0 ; iD < (signed) ((vUASummary.at(iUAS))->vSCut).size() ; ++iD ) kvSCut.push_back( ((vUASummary.at(iUAS))->vSCut).at(iD) );
+  //for ( int iD = 0 ; iD < (signed) ((vUASummary.at(iUAS))->vBCut).size() ; ++iD ) kvBCut.push_back( ((vUASummary.at(iUAS))->vBCut).at(iD) );
+  for ( int iD = 0 ; iD < (signed) ((vUASummary.at(iUAS))->vSCut).size() ; ++iD ) delete ((vUASummary.at(iUAS))->vSCut).at(iD) ;
+  for ( int iD = 0 ; iD < (signed) ((vUASummary.at(iUAS))->vBCut).size() ; ++iD ) delete ((vUASummary.at(iUAS))->vBCut).at(iD) ;
+  ((vUASummary.at(iUAS))->vSCut).clear();
+  ((vUASummary.at(iUAS))->vBCut).clear();
+  for ( int iD = 0 ; iD < (signed) vSCut_.size() ; ++iD ) ((vUASummary.at(iUAS))->vSCut).push_back( (TH1D*) vSCut_.at(iD)->Clone() ) ;
+  for ( int iD = 0 ; iD < (signed) vBCut_.size() ; ++iD ) ((vUASummary.at(iUAS))->vBCut).push_back( (TH1D*) vBCut_.at(iD)->Clone() ) ;
+  for ( int iD = 0 ; iD < (signed) ((vUASummary.at(iUAS))->vSCut).size() ; ++iD ) SetGoodAxis( ((vUASummary.at(iUAS))->vSCut).at(iD) );
+  for ( int iD = 0 ; iD < (signed) ((vUASummary.at(iUAS))->vBCut).size() ; ++iD ) SetGoodAxis( ((vUASummary.at(iUAS))->vBCut).at(iD) );
+
+  delete CorrMtxS_ ;
+  delete CorrMtxB_ ;
+  delete D2Train_ ;
+  delete D2Test_  ;
+
+  delete STrain_ ;
+  delete BTrain_ ;
+  delete STest_ ;
+  delete BTest_ ;
+
+  delete DCut_  ;
+  delete SCut_  ;
+
+  for ( int iD = 0 ; iD < (signed) vSCut_.size() ; ++iD ) delete vSCut_.at(iD);
+  for ( int iD = 0 ; iD < (signed) vBCut_.size() ; ++iD ) delete vBCut_.at(iD);
+  vSCut_.clear();
+  vBCut_.clear();
+
+  TCanvas* Canvas = new TCanvas(TmvaName1D,TmvaName1D,950,700);
+  Canvas->Divide(3,2);
+
+  Canvas->cd(1);
+  PlotEpoch(iUAS);
+  Canvas->cd(2);
+  PlotOvertrain(iUAS);
+  Canvas->cd(4);
+  PlotCorrMtx(iUAS,1);
+  Canvas->cd(5);
+  PlotCorrMtx(iUAS,0);
+  Canvas->cd(6); 
+  PlotMVAStack(iUAS );
+
+  Canvas->SaveAs("plots/mvasummary_"+TmvaName1D+".eps");
+  Canvas->SaveAs("plots/mvasummary_"+TmvaName1D+".gif");
+
+  TCanvas* CanvasStack = new TCanvas(TmvaName1D+"_Stack",TmvaName1D,600,600);
+  CanvasStack->cd();
+  PlotMVAStack(iUAS );
+
+  CanvasStack->SaveAs("plots/mvastack_"+TmvaName1D+".eps");
+  CanvasStack->SaveAs("plots/mvastack_"+TmvaName1D+".gif");
+
+  // Close File
+  //File->Close();
+  //delete File;
+
+  return;
+}
 
 // --------------------------- PrintYields ()
 

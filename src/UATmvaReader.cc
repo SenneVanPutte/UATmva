@@ -414,7 +414,7 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
          Double_t result = -99. ; 
          vector<Double_t> RESULTS ;
          if ( Cfg.GetTmvaDim() == 1 ) { 
-           UAReader->TmvaReader->EvaluateMVA((UAReader->TmvaName).at(0));
+           result = UAReader->TmvaReader->EvaluateMVA((UAReader->TmvaName).at(0));
          } else {
            // result for each separated MVA
            for ( int iDim = 1 ; iDim <=  Cfg.GetTmvaDim() ; ++iDim ) {

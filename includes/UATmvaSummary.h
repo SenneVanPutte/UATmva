@@ -23,6 +23,7 @@ class UATmvaSummary_t {
   TString             BaseName;
   TString             ExtName;  
   TString             TmvaName;
+  vector<TString>     TmvaNameDim;
  
   vector< Bool_t >            CPlotsLogY ;   
   vector< TString >           CPlotsXAxis;
@@ -97,6 +98,7 @@ class UATmvaSummary {
   void PlotOvertrain  ( int );
   void PlotEff        ( int );
   void PlotMVAStack   ( int );
+  void PlotDimMVA     ( UATmvaConfig& , int , int );
   void PlotCplotStack ( int , int );
   void PrintYields ( int , int );
   int    GetBestLimitMVAID ();
