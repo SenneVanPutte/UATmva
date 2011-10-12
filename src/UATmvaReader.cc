@@ -413,6 +413,7 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
          if (iD->TrueData               ) Weight *= DaWeight;
          Double_t result = -99. ; 
          vector<Double_t> RESULTS ;
+         bool kEvent = true;
          if ( Cfg.GetTmvaDim() == 1 ) { 
            result = UAReader->TmvaReader->EvaluateMVA((UAReader->TmvaName).at(0));
          } else {
@@ -425,19 +426,23 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
            for ( int iDim = 0 ; iDim < Cfg.GetTmvaDim() ; ++iDim ) r2 += pow((1.+RESULTS.at(iDim)),2)  ;
            if (r2>=0.) result = sqrt(r2)-1.;
            //result = RESULTS.at(0) ; 
+           //if ( RESULTS.at(1) < 0.5 ) kEvent = false ;
          } 
 //         cout << result << " " << Weight << endl;
-         hMVA -> Fill( result , Weight);
+
          if ( Cfg.GetTmvaDim() != 1 ) {
            for ( int iDim = 0 ; iDim < Cfg.GetTmvaDim() ; ++iDim ) (hMVA_ND.at(iDim))->Fill( RESULTS.at(iDim) , Weight ) ;
          }
-         if (iD->TrueData                ) hMVA_data -> Fill( result , Weight);
-         if (iD->SigTrain                ) hMVA_sig  -> Fill( result , Weight);
-         if (iD->BkgdData||iD->BkgdTrain ) hMVA_bkgd -> Fill( result , Weight);
-         if (iD->BkgdData&&!iD->BkgdTrain) hMVA_bgSp -> Fill( result , Weight);
-         if (iD->BkgdTrain               ) hMVA_bgTr -> Fill( result , Weight);
-         // Var Control Plots 
-         for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) hCtrl.at(iP)->Fill( FVar[((Cfg.GetCtrlPlot())->at(iP)).iVarPos+1] , Weight);
+         if (kEvent) {
+           hMVA -> Fill( result , Weight);
+           if (iD->TrueData                ) hMVA_data -> Fill( result , Weight);
+           if (iD->SigTrain                ) hMVA_sig  -> Fill( result , Weight);
+           if (iD->BkgdData||iD->BkgdTrain ) hMVA_bkgd -> Fill( result , Weight);
+           if (iD->BkgdData&&!iD->BkgdTrain) hMVA_bgSp -> Fill( result , Weight);
+           if (iD->BkgdTrain               ) hMVA_bgTr -> Fill( result , Weight);
+           // Var Control Plots 
+           for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) hCtrl.at(iP)->Fill( FVar[((Cfg.GetCtrlPlot())->at(iP)).iVarPos+1] , Weight);
+         }
        }
        cout << "[UATmvaReade::Read] Loop End for tree:" << iD->NickName << endl; 
        ((UAReader->TmvaFile).at(0))->cd(Directory.str().c_str());
