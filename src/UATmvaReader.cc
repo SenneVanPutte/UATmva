@@ -335,6 +335,9 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
 
      cout <<(Cfg.GetInputData())->size() << endl;  
      for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+       // skip Train sample (unless we are in a poorman aproach of having Train=Test)
+       if (iD->SigTrain  && Cfg.GetTestMode() != 1 ) continue;
+       if (iD->BkgdTrain && Cfg.GetTestMode() != 1 ) continue;
        Double_t DaWeight=1.0; 
        Double_t SgWeight=1.0;
        Double_t BgWeight=1.0;
@@ -408,8 +411,8 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
          treeWeight  = 1.;
          if ( TreeWght ) treeWeight = TreeWght->EvalInstance() ; 
          Weight = treeWeight ; 
-         if (iD->SigTrain               ) Weight *= SgWeight;
-         if (iD->BkgdData||iD->BkgdTrain) Weight *= BgWeight;
+         if (iD->SigTest                ) Weight *= SgWeight;
+         if (iD->BkgdData||iD->BkgdTest ) Weight *= BgWeight;
          if (iD->TrueData               ) Weight *= DaWeight;
          Double_t result = -99. ; 
          vector<Double_t> RESULTS ;
@@ -427,7 +430,12 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
            if (r2>=0.) result = sqrt(r2)-1.;
            //result = RESULTS.at(0) ; 
            //if ( RESULTS.at(1) < 0.5 ) kEvent = false ;
-         } 
+         }
+         // TMVA result used in log mode 
+         if ( Cfg.GetTmvaRespUseLog() ) {
+           result = result + 1. + Cfg.GetTmvaRespXMin() ;
+           result = log(result);
+         }
 //         cout << result << " " << Weight << endl;
 
          if ( Cfg.GetTmvaDim() != 1 ) {
@@ -436,10 +444,10 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
          if (kEvent) {
            hMVA -> Fill( result , Weight);
            if (iD->TrueData                ) hMVA_data -> Fill( result , Weight);
-           if (iD->SigTrain                ) hMVA_sig  -> Fill( result , Weight);
-           if (iD->BkgdData||iD->BkgdTrain ) hMVA_bkgd -> Fill( result , Weight);
-           if (iD->BkgdData&&!iD->BkgdTrain) hMVA_bgSp -> Fill( result , Weight);
-           if (iD->BkgdTrain               ) hMVA_bgTr -> Fill( result , Weight);
+           if (iD->SigTest                 ) hMVA_sig  -> Fill( result , Weight);
+           if (iD->BkgdData||iD->BkgdTest  ) hMVA_bkgd -> Fill( result , Weight);
+           if (iD->BkgdData&&!iD->BkgdTest ) hMVA_bgSp -> Fill( result , Weight);
+           if (iD->BkgdTest                ) hMVA_bgTr -> Fill( result , Weight);
            // Var Control Plots 
            for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) hCtrl.at(iP)->Fill( FVar[((Cfg.GetCtrlPlot())->at(iP)).iVarPos+1] , Weight);
          }
@@ -523,8 +531,8 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
              //if (iD->SigTrain                ) CutBased_Signal += SgWeight * ( (TH1F*) File->Get((itCB->Hist).c_str()) ) -> GetBinContent(itCB->Bin) ;
              //if (iD->BkgdData||iD->BkgdTrain ) CutBased_Bkgd   += BgWeight * ( (TH1F*) File->Get((itCB->Hist).c_str()) ) -> GetBinContent(itCB->Bin) ;
              if (iD->TrueData                ) CutBased_Data   += ( (TH1F*) File->Get((itCB->Hist).c_str()) ) -> GetBinContent(itCB->Bin) ;
-             if (iD->SigTrain                ) CutBased_Signal += ( (TH1F*) File->Get((itCB->Hist).c_str()) ) -> GetBinContent(itCB->Bin) ;
-             if (iD->BkgdData||iD->BkgdTrain ) CutBased_Bkgd   += ( (TH1F*) File->Get((itCB->Hist).c_str()) ) -> GetBinContent(itCB->Bin) ;
+             if (iD->SigTest                 ) CutBased_Signal += ( (TH1F*) File->Get((itCB->Hist).c_str()) ) -> GetBinContent(itCB->Bin) ;
+             if (iD->BkgdData||iD->BkgdTest  ) CutBased_Bkgd   += ( (TH1F*) File->Get((itCB->Hist).c_str()) ) -> GetBinContent(itCB->Bin) ;
              File->Close();
              delete File; 
            }

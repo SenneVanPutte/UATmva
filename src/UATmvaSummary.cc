@@ -109,7 +109,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
         if ( CPlotData_ == NULL ) CPlotData_ = (TH1F*) ((TH1F*) File->Get(TSDirectory+"/"+HistName))->Clone() ;
         else                      CPlotData_ -> Add    ((TH1F*) File->Get(TSDirectory+"/"+HistName))          ;
       }
-      if (iD->SigTrain) {  
+      if (iD->SigTest ) {  
         if ( CPlotSign_ == NULL ) CPlotSign_ = (TH1F*) ((TH1F*) File->Get(TSDirectory+"/"+HistName))->Clone() ;
         else                      CPlotSign_ -> Add    ((TH1F*) File->Get(TSDirectory+"/"+HistName))          ;
       }
@@ -118,7 +118,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
     vector<TH1F*> CPlotsBkgd_ ;
     if ( Cfg.GetPlotGroup()->size() == 0 ) {
       for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
-        if (iD->BkgdData||iD->BkgdTrain ) {
+        if (iD->BkgdData||iD->BkgdTest  ) {
           TString HistName = iD->NickName+"_"+Cfg.GetCtrlPlot()->at(iP).VarName ;
           CPlotsBkgd_.push_back( (TH1F*) File->Get(TSDirectory+"/"+HistName) );
         }
@@ -195,14 +195,14 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   TH1D* BCutTr_   = (TH1D*) File->Get(TSDirectory+"/BkgdTrain");
   TH1D* BCutAll_  = (TH1D*) File->Get(TSDirectory+"/BkgdTot");
 
-
+  cout << "[UATmvaSummary_t] Fetching MVA outputs ... vSCut" << endl;
   vector <TH1D*>  vSCut_ ;
 //  if ( Cfg.GetPlotGroup()->size() == 0 ) {
     for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
-      if (iD->SigTrain) {
+      if (iD->SigTest ) {
         vSName.push_back(iD->NickName);
         vSCut_.push_back( (TH1D*) ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName))->Clone() ) ;
-//         (vSCut_.at(0))->Draw();
+//        (vSCut_.at(0))->Draw();
       } 
     } 
 /*
@@ -232,7 +232,9 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   }
 */
 
+  cout << "[UATmvaSummary_t] Fetching MVA outputs ... vBCut" << endl;
   vector <TH1D*>  vBCut_ ;
+
   if ( Cfg.GetPlotGroup()->size() == 0 ) {
     for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
       if (iD->BkgdData) {

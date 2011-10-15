@@ -147,7 +147,10 @@ void UATmvaClassification::DoLH( UATmvaConfig& Cfg, UATmvaTree& T) {
 
      // Create Method Options
      ostringstream Method;
-     Method << "H:!V" ;
+     //Method << "H:!V" ;
+     Method << "H:!V:!TransformOutput:PDFInterpol=Spline2:NSmoothSig[0]=30:NSmoothBkg[0]=30:NSmoothBkg[1]=10:NSmooth=1:NAvEvtPerBin=50" ;
+
+
 
      // Create and Train MVA
      Train(Cfg,T,Name.str(),Method.str(),nVarMax);
@@ -280,17 +283,53 @@ void UATmvaClassification::Train1D(UATmvaConfig& Cfg, UATmvaTree& T , string Nam
      
      // Add Tree
      for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+       // SigTrain
        if(iD->SigTrain ) {
          SgWeight = iD->ScaleFac;
-         UAFactory->TmvaFactory->AddSignalTree     ( T.GetTree(iD->NickName) , SgWeight ) ;
+         //if      ( Cfg.GetTestMode() == 1 )
+           UAFactory->TmvaFactory->AddSignalTree     ( T.GetTree(iD->NickName) , SgWeight ) ;
+         //else if ( Cfg.GetTestMode() == 2 ) 
+         //  UAFactory->TmvaFactory->AddSignalTree     ( T.GetTree(iD->NickName) , SgWeight , "Training") ;
        }
+       // SigTest (if that mode)
+/*
+       if(iD->SigTest ) {
+         SgWeight = iD->ScaleFac;
+         if      ( Cfg.GetTestMode() == 2 )
+           UAFactory->TmvaFactory->AddSignalTree     ( T.GetTree(iD->NickName) , SgWeight , "Test") ;
+       }
+*/
+       // BkgdTrain 
        if(iD->BkgdTrain) {
          BgWeight = iD->ScaleFac;
-         if ( Cfg.GetTmvaDim() == 1 )     UAFactory->TmvaFactory->AddBackgroundTree ( T.GetTree(iD->NickName) , BgWeight ) ;
-         else {
-           if ( (iD->BkgdTrain) == iDim ) UAFactory->TmvaFactory->AddBackgroundTree ( T.GetTree(iD->NickName) , BgWeight ) ;
+         if ( Cfg.GetTmvaDim() == 1 ) { 
+           //if      ( Cfg.GetTestMode() == 1 )
+             UAFactory->TmvaFactory->AddBackgroundTree ( T.GetTree(iD->NickName) , BgWeight ) ;
+           //else if ( Cfg.GetTestMode() == 2 )
+           //  UAFactory->TmvaFactory->AddBackgroundTree ( T.GetTree(iD->NickName) , BgWeight , "Training") ;
+         } else {
+           if ( (iD->BkgdTrain) == iDim ) {
+             //if      ( Cfg.GetTestMode() == 1 )
+               UAFactory->TmvaFactory->AddBackgroundTree ( T.GetTree(iD->NickName) , BgWeight ) ;
+             //else if ( Cfg.GetTestMode() == 2 )
+             //  UAFactory->TmvaFactory->AddBackgroundTree ( T.GetTree(iD->NickName) , BgWeight , "Training" ) ;
+           }
          }
        }
+       // BkgdTest (if that mode)
+/*
+       if(iD->BkgdTest) {
+         BgWeight = iD->ScaleFac;
+         if ( Cfg.GetTestMode() == 2 ) {
+           if ( Cfg.GetTmvaDim() == 1 ) { 
+             UAFactory->TmvaFactory->AddBackgroundTree ( T.GetTree(iD->NickName) , BgWeight , "Test" ) ;
+           } else {  
+             if ( (iD->BkgdTrain) == iDim )
+               UAFactory->TmvaFactory->AddBackgroundTree ( T.GetTree(iD->NickName) , BgWeight , "Test" ) ;
+           }
+         }
+       }
+*/ 
      }
   
      // Set training options

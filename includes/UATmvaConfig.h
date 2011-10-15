@@ -16,6 +16,8 @@ class InputData_t {
   TString FileName  ;
   Bool_t  SigTrain  ;
   Int_t   BkgdTrain ;
+  Bool_t  SigTest   ;
+  Int_t   BkgdTest  ; 
   Bool_t  TrueData  ;
   Bool_t  BkgdData  ;    
   Float_t Lumi      ;
@@ -88,6 +90,7 @@ class UATmvaConfig {
 
   Int_t                InputType  ;
   TString              TreeName   ;
+  Int_t                TestMode   ; // Training & Test Separation !
   vector<InputData_t>  InputData  ;
   vector<InputVar_t>   InputVar   ;
   
@@ -141,7 +144,8 @@ class UATmvaConfig {
   Float_t              TmvaRespXMin       ;
   Float_t              TmvaRespXMax       ; 
   Int_t                TmvaRespRebinFac   ;     
-
+  Bool_t               TmvaRespUseLog     ;
+ 
   // Cut Based Yields
   //TString              CutBasedHistName   ;
   //Int_t                CutBasedHistBin    ;  
@@ -174,6 +178,7 @@ class UATmvaConfig {
   TString              GetTmvaName()       { return TmvaName      ; }
   Int_t                GetInputType()      { return InputType     ; }
   TString              GetTreeName()       { return TreeName      ; }
+  Int_t                GetTestMode()       { return TestMode      ; } 
   vector<InputData_t>* GetInputData()      { return &InputData    ; }
   vector<InputVar_t>*  GetInputVar()       { return &InputVar     ; }
  
@@ -216,6 +221,7 @@ class UATmvaConfig {
   Float_t              GetTmvaRespXMin()       { return TmvaRespXMin       ; }
   Float_t              GetTmvaRespXMax()       { return TmvaRespXMax       ; }
   Int_t                GetTmvaRespRebinFac()   { return TmvaRespRebinFac   ; }
+  Bool_t               GetTmvaRespUseLog()     { return TmvaRespUseLog     ; }
  
   //TString              GetCutBasedHistName()   { return CutBasedHistName ; }
   //Int_t                GetCutBasedHistBin()    { return CutBasedHistBin  ; }

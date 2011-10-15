@@ -22,6 +22,7 @@ void UATmvaConfig::Reset(){
 
   InputType = -1;
   TreeName  = "";
+  TestMode  =  1;
   InputData.clear();
   InputVar.clear();
 
@@ -150,10 +151,11 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
       else UAError("[UATmvaConfig] Wrong InputType Input !");
     }
 
+    if ( Elements.at(0) == "TestMode" ) TestMode = atoi(Elements.at(1).c_str()) ;
 
     // InputData
     if ( Elements.at(0) == "InputData" ) {
-       if  ( Elements.size() == 9 ) {
+       if  ( Elements.size() == 9 && TestMode == 1 ) {
           InputData_t InDat;
           InDat.NickName  = Elements.at(1);
           InDat.FileName  = Elements.at(8);
@@ -163,8 +165,24 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
           InDat.BkgdData  = atoi(Elements.at(5).c_str()) ;
           InDat.Lumi      = atof(Elements.at(6).c_str()) ;
           InDat.ScaleFac  = atof(Elements.at(7).c_str()) ;
+          InDat.SigTest   = InDat.SigTrain  ; 
+          InDat.BkgdTest  = InDat.BkgdTrain ;
           InputData.push_back(InDat);
        }
+       else if  ( Elements.size() == 11 && TestMode == 2) {
+          InputData_t InDat;
+          InDat.NickName  = Elements.at(1);
+          InDat.FileName  = Elements.at(10);
+          InDat.SigTrain  = atoi(Elements.at(2).c_str()) ;
+          InDat.SigTest   = atoi(Elements.at(3).c_str()) ;
+          InDat.BkgdTrain = atoi(Elements.at(4).c_str()) ;
+          InDat.BkgdTest  = atoi(Elements.at(5).c_str()) ;
+          InDat.TrueData  = atoi(Elements.at(6).c_str()) ;
+          InDat.BkgdData  = atoi(Elements.at(7).c_str()) ;
+          InDat.Lumi      = atof(Elements.at(8).c_str()) ;
+          InDat.ScaleFac  = atof(Elements.at(9).c_str()) ;
+          InputData.push_back(InDat);
+       } 
        else UAError("[UATmvaConfig] Wrong InputData Input !");
     }
 
@@ -362,11 +380,18 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
     // ------------------------------- Reader MVA Output binning
 
     if ( Elements.at(0) == "TmvaRespBinning" ) {
-      if   ( Elements.size() == 5 ) {
+      if   ( Elements.size() == 6 ) {
          TmvaRespNBins = atoi(Elements.at(1).c_str());
          TmvaRespXMin  = atof(Elements.at(2).c_str());
          TmvaRespXMax  = atof(Elements.at(3).c_str()); 
          TmvaRespRebinFac = atoi(Elements.at(4).c_str());
+         TmvaRespUseLog   = atoi(Elements.at(5).c_str());
+         if ( TmvaRespUseLog ) {
+           TmvaRespXMin += TmvaRespXMin + 1.;
+           TmvaRespXMax += TmvaRespXMin + 1.;
+           TmvaRespXMin =  log(TmvaRespXMin);
+           TmvaRespXMax =  log(TmvaRespXMax);
+         }
       }
       else UAError("[UATmvaConfig] Wrong TmvaResBinning Input !");
     }  

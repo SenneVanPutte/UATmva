@@ -159,7 +159,7 @@ TH1D* GetExclusionLimit(TString hName, TH1D* Signal , TH1D* Background) {
   hSign->Reset();
   hSign->SetTitle(hName);
 
-//  return hSign; 
+  return hSign; 
 
 //  init();
 //  RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING);
