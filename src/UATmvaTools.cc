@@ -2,6 +2,7 @@
 #include <TCanvas.h>
 #include <TH1D.h>
 #include <iostream>
+#include "../includes/UATmvaConfig.h"
 
 using namespace std;
 
@@ -159,7 +160,7 @@ TH1D* GetExclusionLimit(TString hName, TH1D* Signal , TH1D* Background) {
   hSign->Reset();
   hSign->SetTitle(hName);
 
-  return hSign; 
+//  return hSign; 
 
 //  init();
 //  RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING);
@@ -273,6 +274,157 @@ TH1D* GetExclusionLimit(TString hName, TH1D* Signal , TH1D* Background) {
 
 }
 
+Double_t limitACLs( int iBin ,TH1D*& hData , vector<TH1D*>& vhSignal , vector<TH1D*>& vhBackground, UATmvaConfig& Cfg ){
 
+  string LimitCardName = "LimitCard"   ;
+  string LimitOutName  = "LimitResutl" ;
+  
+  Double_t Data   , eStatData   ;
+  vector<Double_t>  Signal ;
+  vector<Double_t>  eStatSignal ;
+  vector<Double_t>  Background ;
+  vector<Double_t>  eStatBkgd ;
+
+  vector<string> Proc;
+
+  // Prepare inputs
+
+  Data     =  hData->IntegralAndError(iBin,hData->GetNbinsX(),eStatData); 
+
+  // Make LimitCard
+  FILE *cFile;
+  cFile = fopen (LimitCardName.c_str(),"w");
+  
+
+
+  return 20.;
+}
+
+TH1D* GetExclusionLimitiACLs(TString hName, TH1D*& hData , vector<TH1D*>& vhSignal , vector<TH1D*>& vhBackground, UATmvaConfig& Cfg ) {
+
+  TH1D* hLimit = (TH1D*) hData->Clone(hName);
+  hLimit->Reset();
+  hLimit->SetTitle(hName);
+
+//  return hLimit; 
+
+
+  Int_t nBin    = hLimit->GetNbinsX() ;
+  Int_t nBinMin = 1 ;
+  Int_t nBinMax = nBin ;
+
+  for ( Int_t jBin = nBinMin ; jBin <= nBinMax ; ++jBin ) hLimit->SetBinContent(jBin,20.) ;
+
+
+  // Adaptative Scan to save CPU time
+  // Steps by 40 for >200 bins
+  if (nBin>200) {   
+    Double_t minLimVal = 19.;
+    Int_t    minLimBin = nBinMin  ;
+    for ( Int_t iBin = nBinMin ; iBin <= nBinMax ; ) {
+/*    Double_t S = Signal->Integral(iBin+20,hLimit->GetNbinsX());
+      Double_t B = Background->Integral(iBin+20,hLimit->GetNbinsX());
+      init(); RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING);
+      Double_t Limit = limitBayesian(B,.35,S,.2);
+      delete wRoo;
+*/
+      Double_t Limit = limitACLs(iBin+20, hData , vhSignal , vhBackground, Cfg );
+
+      //cout << iBin << " " << S << " " << B << " " << Limit << endl;
+      for ( Int_t jBin = iBin ; jBin <= iBin+39 ; ++jBin ) {
+        hLimit->SetBinContent(jBin,Limit); 
+      }
+      if ( Limit < minLimVal ) {
+        minLimVal = Limit ;
+        minLimBin = iBin  ;
+      }
+      iBin+=40; 
+    }
+    if (minLimBin > 1 ) nBinMin = minLimBin - 40 ;
+    nBinMax = minLimBin + 80 ;
+    if (nBinMax > nBin ) nBinMax = nBin ;
+  }
+
+
+
+  // Steps by 10 for >80  bins
+  if (nBin>80 ) {   
+    Double_t minLimVal = 19.;
+    Int_t    minLimBin = nBinMin  ;
+    for ( Int_t iBin = nBinMin ; iBin <= nBinMax ; ) {
+/*
+      Double_t S = Signal->Integral(iBin+5 ,hLimit->GetNbinsX());
+      Double_t B = Background->Integral(iBin+5 ,hLimit->GetNbinsX());
+      init(); RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING);
+      Double_t Limit = limitBayesian(B,.35,S,.2);
+      delete wRoo;
+*/
+      Double_t Limit = limitACLs(iBin+5, hData , vhSignal , vhBackground, Cfg );
+      //cout << iBin << " " << S << " " << B << " " << Limit << endl;
+      for ( Int_t jBin = iBin ; jBin <= iBin+ 9 ; ++jBin ) {
+        hLimit->SetBinContent(jBin,Limit); 
+      }
+      if ( Limit < minLimVal ) {
+        minLimVal = Limit ;
+        minLimBin = iBin  ;
+      }
+      iBin+=10; 
+    }
+    if (minLimBin > 1 ) nBinMin = minLimBin - 10 ;
+    nBinMax = minLimBin + 20 ;
+    if (nBinMax > nBin ) nBinMax = nBin ;
+  }
+
+
+  // Steps by 5  for >20  bins
+  if (nBin>20 ) {   
+    Double_t minLimVal = 19.;
+    Int_t    minLimBin = nBinMin  ;
+    for ( Int_t iBin = nBinMin ; iBin <= nBinMax ; ) {
+/*
+      Double_t S = Signal->Integral(iBin+2 ,hLimit->GetNbinsX());
+      Double_t B = Background->Integral(iBin+2 ,hLimit->GetNbinsX());
+      init(); RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING);
+      Double_t Limit = limitBayesian(B,.35,S,.2);
+      delete wRoo;
+*/
+      Double_t Limit = limitACLs(iBin+2, hData , vhSignal , vhBackground, Cfg );
+      //cout << iBin << " " << S << " " << B << " " << Limit << endl;
+      for ( Int_t jBin = iBin ; jBin <= iBin+ 4 ; ++jBin ) {
+        hLimit->SetBinContent(jBin,Limit); 
+      }
+      if ( Limit < minLimVal ) {
+        minLimVal = Limit ;
+        minLimBin = iBin  ;
+      }
+      iBin+=5; 
+    }
+    if (minLimBin > 1 ) nBinMin = minLimBin - 5  ;
+    nBinMax = minLimBin + 10 ;
+    if (nBinMax > nBin ) nBinMax = nBin ;
+  }
+
+  // Last Step of 1 Bin
+
+  for ( Int_t iBin = nBinMin ; iBin <= nBinMax ; ++iBin ) {
+/*
+    Double_t S = Signal->Integral(iBin,hLimit->GetNbinsX());
+    Double_t B = Background->Integral(iBin,hLimit->GetNbinsX());
+    init(); RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING);
+    hLimit->SetBinContent(iBin,limitBayesian(B,.35,S,.1));
+    delete wRoo;
+*/
+   Double_t Limit = limitACLs(iBin  , hData , vhSignal , vhBackground, Cfg ); 
+   hLimit->SetBinContent(iBin,Limit);
+   //cout << iBin << " " << S << " " << B << " " << Limit << endl; 
+  }
+
+
+//  delete wRoo;
+
+
+  return hLimit;
+
+}
 
 

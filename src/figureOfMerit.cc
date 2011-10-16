@@ -34,7 +34,7 @@ void init() {
 double limitBayesian(double B, double dB=0.35, double S=1, double dS=0.1) {
     cout << "[limitBayesian] B = " << B <<" S = "<< S <<endl;
 
-    return 10.;
+//    return 10.;
 
     wRoo->var("B")->setVal(B);
     wRoo->var("dB")->setVal(dB);
