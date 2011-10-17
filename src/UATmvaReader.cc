@@ -609,12 +609,43 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
      Double_t Bin_bkgd_SoverSqrtBPlusDeltaB = OptimalCutHigh(bkgd_SoverSqrtBPlusDeltaB,2);
 
      // Get Limits
-     TH1D* bgTr_BayesLimit = GetExclusionLimit("bgTr_BayesLimit",hMVA_sig ,hMVA_bgTr); bgTr_BayesLimit->Write();
-     //TH1D* bgSp_BayesLimit = GetExclusionLimit("bgSp_BayesLimit",hMVA_sig ,hMVA_bgSp); bgSp_BayesLimit->Write();
-     TH1D* bgSp_BayesLimit = GetExclusionLimitiACLs("bgSp_BayesLimit",hMVA_data,vhSignal,vhBackground,Cfg);
-     TH1D* bkgd_BayesLimit = GetExclusionLimit("bkgd_BayesLimit",hMVA_sig ,hMVA_bkgd); bkgd_BayesLimit->Write();
-     //TH1D* bgTr_BayesLimit = (TH1D*) bkgd_BayesLimit->Clone("bgTr_BayesLimit");
-     //TH1D* bgSp_BayesLimit = (TH1D*) bkgd_BayesLimit->Clone("bgSp_BayesLimit");
+     int LimitMethod =  2 ;
+     TH1D* bgTr_BayesLimit = NULL ;
+     TH1D* bgSp_BayesLimit = NULL ;
+     TH1D* bkgd_BayesLimit = NULL ;
+     if      ( LimitMethod == 0 ) {
+       bgTr_BayesLimit = (TH1D*) hMVA_sig->Clone("bgTr_BayesLimit");
+       bgSp_BayesLimit = (TH1D*) hMVA_sig->Clone("bgSp_BayesLimit");
+       bkgd_BayesLimit = (TH1D*) hMVA_sig->Clone("bkgd_BayesLimit");
+       bgTr_BayesLimit->Reset();
+       bgSp_BayesLimit->Reset();
+       bkgd_BayesLimit->Reset();
+       bgTr_BayesLimit->SetTitle("bgTr_BayesLimit");
+       bgSp_BayesLimit->SetTitle("bgSp_BayesLimit");
+       bkgd_BayesLimit->SetTitle("bkgd_BayesLimit");
+     }
+     else if ( LimitMethod == 1 ) {
+       bgTr_BayesLimit = GetExclusionLimit("bgTr_BayesLimit",hMVA_sig ,hMVA_bgTr);
+       bgSp_BayesLimit = GetExclusionLimit("bgSp_BayesLimit",hMVA_sig ,hMVA_bgSp);
+       bkgd_BayesLimit = GetExclusionLimit("bkgd_BayesLimit",hMVA_sig ,hMVA_bkgd);   
+     }
+     else if ( LimitMethod == 2 ) {
+       bgTr_BayesLimit = (TH1D*) hMVA_sig->Clone("bgTr_BayesLimit");
+       bgSp_BayesLimit = (TH1D*) hMVA_sig->Clone("bgSp_BayesLimit");
+       bgTr_BayesLimit->Reset();
+       bgSp_BayesLimit->Reset();
+       bgTr_BayesLimit->SetTitle("bgTr_BayesLimit");
+       bgSp_BayesLimit->SetTitle("bgSp_BayesLimit");
+       bkgd_BayesLimit = GetExclusionLimitiACLs("bkgd_BayesLimit",hMVA_data,vhSignal,vhBackground,Cfg); bgSp_BayesLimit->Write(); 
+     } else {
+       bgTr_BayesLimit = GetExclusionLimit("bgTr_BayesLimit",hMVA_sig ,hMVA_bgTr); 
+       bgSp_BayesLimit = GetExclusionLimitiACLs("bgSp_BayesLimit",hMVA_data,vhSignal,vhBackground,Cfg); 
+       bkgd_BayesLimit = GetExclusionLimit("bkgd_BayesLimit",hMVA_sig ,hMVA_bkgd); 
+     }
+
+     bgTr_BayesLimit->Write();
+     bgSp_BayesLimit->Write();
+     bkgd_BayesLimit->Write();
 
      // Find Optimal Cut for Limit
 
