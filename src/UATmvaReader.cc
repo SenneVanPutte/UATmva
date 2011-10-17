@@ -333,6 +333,9 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
      TH1D* hMVA_bgTr = new TH1D ("BkgdTrain","BkgdTrain",nbins,minBin,maxBin) ;
      TH1D* hMVA_bgSp = new TH1D ("BkgdSpect","BkgdSpect",nbins,minBin,maxBin) ;
 
+     vector<TH1D*> vhSignal;
+     vector<TH1D*> vhBackground;
+
      cout <<(Cfg.GetInputData())->size() << endl;  
      for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
        // skip Train sample (unless we are in a poorman aproach of having Train=Test)
@@ -455,6 +458,9 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
        cout << "[UATmvaReade::Read] Loop End for tree:" << iD->NickName << endl; 
        ((UAReader->TmvaFile).at(0))->cd(Directory.str().c_str());
        hMVA->Write();
+       if (iD->SigTest                ) vhSignal.push_back     ( (TH1D*) hMVA->Clone() ); 
+       if (iD->BkgdData||iD->BkgdTest ) vhBackground.push_back ( (TH1D*) hMVA->Clone() );
+
        if ( Cfg.GetTmvaDim() != 1 ) 
          for ( int iDim = 0 ; iDim < Cfg.GetTmvaDim() ; ++iDim ) (hMVA_ND.at(iDim))->Write();
        for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) { hCtrl.at(iP)->Write() ; } 
@@ -604,7 +610,8 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
 
      // Get Limits
      TH1D* bgTr_BayesLimit = GetExclusionLimit("bgTr_BayesLimit",hMVA_sig ,hMVA_bgTr); bgTr_BayesLimit->Write();
-     TH1D* bgSp_BayesLimit = GetExclusionLimit("bgSp_BayesLimit",hMVA_sig ,hMVA_bgSp); bgSp_BayesLimit->Write();
+     //TH1D* bgSp_BayesLimit = GetExclusionLimit("bgSp_BayesLimit",hMVA_sig ,hMVA_bgSp); bgSp_BayesLimit->Write();
+     TH1D* bgSp_BayesLimit = GetExclusionLimitiACLs("bgSp_BayesLimit",hMVA_data,vhSignal,vhBackground,Cfg);
      TH1D* bkgd_BayesLimit = GetExclusionLimit("bkgd_BayesLimit",hMVA_sig ,hMVA_bkgd); bkgd_BayesLimit->Write();
      //TH1D* bgTr_BayesLimit = (TH1D*) bkgd_BayesLimit->Clone("bgTr_BayesLimit");
      //TH1D* bgSp_BayesLimit = (TH1D*) bkgd_BayesLimit->Clone("bgSp_BayesLimit");

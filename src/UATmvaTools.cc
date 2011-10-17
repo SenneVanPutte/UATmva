@@ -160,7 +160,7 @@ TH1D* GetExclusionLimit(TString hName, TH1D* Signal , TH1D* Background) {
   hSign->Reset();
   hSign->SetTitle(hName);
 
-//  return hSign; 
+  return hSign; 
 
 //  init();
 //  RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING);
@@ -274,10 +274,12 @@ TH1D* GetExclusionLimit(TString hName, TH1D* Signal , TH1D* Background) {
 
 }
 
+// ------------------------------------------ limitACLs --------------------------------------------
+
 Double_t limitACLs( int iBin ,TH1D*& hData , vector<TH1D*>& vhSignal , vector<TH1D*>& vhBackground, UATmvaConfig& Cfg ){
 
-  string LimitCardName = "LimitCard"   ;
-  string LimitOutName  = "LimitResutl" ;
+  string LimitCardName = "LimitCardTmp.card"   ;
+  string LimitOutName  = "LimitResultTmp.ExpLim" ;
   
   Double_t Data   , eStatData   ;
   vector<Double_t>  Signal ;
@@ -287,18 +289,145 @@ Double_t limitACLs( int iBin ,TH1D*& hData , vector<TH1D*>& vhSignal , vector<TH
 
   vector<string> Proc;
 
-  // Prepare inputs
+  // Prepare Data inputs
 
   Data     =  hData->IntegralAndError(iBin,hData->GetNbinsX(),eStatData); 
+
+  // Prepare Signal Inputs
+
+  Proc.clear();
+  Signal.clear();
+  eStatSignal.clear();
+  
+  if ( Cfg.GetPlotGroup()->size() == 0 ) {
+    for (int iH=0 ; iH < (signed) vhSignal.size() ; ++iH) { 
+      Double_t EStat;
+      Signal.push_back( (vhSignal.at(iH))->IntegralAndError(iBin,(vhSignal.at(iH))->GetNbinsX(),EStat) );
+      eStatSignal.push_back(EStat);
+      int nD=0; 
+      string cProc ;
+      for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+        if (iD->SigTest) {
+          if ( iH == nD) cProc = iD->NickName ;
+          ++nD; 
+        }
+      }
+      Proc.push_back(cProc);
+    }
+  } else {
+    cout << "[limitACLs] PlotGroup not implemented" << endl;
+    return 20;
+  }
+
+  // Prepare Background Inputs
+
+    
+  Background.clear();
+  eStatBkgd.clear();
+  if ( Cfg.GetPlotGroup()->size() == 0 ) {
+    for (int iH=0 ; iH < (signed) vhBackground.size() ; ++iH) {
+      Double_t EStat;
+      Background.push_back( (vhBackground.at(iH))->IntegralAndError(iBin,(vhBackground.at(iH))->GetNbinsX(),EStat) );
+      eStatBkgd.push_back(EStat);
+      int nD=0;
+      string cProc ;
+      for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
+        if (iD->BkgdData||iD->BkgdTest) {
+          if ( iH == nD) cProc = iD->NickName ;
+          ++nD;
+        }
+      }
+      Proc.push_back(cProc);
+    }
+  } else {
+    cout << "[limitACLs] PlotGroup not implemented" << endl;
+    return 20;
+  }
+
 
   // Make LimitCard
   FILE *cFile;
   cFile = fopen (LimitCardName.c_str(),"w");
   
+  fprintf (cFile,"imax 1 number of channels\n");
+  fprintf (cFile,"jmax * number of background\n");
+  fprintf (cFile,"kmax * number of nuisance parameters\n");
+  fprintf (cFile,"Observation %-9.3f \n",Data);
+
+  fprintf (cFile,"bin ");
+  for (int iD=0 ; iD < (signed) Proc.size() ; ++iD ) fprintf (cFile,"1 ") ;
+
+  fprintf (cFile,"\n") ;
+  fprintf (cFile,"process ") ;
+  for (int iD=0 ; iD < (signed) Proc.size() ; ++iD ) fprintf (cFile,"%s ", (Proc.at(iD)).c_str() );
+  fprintf (cFile,"\n") ;
+  fprintf (cFile,"process ");
+  for (int iD=1 ; iD <= (signed) Signal.size() ; ++iD ) fprintf (cFile,"%i ", - (signed) Signal.size() + iD );
+  for (int iD=1 ; iD <= (signed) Background.size() ; ++iD ) fprintf (cFile,"%i ",iD);
+  fprintf (cFile,"\n") ;
+  
+  fprintf (cFile,"rate ") ;
+  for (int iD=0 ; iD < (signed) Signal.size() ; ++iD ) fprintf (cFile,"%-9.3f ",Signal.at(iD)) ;
+  for (int iD=0 ; iD < (signed) Background.size() ; ++iD ) fprintf (cFile,"%-9.3f ",Background.at(iD)) ;
+  fprintf (cFile,"\n") ;
+
+  // ... Syst Errors
+  for ( vector<Systematic_t>::iterator itSyst = (Cfg.GetSystematic())->begin() ; itSyst != (Cfg.GetSystematic())->end() ; ++ itSyst ) {
+    fprintf (cFile,"%-25s %-5s ",(itSyst->systName).c_str(),(itSyst->systType).c_str());
+    for ( vector<string>::iterator itProc =  Proc.begin() ; itProc != Proc.end() ; ++itProc) {
+      bool pFound = false ;
+      for ( vector<string>::iterator itSM  = (itSyst->systMember).begin() ; itSM != (itSyst->systMember).end() ; ++itSM ) {
+        if ( (*itSM) == (*itProc) )  pFound = true ;
+      }
+      if ( pFound )  fprintf (cFile,"%-5.3f ",itSyst->systVal);
+      else           fprintf (cFile,"  -   ");
+    }
+    fprintf (cFile,"\n") ;
+  }
+
+  // ... Stat Errors
+  int iProc = 0 ;
+  for (int iD=0 ; iD < (signed) Signal.size() ; ++iD ) {
+    double eStaRel = 1. ;
+    if (Signal.at(iD)>0.) eStaRel += eStatSignal.at(iD) / Signal.at(iD) ;
+    string statName = "stat_" + Proc.at(iProc) ;
+    string statType = "lnN" ;
+    fprintf (cFile,"%-25s %-5s ",statName.c_str() , statType.c_str() ) ;      
+    for ( vector<string>::iterator itProc =  Proc.begin() ; itProc != Proc.end() ; ++itProc) {
+      if ( (Proc.at(iProc)) == (*itProc) ) fprintf (cFile,"%-5.3f ",eStaRel) ;
+      else                                                   fprintf (cFile,"  -   ");
+    }
+    fprintf (cFile,"\n") ;
+    ++iProc;
+  }
+  for (int iD=0 ; iD < (signed) Background.size() ; ++iD ) {
+    double eStaRel = 1. ;
+    if (Background.at(iD)>0.) eStaRel += eStatBkgd.at(iD) / Background.at(iD) ;
+    string statName = "stat_" + Proc.at(iProc) ;
+    string statType = "lnN" ;
+    fprintf (cFile,"%-25s %-5s ",statName.c_str() , statType.c_str() ) ;      
+    for ( vector<string>::iterator itProc =  Proc.begin() ; itProc != Proc.end() ; ++itProc) {
+      if ( (Proc.at(iProc)) == (*itProc) ) fprintf (cFile,"%-5.3f ",eStaRel) ;
+      else                                                   fprintf (cFile,"  -   ");
+    }
+    fprintf (cFile,"\n") ;
+    ++iProc;
+  }
+
+  fclose(cFile);
+
+  // Compute Limit
+  string execBase  = "source $VO_CMS_SW_DIR/cmsset_default.sh ; cd /localgrid/xjanssen/CMSSW_4_2_8/src ; eval `scramv1 runtime -sh` ; cd - ;";
+  string execLimit = "combine -M Asymptotic --run=expected -m 0 -n " + LimitCardName ;
+  string EXEC      = execBase + execLimit ;
+  system( EXEC.c_str() );
+
 
 
   return 20.;
 }
+
+// ------------------------------------------- GetExclusionLimitiACLs ---------------------------------
 
 TH1D* GetExclusionLimitiACLs(TString hName, TH1D*& hData , vector<TH1D*>& vhSignal , vector<TH1D*>& vhBackground, UATmvaConfig& Cfg ) {
 
