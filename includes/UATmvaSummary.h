@@ -97,7 +97,7 @@ class UATmvaSummary {
   void PlotEpoch      ( int );
   void PlotOvertrain  ( int );
   void PlotEff        ( int );
-  void PlotMVAStack   ( int );
+  void PlotMVAStack   ( UATmvaConfig& , int );
   void PlotDimMVA     ( UATmvaConfig& , int , int );
   void PlotCplotStack ( int , int );
   void PrintYields ( int , int );

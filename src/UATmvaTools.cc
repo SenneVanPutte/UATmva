@@ -376,10 +376,12 @@ Double_t limitACLs( int iBin ,TH1D*& hData , vector<TH1D*>& vhSignal , vector<TH
     fprintf (cFile,"%-25s %-5s ",(itSyst->systName).c_str(),(itSyst->systType).c_str());
     for ( vector<string>::iterator itProc =  Proc.begin() ; itProc != Proc.end() ; ++itProc) {
       bool pFound = false ;
+      int  iSyst  = -1;
+      int  jSyst  =  0;
       for ( vector<string>::iterator itSM  = (itSyst->systMember).begin() ; itSM != (itSyst->systMember).end() ; ++itSM ) {
-        if ( (*itSM) == (*itProc) )  pFound = true ;
+        if ( (*itSM) == (*itProc) ) { pFound = true ; iSyst = jSyst ; }
       }
-      if ( pFound )  fprintf (cFile,"%-5.3f ",itSyst->systVal);
+      if ( pFound )  fprintf (cFile,"%-5.3f ",(itSyst->systVal).at(iSyst));
       else           fprintf (cFile,"  -   ");
     }
     fprintf (cFile,"\n") ;
@@ -423,7 +425,8 @@ Double_t limitACLs( int iBin ,TH1D*& hData , vector<TH1D*>& vhSignal , vector<TH
   string execGet   = "grep 'Median for expected limits:' " + LimitOutName + " && Limit=$(grep 'Median for expected limits:' " + LimitOutName + " | awk '{print $5}' ) || Limit=40. ; echo $Limit > .explim "  ;
   cout << execLimit << endl;
   string EXEC      = execBase + ";" + execLimit + ";" + execGet  ;
-  system( EXEC.c_str() );
+  int iErr = system( EXEC.c_str() );
+  if (iErr) cout << iErr << endl ;
 
   Double_t Limit;  
   ifstream indata;

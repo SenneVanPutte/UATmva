@@ -7,7 +7,13 @@
 #include <TStyle.h>
 #include <TSystem.h>
 #include <TText.h>
+#include <TLatex.h>
+
 #include <TLegend.h>
+
+
+#include "src/tdrstyle.C"
+
 
 void SetGoodAxis(TObject* Curve_){
 
@@ -311,6 +317,7 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
 
   cout << "[UATmvaSummary_t] Copying MVA outputs" << endl;
   DCut     = (TH1D*) DCut_    ->Clone() ;
+  //DCut->Reset();
   SCut     = (TH1D*) SCut_    ->Clone() ;
   BCutTr   = (TH1D*) BCutTr_  ->Clone() ;
   BCutAll  = (TH1D*) BCutAll_ ->Clone();
@@ -667,6 +674,9 @@ void UATmvaSummary::Print( ){
 
 void UATmvaSummary::Plots( UATmvaConfig& Cfg , bool bBest ){
 
+  setTDRStyle();
+
+
   Int_t ID = -1 ;
   while ( ID != 0 ) {
     Print();
@@ -699,14 +709,14 @@ void UATmvaSummary::Plots( UATmvaConfig& Cfg , bool bBest ){
         Canvas->cd(3);
         PlotEff(ID-1);
         Canvas->cd(6);
-        PlotMVAStack(ID-1 );
+        PlotMVAStack(Cfg,ID-1 );
       } else {
         Canvas = new TCanvas(vUASummary.at(ID-1)->TmvaName,vUASummary.at(ID-1)->TmvaName,700,350);
         Canvas->Divide(2,1);
         Canvas->cd(1);
         PlotEff(ID-1);
         Canvas->cd(2);
-        PlotMVAStack(ID-1 );
+        PlotMVAStack(Cfg,ID-1 );
       }
 
       //gPad->WaitPrimitive();
@@ -730,9 +740,10 @@ void UATmvaSummary::Plots( UATmvaConfig& Cfg , bool bBest ){
 
       TCanvas* CanvasStack = new TCanvas(vUASummary.at(ID-1)->TmvaName+"_Stack",vUASummary.at(ID-1)->TmvaName,600,600);
       CanvasStack->cd();
-      PlotMVAStack(ID-1);
+      PlotMVAStack(Cfg,ID-1);
       CanvasStack->SaveAs("plots/mvastack_"+TString(PlotName)+".eps");
       CanvasStack->SaveAs("plots/mvastack_"+TString(PlotName)+".gif");
+      CanvasStack->SaveAs("plots/mvastack_"+TString(PlotName)+".pdf");
 
       if ( Cfg.GetTmvaDim() > 1 ) {
         for (int iDim = 1 ; iDim <= Cfg.GetTmvaDim() ; ++iDim ) PlotDimMVA(Cfg,ID-1,iDim) ;
@@ -918,7 +929,7 @@ void UATmvaSummary::PlotCplotStack(int iUAS , int iVar ){
 
 //-------------------------------- PlotMVAStack()
 
-void UATmvaSummary::PlotMVAStack(int iUAS ){
+void UATmvaSummary::PlotMVAStack( UATmvaConfig& Cfg ,  int iUAS ){
 
 
 /*
@@ -933,9 +944,11 @@ void UATmvaSummary::PlotMVAStack(int iUAS ){
 */
 
 
-   gPad->SetRightMargin(0.02);
+   bool useLog = false ;
+
+   gPad->SetRightMargin(0.05);
    gPad->SetLeftMargin(0.15);
-   gPad->SetLogy(1);
+   if (useLog) gPad->SetLogy(1);
 
    vector<TH1D*> vStack;
    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) {
@@ -946,27 +959,39 @@ void UATmvaSummary::PlotMVAStack(int iUAS ){
        iStack->Add(vUASummary.at(iUAS)->vBCut.at(iD2Sum));
      }
      cout << endl;
-     iStack->SetLineColor(iD+2);
-     iStack->SetFillColor(iD+2);
+     if ( Cfg.GetPlotGroup()->size() == 0 ) {
+       iStack->SetLineColor(iD+2);
+       iStack->SetFillColor(iD+2);
+     } else {
+       iStack->SetLineColor(  ((Cfg.GetPlotGroup())->at(iD)).PlotGroupColor   );
+       iStack->SetFillColor(  ((Cfg.GetPlotGroup())->at(iD)).PlotGroupColor   );
+     }
      iStack->Rebin(MVARebinFac);
      vStack.push_back( (TH1D*) iStack->Clone() );
      delete iStack;
    }
 
-   vUASummary.at(iUAS)->SCut->SetLineColor(kBlack);
+   if ( Cfg.GetPlotGroup()->size() == 0 ) {
+     vUASummary.at(iUAS)->SCut->SetLineColor(kBlack);
+     vUASummary.at(iUAS)->DCut->SetMarkerColor(kBlack);
+   } else {
+     vUASummary.at(iUAS)->SCut->SetLineColor(kRed+1);
+     vUASummary.at(iUAS)->DCut->SetMarkerColor(kBlack);
+   }
    vUASummary.at(iUAS)->SCut->SetLineWidth(2);
-   vUASummary.at(iUAS)->DCut->SetMarkerColor(kBlack);
    vUASummary.at(iUAS)->DCut->SetMarkerStyle(20);
     
    Double_t hMax = TMath::Max( vStack.at(0)->GetMaximum() , vUASummary.at(iUAS)->DCut->GetMaximum() );
    hMax = TMath::Max ( hMax , vUASummary.at(iUAS)->BCutAll->GetMaximum() );
 
-   vStack.at(0)->GetYaxis()->SetRangeUser( 0.01 , 10*hMax);
+   if (useLog) vStack.at(0)->GetYaxis()->SetRangeUser( 0.01 , 10*hMax);
+   else        vStack.at(0)->GetYaxis()->SetRangeUser(  0.  , 1.6*hMax);
    vStack.at(0)->SetTitle(vUASummary.at(iUAS)->TmvaName);
+   vStack.at(0)->GetXaxis()->SetTitleOffset(1.2);
    vStack.at(0)->GetXaxis()->SetTitle("MVA Output");
    vStack.at(0)->GetYaxis()->SetTitle("Events");
 
-   vStack.at(0)->DrawCopy("histe"); 
+   vStack.at(0)->DrawCopy("hist"); 
    for (int iD=1 ; iD < (signed) vStack.size()  ; ++iD ) vStack.at(iD)->DrawCopy("histsame");
    //vUASummary.at(iUAS)->SCut->DrawCopy("histsame");
    //vUASummary.at(iUAS)->DCut->DrawCopy("esame");
@@ -983,16 +1008,30 @@ void UATmvaSummary::PlotMVAStack(int iUAS ){
    delete DCut;
 
    int nLegEntry = 2 + ((signed) vStack.size())/3;
-   TLegend* Legend = new TLegend (.20,.90-nLegEntry*.035,.8,.90);
+   TLegend* Legend = new TLegend (.30,.87-nLegEntry*.038,.9,.87);
    Legend->SetNColumns(3);
    Legend->SetBorderSize(0);
    Legend->SetFillColor(0);
    Legend->SetFillStyle(0);
    Legend->SetTextSize(0.04);
-   Legend->AddEntry( vUASummary.at(iUAS)->DCut   , "Data  " , "p");
-   Legend->AddEntry( vUASummary.at(iUAS)->SCut   , "Signal" , "l");
+   Legend->AddEntry( vUASummary.at(iUAS)->DCut   , "data  " , "p");
+   Legend->AddEntry( vUASummary.at(iUAS)->SCut   , (Cfg.GetSignalName()).c_str() , "l");
    for (int iD=0 ; iD < (signed) vStack.size()  ; ++iD ) Legend->AddEntry( vStack.at(iD) , (vUASummary.at(iUAS)->vBName.at(iD)).c_str() , "f");
    Legend->Draw("same");
+
+
+   TText* CMS = new TText(.15,.94,"CMS Preliminary");
+   CMS ->SetTextSize(.04);
+   CMS ->SetNDC(1);
+   CMS ->Draw("same");
+
+   char LumiText[50];
+   sprintf ( LumiText , "L_{int} = %4.2f fb^{-1}", (((Cfg.GetTargetLumi())->at(0)).Lumi)/1000. );
+   TLatex* Lumi = new TLatex(.75,.94,LumiText);
+   Lumi ->SetTextSize(.04);
+   Lumi ->SetNDC(1);
+   Lumi ->Draw("same");
+ 
 
    //gPad->WaitPrimitive();
 
@@ -1342,14 +1381,14 @@ void UATmvaSummary::PlotDimMVA ( UATmvaConfig& Cfg , int iUAS , int iDim) {
   Canvas->cd(5);
   PlotCorrMtx(iUAS,0);
   Canvas->cd(6); 
-  PlotMVAStack(iUAS );
+  PlotMVAStack(Cfg,iUAS );
 
   Canvas->SaveAs("plots/mvasummary_"+TmvaName1D+".eps");
   Canvas->SaveAs("plots/mvasummary_"+TmvaName1D+".gif");
 
   TCanvas* CanvasStack = new TCanvas(TmvaName1D+"_Stack",TmvaName1D,600,600);
   CanvasStack->cd();
-  PlotMVAStack(iUAS );
+  PlotMVAStack(Cfg,iUAS );
 
   CanvasStack->SaveAs("plots/mvastack_"+TmvaName1D+".eps");
   CanvasStack->SaveAs("plots/mvastack_"+TmvaName1D+".gif");
@@ -1393,6 +1432,39 @@ void UATmvaSummary::PrintYields ( int iUAS , int iOptim ) {
 }
 
 // --------------------------- LimitCard ()
+
+
+void getsyst(TString cname, float mass, float &N, float &s, float &u) {
+  
+  ifstream card; card.open(cname.Data());
+  if(!card) {
+    printf("Did not find card %s\n", cname.Data());
+    return;
+  }
+  while ( !card.eof() ) { 
+    float HiggsMass(0);
+    float NumEventsInCtrlRegion(0);
+    float scaleToSignRegion(0);
+    float uncertaintyOnScaleToSignRegion(0);
+    card >> HiggsMass >> NumEventsInCtrlRegion >> scaleToSignRegion >> uncertaintyOnScaleToSignRegion;
+    // notes from Emanuele
+    // n in signal region = NumEventsInCtrlRegion * scaleToSignRegion
+    // uncertainty on n   = NumEventsInCtrlRegion * uncertaintyOnScaleToSignRegion    
+    // fractional uncertainty on n = uncertaintyOnScaleToSignRegion / scaleToSignRegion
+
+    //printf("looking for mass point %.1f %.1f\n", mass, HiggsMass);
+    if (fabs(HiggsMass-mass)<5) {
+      s = scaleToSignRegion;
+      N = NumEventsInCtrlRegion;
+      u = uncertaintyOnScaleToSignRegion;
+      //printf("Found mass point %.0f: %.3f %.3f %.3f\n", mass, N, s, u);
+      return;
+    }
+  }
+  printf("Did not find mass point %.0f\n", mass);
+  return;
+
+}
 
 void UATmvaSummary::LimitCard ( UATmvaConfig& Cfg ) {
 
@@ -1444,7 +1516,8 @@ void UATmvaSummary::LimitCard ( UATmvaConfig& Cfg ) {
       Proc.push_back((vUASummary.at(iUAS)->vSName.at(iD)).c_str());
       Double_t EStat;
       Signal.push_back( vUASummary.at(iUAS)->vSCut.at(iD)->IntegralAndError(iBin,vUASummary.at(iUAS)->vSCut.at(iD)->GetNbinsX(),EStat) );
-      eStatSignal.push_back(EStat);
+      //eStatSignal.push_back(EStat);
+      eStatSignal.push_back(sqrt(vUASummary.at(iUAS)->vSCut.at(iD)->GetEntries()));
     }          
 
     Background.clear(); 
@@ -1453,7 +1526,8 @@ void UATmvaSummary::LimitCard ( UATmvaConfig& Cfg ) {
       Proc.push_back((vUASummary.at(iUAS)->vBName.at(iD)).c_str());
       Double_t EStat;
       Background.push_back( vUASummary.at(iUAS)->vBCut.at(iD)->IntegralAndError(iBin,vUASummary.at(iUAS)->vBCut.at(iD)->GetNbinsX(),EStat) );
-      eStatBkgd.push_back(EStat);
+      //eStatBkgd.push_back(EStat);
+      eStatBkgd.push_back(sqrt(vUASummary.at(iUAS)->vBCut.at(iD)->GetEntries()));
     }          
   
     if ( iMethod == 0 ) LimitCardName = "LimitCards/" + CardName + "__MVACut.card" ;  
@@ -1465,66 +1539,156 @@ void UATmvaSummary::LimitCard ( UATmvaConfig& Cfg ) {
     FILE *cFile; 
     cFile = fopen (LimitCardName.c_str(),"w");
   
-    fprintf (cFile,"imax 1 number of channels\n"); 
-    fprintf (cFile,"jmax * number of background\n");
-    fprintf (cFile,"kmax * number of nuisance parameters\n");
+    fprintf (cFile,"imax 1\n"); // number of channels\n"); 
+    fprintf (cFile,"jmax *\n"); // number of background\n");
+    fprintf (cFile,"kmax *\n"); // number of nuisance parameters\n");
+    fprintf (cFile,"----------------------------------------------------------------------------------------------------------------------------------\n");
+    fprintf (cFile,"bin         %-9s \n",(Cfg.GetLimBinName()).c_str()) ;
     fprintf (cFile,"Observation %-9.3f \n",Data);
     if ( iMethod == 1 ) {
       fprintf (cFile,"shapes *         * %s histo_$PROCESS \n",LimitRootName.c_str());
-      fprintf (cFile,"shapes data_obs  * %s histo_Data\n",LimitRootName.c_str());
+      fprintf (cFile,"shapes data_obs  * %s histo_Data     \n",LimitRootName.c_str());
     }
-    fprintf (cFile,"bin ");
-    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) fprintf (cFile,"1 ") ; 
-    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) fprintf (cFile,"1 ") ; 
+    fprintf (cFile,"----------------------------------------------------------------------------------------------------------------------------------\n");
+    fprintf (cFile,"bin                                         ");
+    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) fprintf (cFile,"%-9s ",(Cfg.GetLimBinName()).c_str()) ;
+    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) fprintf (cFile,"%-9s ",(Cfg.GetLimBinName()).c_str()) ;
     fprintf (cFile,"\n") ; 
-    fprintf (cFile,"process ") ; 
-    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) fprintf (cFile,"%s ", (vUASummary.at(iUAS)->vSName.at(iD)).c_str() ) ;
-    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) fprintf (cFile,"%s ", (vUASummary.at(iUAS)->vBName.at(iD)).c_str() ) ;
+    fprintf (cFile,"process                                     ") ;
+    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) fprintf (cFile,"%-9s ", (vUASummary.at(iUAS)->vSName.at(iD)).c_str() ) ;
+    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) fprintf (cFile,"%-9s ", (vUASummary.at(iUAS)->vBName.at(iD)).c_str() ) ;
     fprintf (cFile,"\n") ;
-    fprintf (cFile,"process ");
-    for (int iD=1 ; iD <= (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) fprintf (cFile,"%i ", - (signed) vUASummary.at(iUAS)->vSCut.size() + iD );
-    for (int iD=1 ; iD <= (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) fprintf (cFile,"%i ",iD);
+    fprintf (cFile,"process                                     ") ;
+    for (int iD=1 ; iD <= (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) fprintf (cFile,"%-9i ", - (signed) vUASummary.at(iUAS)->vSCut.size() + iD );
+    for (int iD=1 ; iD <= (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) fprintf (cFile,"%-9i ",iD);
     fprintf (cFile,"\n") ;
-    fprintf (cFile,"rate ") ; 
+    fprintf (cFile,"rate                                        ") ;
     for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) fprintf (cFile,"%-9.3f ",Signal.at(iD)) ;
     for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) fprintf (cFile,"%-9.3f ",Background.at(iD)) ;
     fprintf (cFile,"\n") ; 
+
+    fprintf (cFile,"----------------------------------------------------------------------------------------------------------------------------------\n"); 
     // ... Syst Errors
     for ( vector<Systematic_t>::iterator itSyst = (Cfg.GetSystematic())->begin() ; itSyst != (Cfg.GetSystematic())->end() ; ++ itSyst ) {
-      fprintf (cFile,"%-25s %-5s ",(itSyst->systName).c_str(),(itSyst->systType).c_str());
+      fprintf (cFile,"%-30s %-5s        ",(itSyst->systName).c_str(),(itSyst->systType).c_str());
       for ( vector<string>::iterator itProc =  Proc.begin() ; itProc != Proc.end() ; ++itProc) {
         bool pFound = false ;
-        for ( vector<string>::iterator itSM  = (itSyst->systMember).begin() ; itSM != (itSyst->systMember).end() ; ++itSM ) {
-          if ( (*itSM) == (*itProc) )  pFound = true ;
+        int  iSyst  = -1;
+        int  jSyst  =  0;
+        for ( vector<string>::iterator itSM  = (itSyst->systMember).begin() ; itSM != (itSyst->systMember).end() ; ++itSM , ++jSyst ) {
+          if ( (*itSM) == (*itProc) ) { pFound = true ; iSyst = jSyst ; }
         }
-        if ( pFound )  fprintf (cFile,"%-5.3f ",itSyst->systVal);
-        else           fprintf (cFile,"  -   "); 
+        if ( pFound )  fprintf (cFile,"%-5.3f     ",(itSyst->systVal).at(iSyst));
+        else           fprintf (cFile,"  -       "); 
       }
       fprintf (cFile,"\n") ; 
     }
+
+    fprintf (cFile,"----------------------------------------------------------------------------------------------------------------------------------\n");
+    // ... Data Driven Estimate Errors
+
+    for ( vector<SyDDEstim_t>::iterator itDDE = (Cfg.GetSyDDEstim())->begin() ; itDDE != (Cfg.GetSyDDEstim())->end() ; ++itDDE ) {
+      for ( vector<string>::iterator itDDEMemb = (itDDE->SyDDEMember).begin() ; itDDEMemb != (itDDE->SyDDEMember).end() ; ++itDDEMemb ) {
+
+        // 0) Find back process
+        int iB = -1 ;
+        for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) {
+          if ( (vUASummary.at(iUAS)->vBName.at(iD)) == (*itDDEMemb) ) iB = iD ;
+        }
+        if ( iB == -1 ) { 
+          cout << "[UATmvaSummary::LimitCard] ERROR: DDE Proc not found : " << (*itDDEMemb) << endl; 
+          continue;
+        } 
+
+        // 1) Compute from datacards
+        // ... N in signal region
+        float Nsig = Background.at(iB) ;
+        
+        // ... Loop on DDE datacards and fetch: NumEventsInCtrlRegion scaleToSignRegion uncertaintyOnScaleToSignRegion
+        vector<float> NSigRegion ;
+        vector<float> NCtrlRegion ;
+        vector<float> Scale2Sign  ;
+        vector<float> UScale2Sign ;
+        for ( vector<string>::iterator itDDECard = (itDDE->SyDDECards).begin() ; itDDECard != (itDDE->SyDDECards).end() ; ++itDDECard ) {
+          float N (Nsig), s(0), u(0) ;  
+          getsyst(*itDDECard,itDDE->SyDDEmass,N,s,u); 
+          NCtrlRegion.push_back(N);
+          Scale2Sign .push_back(s);
+          UScale2Sign.push_back(u); 
+        }
+        // N.B.: since there is no dd estimates at BDT-level, do a temporary patch: combine two sub-channels
+        // ... ratio of events in signal region (datacard / current)
+        float rdenom(0) , ratio(1) ; 
+        for ( int j = 0 ; j < (signed) NCtrlRegion.size() ; ++j) rdenom += Scale2Sign.at(j) * NCtrlRegion.at(j); 
+        if (rdenom>0) ratio = Nsig / rdenom ;
+        // ... currently extrapolating WW level estimates
+        float Nctrl = itDDE->SyDDEdctrl;
+        // ... scale factor from control region
+        float scfac = Nsig/Nctrl;           
+        // ... average uncertainty fractions
+        float unum(0);
+        for ( int j = 0 ; j < (signed) NCtrlRegion.size() ; ++j) unum += UScale2Sign.at(j) / Scale2Sign.at(j);
+        float unc = scfac*(1/(float)NCtrlRegion.size())*unum; 
+        // ... but take it from input if specified
+        if (itDDE->SyDDEderr != -1) unc = scfac*itDDE->SyDDEderr;
+        // ... and the final stuff
+        float extr(0);
+        if ( (itDDE->SyDDEType) == "lnN" ) extr = 1+unc/scfac;  // syst w.r.t 1
+        if ( (itDDE->SyDDEType) == "gmM" ) extr = unc/scfac;    // syst w.r.t 0
+
+        // 2) Write result
+        // ... lnN/gmM
+        string extrName = itDDE->SyDDEName + "_extr";
+        fprintf (cFile,"%-30s %-5s        ",extrName.c_str() , (itDDE->SyDDEType).c_str() ) ;
+        for ( vector<string>::iterator itProc =  Proc.begin() ; itProc != Proc.end() ; ++itProc) {
+          if ( (*itDDEMemb) == (*itProc) ) fprintf (cFile,"%-5.3f     ",extr) ;
+          else                                                     fprintf (cFile,"  -       ");
+        } 
+        fprintf (cFile,"\n") ;
+        // ... gmN
+        extrName = itDDE->SyDDEName + "_stat";
+        fprintf (cFile,"%-30s %-5s %-5.0f  ",extrName.c_str() , "gmN" , Nctrl ) ;
+        for ( vector<string>::iterator itProc =  Proc.begin() ; itProc != Proc.end() ; ++itProc) {
+          if ( (*itDDEMemb) == (*itProc) ) fprintf (cFile,"%-5.3f     ", scfac ) ;
+          else                                                     fprintf (cFile,"  -       ");
+        } 
+        fprintf (cFile,"\n") ;
+
+      } // for itDDEMmb
+    } // for itDDE
+
+    fprintf (cFile,"----------------------------------------------------------------------------------------------------------------------------------\n");
     // ... Stat Errors
     for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vSCut.size() ; ++iD ) {
       double eStaRel = 1. ;
-      if (Signal.at(iD)>0.) eStaRel += eStatSignal.at(iD) / Signal.at(iD) ;
-      string statName = "stat_" + vUASummary.at(iUAS)->vSName.at(iD);  
+      //if (Signal.at(iD)>0.) eStaRel += eStatSignal.at(iD) / Signal.at(iD) ;
+      if (eStatSignal.at(iD)>0.) eStaRel += 1. / eStatSignal.at(iD) ;
+      string statName = (Cfg.GetStatPrefix()) + "stat_" + (Cfg.GetStatMiddle()) + vUASummary.at(iUAS)->vSName.at(iD) + (Cfg.GetStatSuffix()) ;
       string statType = "lnN" ;   
-      fprintf (cFile,"%-25s %-5s ",statName.c_str() , statType.c_str() ) ; 
+      fprintf (cFile,"%-30s %-5s        ",statName.c_str() , statType.c_str() ) ; 
       for ( vector<string>::iterator itProc =  Proc.begin() ; itProc != Proc.end() ; ++itProc) {
-        if ( (vUASummary.at(iUAS)->vSName.at(iD)) == (*itProc) ) fprintf (cFile,"%-5.3f ",eStaRel) ;
-        else                                                   fprintf (cFile,"  -   "); 
+        if ( (vUASummary.at(iUAS)->vSName.at(iD)) == (*itProc) ) {
+          if (Signal.at(iD)>0.) fprintf (cFile,"%-5.3f     ",eStaRel) ;
+          else                  fprintf (cFile,"  inf     ");
+        }
+        else                    fprintf (cFile,"  -       "); 
       }
       fprintf (cFile,"\n") ;
     }
   
     for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) {
       double eStaRel = 1. ;
-      if (Background.at(iD)>0.) eStaRel += eStatBkgd.at(iD) / Background.at(iD) ;
-      string statName = "stat_" + vUASummary.at(iUAS)->vBName.at(iD);  
+      //if (Background.at(iD)>0.) eStaRel += eStatBkgd.at(iD) / Background.at(iD) ;
+      if (eStatBkgd.at(iD)>0.) eStaRel += 1. / eStatBkgd.at(iD);
+      string statName = (Cfg.GetStatPrefix()) + "stat_" + (Cfg.GetStatMiddle()) + vUASummary.at(iUAS)->vBName.at(iD) + (Cfg.GetStatSuffix()) ;  
       string statType = "lnN" ;   
-      fprintf (cFile,"%-25s %-5s ",statName.c_str() , statType.c_str() ) ; 
+      fprintf (cFile,"%-30s %-5s        ",statName.c_str() , statType.c_str() ) ; 
       for ( vector<string>::iterator itProc =  Proc.begin() ; itProc != Proc.end() ; ++itProc) {
-        if ( (vUASummary.at(iUAS)->vBName.at(iD)) == (*itProc) ) fprintf (cFile,"%-5.3f ",eStaRel) ;
-        else                                                   fprintf (cFile,"  -   "); 
+        if ( (vUASummary.at(iUAS)->vBName.at(iD)) == (*itProc) ) {
+          if (Background.at(iD)>0.) fprintf (cFile,"%-5.3f     ",eStaRel) ;
+          else                      fprintf (cFile,"  inf     ");
+        } 
+        else                        fprintf (cFile,"  -       "); 
       }
       fprintf (cFile,"\n") ;
     }

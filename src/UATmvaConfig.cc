@@ -13,6 +13,33 @@ using namespace std;
 // ----------------------
 
 
+// ---------------------- TreeFormula_t ----------------------------
+
+void TreeFormula_t::MakFormula (TTree* Tree){
+  Formula = new TTreeFormula(NickName.c_str(),Expression.c_str(),Tree);
+}
+void TreeFormula_t::EvaFormula (){
+  if ( Formula ) {
+    Result_    = Formula->EvalInstance() ;
+    bEvaluated = true ;
+  } else {
+    cout << "[TreeFormula_t::EvaFormula] Formula not associated to a Tree: " << NickName << endl ;
+    Result_ = 0. ;
+  }
+}
+void TreeFormula_t::DelFormula (){
+  bEvaluated = false ;
+  delete Formula;
+}
+Float_t TreeFormula_t::Result(){
+  if ( bEvaluated ) {
+    return Result_ ;
+  } else {
+    cout << "[TreeFormula_t::EvaFormula] Formula not evaluated: " << NickName << endl ;
+    return 0.;
+  }
+}
+
 // ----------------------
 
 
@@ -70,7 +97,7 @@ void UATmvaConfig::Reset(){
   BDTPruneStrength .push_back(12) ;
   BDTNNodesMax     .push_back(100000) ;
 
-  XMLFile           = "NULL" ;
+  XMLFiles.clear();
 
   TmvaRespNBins     = 440 ;
   TmvaRespXMin      = -1.1 ;
@@ -81,10 +108,19 @@ void UATmvaConfig::Reset(){
   //CutBasedHistBin    = -1 ;
   CutBased         .clear();
 
+
+  SignalName = "signal";
   PlotGroup.clear() ;
   CtrlPlot.clear()  ;
 
+  LimBinName = "1";
+  DataSetWghts.clear();
   Systematic.clear() ;
+  SyDDEstim.clear();
+  StatMember.clear();
+  StatPrefix = "CMS_" ;
+  StatMiddle = ""     ;
+  StatSuffix = "_bin1";
 
 }
 
@@ -373,7 +409,7 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
     // ------------------------------- External XML weights
 
     if ( Elements.at(0) == "XMLFile") {
-      XMLFile = Elements.at(1) ; 
+      XMLFiles.push_back( Elements.at(1) ) ; 
     }
 
 
@@ -416,6 +452,8 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
       else UAError("[UATmvaConfig] Wrong CutBased Input !");
 
    }
+
+   if ( Elements.at(0) == "SignalName" ) SignalName = Elements.at(1) ;
  
    // Final Plot group ( for bkgd only )
    if ( Elements.at(0) == "PlotGroup" ) {
@@ -465,16 +503,88 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
    }
 
 
+   // DataSetWghts
+    if ( Elements.at(0) == "DataSetWght" ) {
+      DataSetWght_t DSWght ;
+      DSWght.NickName   = Elements.at(1) ;
+      DSWght.Expression = Elements.at(2) ;
+      //DSWght.Weight   = atof(Elements.at(2).c_str()) ; 
+      for ( int iMember = 3 ; iMember < (signed)Elements.size() ; ++iMember ) (DSWght.DataSets).push_back(Elements.at(iMember));
+      DataSetWghts.push_back ( DSWght );
+    }
+
+
+    // LimitBinName
+    if ( Elements.at(0) == "LimBinName") {
+      LimBinName = Elements.at(1) ;
+    }
+
+
     // Sytematics
     if ( Elements.at(0) == "Systematic" ) {
-      Systematic_t Syst ;
-      Syst.systName = Elements.at(1) ;
-      Syst.systType = Elements.at(2) ;
-      Syst.systVal  = atof((Elements.at(3)).c_str()) ;
-      vector<string> Member = UATokenize( Elements.at(4) , ':' );
-      for ( int iM = 0 ; iM < (signed) Member.size() ; ++iM ) (Syst.systMember).push_back(Member.at(iM)) ;
-      Systematic.push_back(Syst);
+      string Name =  Elements.at(1) ;
+      int iSFound = -1;
+      int iS      =  0; 
+      for ( vector<Systematic_t>::iterator itS = Systematic.begin() ; itS != Systematic.end() ; ++itS , ++iS ) {
+        if ( itS->systName == Name ) iSFound = iS ; 
+      }
+      if ( iSFound >= 0 ) { 
+        float Val  = atof((Elements.at(3)).c_str()) ; 
+        vector<string> Member = UATokenize( Elements.at(4) , ':' );
+        for ( int iM = 0 ; iM < (signed) Member.size() ; ++iM ) {
+          ((Systematic.at(iSFound)).systVal).push_back(Val);
+          ((Systematic.at(iSFound)).systMember).push_back(Member.at(iM)) ;
+        } 
+      } else {
+        Systematic_t Syst ;
+        Syst.systName = Elements.at(1) ;
+        Syst.systType = Elements.at(2) ;
+        float Val  = atof((Elements.at(3)).c_str()) ;
+        vector<string> Member = UATokenize( Elements.at(4) , ':' );
+        for ( int iM = 0 ; iM < (signed) Member.size() ; ++iM ) {
+          (Syst.systVal).push_back(Val);
+          (Syst.systMember).push_back(Member.at(iM)) ;
+        }
+        Systematic.push_back(Syst);
+      }
     }
+
+    // SyDDEstim
+    if ( Elements.at(0) == "SyDDEstim" ) {
+      SyDDEstim_t SyDDE ;
+      SyDDE.SyDDEName  = Elements.at(1) ;
+      SyDDE.SyDDEType  = Elements.at(2) ;
+      SyDDE.SyDDEmass  = atof((Elements.at(3)).c_str()) ;  
+      SyDDE.SyDDEdctrl = atof((Elements.at(4)).c_str()) ;  
+      SyDDE.SyDDEderr  = atof((Elements.at(5)).c_str()) ;
+      vector<string> Cards = UATokenize( Elements.at(6) , ':' );
+      for ( int iC = 0 ; iC < (signed) Cards.size() ; ++iC ) (SyDDE.SyDDECards).push_back(Cards.at(iC)) ;
+      vector<string> Member = UATokenize( Elements.at(7) , ':' );
+      for ( int iM = 0 ; iM < (signed) Member.size() ; ++iM ) (SyDDE.SyDDEMember).push_back(Member.at(iM)) ;
+      SyDDEstim.push_back(SyDDE);
+    }
+
+    //StatMember
+    if ( Elements.at(0) == "StatMember" ) {
+      vector<string> Member = UATokenize( Elements.at(1) , ':' );
+      for ( int iM = 0 ; iM < (signed) Member.size() ; ++iM ) StatMember.push_back(Member.at(iM)) ;
+    }
+
+    // StatPrefix
+    if ( Elements.at(0) == "StatPrefix" ) {
+      StatPrefix = Elements.at(1) ;
+    }
+
+    // StatMiddle
+    if ( Elements.at(0) == "StatMiddle" ) {
+      StatMiddle = Elements.at(1) ;
+    }
+
+    // StatSuffix
+    if ( Elements.at(0) == "StatSuffix" ) {
+      StatSuffix = Elements.at(1) ;
+    }
+
 
   }
 
@@ -573,7 +683,8 @@ void UATmvaConfig::Print(){
 
   if ( TmvaType == "XML" ) {
      cout << "--------------------- TMVA: XML ---------------------------" << endl;
-     cout << "XMLFile  = " << XMLFile << endl;
+     for (int iF=0 ; iF < (signed) XMLFiles.size() ; ++iF )
+       cout << "XMLFile  = " << XMLFiles.at(iF) << endl;
   }
 
 /*
@@ -604,6 +715,8 @@ void UATmvaConfig::Print(){
                            << endl;
     }
   }
+
+
 
   if (TargetLumi.size() > 0 ) {
     cout << "--------------------- Plot Target Lumi --------------------" << endl;

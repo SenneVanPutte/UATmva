@@ -246,10 +246,11 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
         Int_t nVar = 0;
         for (vector<InputVar_t>::iterator iVar = (Cfg.GetTmvaVar())->begin() ; iVar != (Cfg.GetTmvaVar())->end() ; ++iVar){
           if (++nVar <= nVarMax) {
-            (T.GetTree(iD->NickName))->SetBranchStatus(iVar->VarName,1);
+            if ( iVar->VarType != 'E' )(T.GetTree(iD->NickName))->SetBranchStatus(iVar->VarName,1);
             if ( iVar->VarType == 'I' ) (T.GetTree(iD->NickName))->SetBranchAddress(iVar->VarName,&IVar[nVar]);
             if ( iVar->VarType == 'F' ) (T.GetTree(iD->NickName))->SetBranchAddress(iVar->VarName,&FVar[nVar]);
             if ( iVar->VarType == 'D' ) (T.GetTree(iD->NickName))->SetBranchAddress(iVar->VarName,&DVar[nVar]);
+            if ( iVar->VarType == 'S' ) (T.GetTree(iD->NickName))->SetBranchAddress(iVar->VarName,&FVar[nVar]);
           } 
         } 
      }
@@ -267,6 +268,8 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
          if ( iVar->VarType == 'I' )  UAReader->TmvaReader->AddVariable(iVar->VarName,&FVar[nVar]);
          if ( iVar->VarType == 'F' )  UAReader->TmvaReader->AddVariable(iVar->VarName,&FVar[nVar]);
          if ( iVar->VarType == 'D' )  UAReader->TmvaReader->AddVariable(iVar->VarName,&FVar[nVar]);
+         if ( iVar->VarType == 'E' )  UAReader->TmvaReader->AddVariable(iVar->VarName,&FVar[nVar]);
+         if ( iVar->VarType == 'S' )  UAReader->TmvaReader->AddSpectator(iVar->VarName,&FVar[nVar]);
        }
      }
 
@@ -275,14 +278,18 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
      vector<TString> TmvaWeightFile ; 
      if ( Cfg.GetTmvaDim() == 1 ) {
        if ( Cfg.GetTmvaType() == "XML" ) { 
-         TmvaWeightFile.push_back(Cfg.GetXMLFile()) ; 
+         TmvaWeightFile.push_back((Cfg.GetXMLFiles())->at(0)) ; 
        } else {
          TmvaWeightFile.push_back( "weights/UATmva_"+(UAReader->TmvaName).at(0)+".weights.xml" ) ;     
        } 
      } else {
         if ( Cfg.GetTmvaType() == "XML" ) { 
-          cout << "[UATmvaReader::Read()] XML Input not implemented for mutlidimension MVA !!! " << endl;
-          return;
+          if ( (Cfg.GetTmvaDim()) != (Cfg.GetXMLFiles())->size() ) {
+            cout << "[UATmvaReader::Read()] ERROR: (Cfg.GetTmvaDim())->size() != (Cfg.GetXMLFiles())->size() !!!! " << endl;
+            return ;
+          }  
+          for ( int iDim = 1 ; iDim <= Cfg.GetTmvaDim() ; ++iDim )
+            TmvaWeightFile.push_back((Cfg.GetXMLFiles())->at(iDim-1)) ;
         } else { 
           for ( int iDim = 1 ; iDim <= Cfg.GetTmvaDim() ; ++iDim ) 
             TmvaWeightFile.push_back( "weights/UATmva_"+(UAReader->TmvaName).at(iDim)+".weights.xml" ) ; 
@@ -386,6 +393,17 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
             T.GetTree(iD->NickName)->SetBranchStatus( Presel->GetLeaf(bi)->GetBranch()->GetName(), 1 );
          }
        }
+       // Expression
+       vector<TTreeFormula*> Expressions ;
+       Int_t nnVar = 0;     
+       for (vector<InputVar_t>::iterator iVar = (Cfg.GetTmvaVar())->begin() ; iVar != (Cfg.GetTmvaVar())->end() ; ++iVar){
+         ostringstream var;
+         var << "var" << nnVar;
+         if (++nnVar <= nVarMax) Expressions.push_back ( new TTreeFormula(var.str().c_str(), iVar->VarName , T.GetTree(iD->NickName) ) ) ;
+       }
+       // DataSetWeights
+       for ( vector<DataSetWght_t>::iterator itDSW = (Cfg.GetDataSetWghts())->begin() ; itDSW != (Cfg.GetDataSetWghts())->end() ; ++itDSW ) itDSW->MakFormula(T.GetTree(iD->NickName));
+
        // Tree Loop
        cout << "[UATmvaReade::Read] Loop on tree:" << iD->NickName << endl; 
        for (Int_t jEntry = 0 ;  jEntry < nEntries ; ++jEntry) {
@@ -398,6 +416,9 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
            if (++nVar <= nVarMax) {
              if ( iVar->VarType == 'I' ) FVar[nVar] = IVar[nVar] ; 
              if ( iVar->VarType == 'D' ) FVar[nVar] = DVar[nVar] ;  
+             if ( iVar->VarType == 'E' ) {
+               if ( Expressions.at(nVar-1) ) FVar[nVar] = (Expressions.at(nVar))->EvalInstance() ; 
+             }
             /* if ( iVar->VarName == "type" && Cfg.GetTmvaType() == "XML" ) {
                int itypeNew = -1 ;
                if ( IVar[nVar] == 0 ) itypeNew = 3 ;  
@@ -410,6 +431,10 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
            }
            //cout << endl;
          }
+         // Evaluate DataSetWght Formula
+         for ( vector<DataSetWght_t>::iterator itDSW = (Cfg.GetDataSetWghts())->begin() ; itDSW != (Cfg.GetDataSetWghts())->end() ; ++itDSW ) itDSW->EvaFormula();
+
+
          // ... Evaluate
          treeWeight  = 1.;
          if ( TreeWght ) treeWeight = TreeWght->EvalInstance() ; 
@@ -417,6 +442,14 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
          if (iD->SigTest                ) Weight *= SgWeight;
          if (iD->BkgdData||iD->BkgdTest ) Weight *= BgWeight;
          if (iD->TrueData               ) Weight *= DaWeight;
+         Double_t DataSetWeight = 1.0 ;
+         for ( vector<DataSetWght_t>::iterator itDSW = (Cfg.GetDataSetWghts())->begin() ; itDSW != (Cfg.GetDataSetWghts())->end() ; ++itDSW ) {
+            for ( vector<string>::iterator itDSN = (itDSW->DataSets).begin() ; itDSN != (itDSW->DataSets).end() ; ++itDSN ) {
+              if ( (*itDSN) == iD->NickName ) DataSetWeight *= itDSW->Result() ;
+            }
+         }
+         Weight *= DataSetWeight ;
+
          Double_t result = -99. ; 
          vector<Double_t> RESULTS ;
          bool kEvent = true;
@@ -428,11 +461,19 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
              RESULTS.push_back ( UAReader->TmvaReader->EvaluateMVA((UAReader->TmvaName).at(iDim)) ) ;
            }
            // and combine
-           double r2 = 0. ;
-           for ( int iDim = 0 ; iDim < Cfg.GetTmvaDim() ; ++iDim ) r2 += pow((1.+RESULTS.at(iDim)),2)  ;
-           if (r2>=0.) result = sqrt(r2)-1.;
+           //double r2 = 0. ;
+           //for ( int iDim = 0 ; iDim < Cfg.GetTmvaDim() ; ++iDim ) r2 += pow((1.+RESULTS.at(iDim)),2)  ;
+           //if (r2>=0.) result = sqrt(r2)-1.;
            //result = RESULTS.at(0) ; 
            //if ( RESULTS.at(1) < 0.5 ) kEvent = false ;
+
+           result = 1.;
+           for ( int iDim = 0 ; iDim < Cfg.GetTmvaDim() ; ++iDim ) { 
+             double r;
+             r = (RESULTS.at(iDim)+1.)/2. ;
+             result *= r ; 
+           }
+
          }
          // TMVA result used in log mode 
          if ( Cfg.GetTmvaRespUseLog() ) {
@@ -477,6 +518,8 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
        for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) { delete hCtrl.at(iP) ; } 
        hCtrl.clear() ; 
        delete hMVA; 
+       // Delete DataSetWght Formula
+       for ( vector<DataSetWght_t>::iterator itDSW = (Cfg.GetDataSetWghts())->begin() ; itDSW != (Cfg.GetDataSetWghts())->end() ; ++itDSW ) itDSW->DelFormula();
      }     
 
      ((UAReader->TmvaFile).at(0))->cd(Directory.str().c_str());
@@ -609,7 +652,7 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
      Double_t Bin_bkgd_SoverSqrtBPlusDeltaB = OptimalCutHigh(bkgd_SoverSqrtBPlusDeltaB,2);
 
      // Get Limits
-     int LimitMethod =  2 ;
+     int LimitMethod =  0 ;
      TH1D* bgTr_BayesLimit = NULL ;
      TH1D* bgSp_BayesLimit = NULL ;
      TH1D* bkgd_BayesLimit = NULL ;

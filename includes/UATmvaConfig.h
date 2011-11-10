@@ -5,6 +5,9 @@
 #include <TString.h>
 #include <string>
 #include <vector>
+#include <TTree.h>
+#include <TTreeFormula.h>
+
 using namespace std;
 
 class InputData_t {
@@ -68,8 +71,44 @@ class Systematic_t {
   public:
   string systName ;
   string systType ;
-  float  systVal  ;
+  vector <float>  systVal  ;
   vector <string> systMember ;
+};
+
+class SyDDEstim_t {
+  public:
+  string SyDDEName ;
+  string SyDDEType ;
+  float  SyDDEmass ;
+  float  SyDDEdctrl;
+  float  SyDDEderr;
+  vector <string> SyDDECards  ;
+  vector <string> SyDDEMember ;
+};
+
+
+class TreeFormula_t {
+  public:
+  TreeFormula_t(){ bEvaluated = false ;}
+  virtual ~TreeFormula_t(){;}
+  string        NickName   ;
+  string        Expression ;
+  private:
+  TTreeFormula* Formula    ;
+  bool          bEvaluated ;
+  Float_t       Result_    ;
+  public:
+  void MakFormula (TTree *);
+  void EvaFormula ()       ;
+  void DelFormula ()       ;
+  Float_t Result()         ;
+};
+
+class DataSetWght_t : public TreeFormula_t {
+  public:
+//  string         NickName ;
+//  Float_t        Weight   ; 
+  vector<string> DataSets ;
 };
 
 
@@ -134,9 +173,9 @@ class UATmvaConfig {
   vector<Int_t>        BDTPruneStrength   ;
   vector<Int_t>        BDTNNodesMax       ;
 
-  // TMVA External XML
+  // TMVA External XML (possibly multiD MVA)
 
-  string               XMLFile            ;
+  vector<string>       XMLFiles           ;
 
   // Reader Basic Options
 
@@ -152,12 +191,25 @@ class UATmvaConfig {
   vector <CutBased_t>  CutBased ; 
 
   // Final Plots 
+  string               SignalName;
   vector<TargetLumi_t> TargetLumi;
   vector<PlotGroup_t>  PlotGroup ;
   vector<CtrlPlot_t>   CtrlPlot  ;
 
-  // Systematics
+
+  // Extra dataset weight 
+  vector<DataSetWght_t>  DataSetWghts ;
+
+
+  string                 LimBinName;
+  // Systematic errors
   vector<Systematic_t> Systematic;
+  vector<SyDDEstim_t>  SyDDEstim; 
+  // Statisctic errors
+  vector<string>       StatMember;
+  string               StatPrefix;
+  string               StatMiddle;
+  string               StatSuffix; 
 
   public:
  
@@ -215,7 +267,7 @@ class UATmvaConfig {
   vector<Int_t>*       GetBDTPruneStrength()   { return &BDTPruneStrength  ; } 
   vector<Int_t>*       GetBDTNNodesMax()       { return &BDTNNodesMax      ; } 
 
-  string               GetXMLFile()            { return XMLFile            ; }
+  vector<string>*      GetXMLFiles()           { return &XMLFiles          ; }
 
   Int_t                GetTmvaRespNBins()      { return TmvaRespNBins      ; }
   Float_t              GetTmvaRespXMin()       { return TmvaRespXMin       ; }
@@ -227,11 +279,22 @@ class UATmvaConfig {
   //Int_t                GetCutBasedHistBin()    { return CutBasedHistBin  ; }
   vector<CutBased_t>*  GetCutBased()           { return &CutBased ; } 
 
+  string                 GetSignalName()       { return SignalName  ; } 
   vector<TargetLumi_t>*  GetTargetLumi()       { return &TargetLumi ; }
   vector<PlotGroup_t>*   GetPlotGroup()        { return &PlotGroup  ; }     
   vector<CtrlPlot_t>*    GetCtrlPlot()         { return &CtrlPlot  ; }     
 
+  vector<DataSetWght_t>*  GetDataSetWghts()   { return &DataSetWghts ; }
+
+  string                  GetLimBinName()   { return LimBinName  ; }
   vector<Systematic_t>*  GetSystematic()       { return &Systematic ; }
+  vector<SyDDEstim_t>*   GetSyDDEstim()        { return &SyDDEstim  ; } 
+
+  vector<string>*        GetStatMember()    { return  &StatMember ; }
+  string                 GetStatPrefix()    { return  StatPrefix ; }
+  string                 GetStatMiddle()    { return  StatMiddle ; }
+  string                 GetStatSuffix()    { return  StatSuffix ; }
+
 
 };
 
