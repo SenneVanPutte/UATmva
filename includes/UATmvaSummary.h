@@ -31,6 +31,24 @@ class UATmvaSummary_t {
   vector< TH1F* >             CPlotsSign ;  
   vector< vector< TH1F* > >  vCPlotsBkgd ;
 
+  vector< TH1F* >             CPSigData ;
+  vector< TH1F* >             CPSigSign ;  
+  vector< vector< TH1F* > >  vCPSigBkgd ;
+
+  vector< TH1F* >             CPNoSigData ;
+  vector< TH1F* >             CPNoSigSign ;  
+  vector< vector< TH1F* > >  vCPNoSigBkgd ;
+
+  vector< TH1F* >             CPCutData ;
+  vector< TH1F* >             CPCutSign ;  
+  vector< vector< TH1F* > >  vCPCutBkgd ;
+
+  vector< TH1F* >             CPNoCutData ;
+  vector< TH1F* >             CPNoCutSign ;  
+  vector< vector< TH1F* > >  vCPNoCutBkgd ;
+
+
+
   TH2F*               CorrMtxS;
   TH2F*               CorrMtxB;
 
@@ -51,6 +69,14 @@ class UATmvaSummary_t {
   vector<TH1D*>       vBCut  ;
   vector<string>      vBName ;
 
+  TH1D*               MVACutData   ;
+  TH1D*               MVACutSign   ;
+  vector<TH1D*>       vMVACutBkgd  ;
+
+  TH1D*               MVANoCutData   ;
+  TH1D*               MVANoCutSign   ;
+  vector<TH1D*>       vMVANoCutBkgd  ;
+   
   TH1D*               SignCutTr;
   TH1D*               SignCutAll;
   TH1D*               LimitCutTr;
@@ -74,7 +100,7 @@ class UATmvaSummary {
   
   Bool_t                    InitDone  ;
   vector<UATmvaSummary_t*>  vUASummary ;
-  void PlotStack( TH1F* , TH1F* , vector<TH1F*> , TString ="" , TString ="" , int = 0 , bool = false );
+  void PlotStack( UATmvaConfig& , TH1F* , TH1F* , vector<TH1F*> , TString ="" , TString ="" , int = 0 , bool = false );
 
   Int_t MVARebinFac ;
 
@@ -87,8 +113,8 @@ class UATmvaSummary {
 
   void Init ( UATmvaConfig& );
   void Print( );
-  void Plots( UATmvaConfig& , bool = true );
-  void CPlots();
+  void Plots( UATmvaConfig& , bool = true , int = 0 );
+  void CPlots( UATmvaConfig& , int = 0 );
   void Yields();
   void BestMVA();
   void LimitCard(  UATmvaConfig&  );
@@ -97,9 +123,9 @@ class UATmvaSummary {
   void PlotEpoch      ( int );
   void PlotOvertrain  ( int );
   void PlotEff        ( int );
-  void PlotMVAStack   ( UATmvaConfig& , int );
+  void PlotMVAStack   ( UATmvaConfig& , int , int = 0 );
   void PlotDimMVA     ( UATmvaConfig& , int , int );
-  void PlotCplotStack ( int , int );
+  void PlotCplotStack ( UATmvaConfig& , int , int , int = 0 );
   void PrintYields ( int , int );
   int    GetBestLimitMVAID ();
   double GetBestLimitMVAVAL ();

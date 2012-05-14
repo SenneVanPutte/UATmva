@@ -298,6 +298,7 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
 
      // BookMethod
      if ( Cfg.GetTmvaDim() == 1 ) {
+       cout << "METTHOD = " << (UAReader->TmvaName).at(0) << endl; 
        UAReader->TmvaReader->BookMVA( (UAReader->TmvaName).at(0) , TmvaWeightFile.at(0) ) ;
      } else {
        for ( int iDim = 1 ; iDim <= Cfg.GetTmvaDim() ; ++iDim ) 
@@ -419,17 +420,26 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
              if ( iVar->VarType == 'E' ) {
                if ( Expressions.at(nVar-1) ) FVar[nVar] = (Expressions.at(nVar))->EvalInstance() ; 
              }
-            /* if ( iVar->VarName == "type" && Cfg.GetTmvaType() == "XML" ) {
+             if ( iVar->VarName == "channel" && Cfg.GetTmvaType() == "XML" && Cfg.Getsmurfchannel() ) {
                int itypeNew = -1 ;
-               if ( IVar[nVar] == 0 ) itypeNew = 3 ;  
-               if ( IVar[nVar] == 1 ) itypeNew = 2 ;  
-               if ( IVar[nVar] == 2 ) itypeNew = 1 ;  
-               if ( IVar[nVar] == 3 ) itypeNew = 0 ;  
+               int itype = FVar[nVar] ;
+               bool Ema = false ;
+               if ( Ema ) {
+                 if ( FVar[nVar] == 0 ) itypeNew = 3 ;  
+                 if ( FVar[nVar] == 1 ) itypeNew = 2 ;  
+                 if ( FVar[nVar] == 2 ) itypeNew = 1 ;  
+                 if ( FVar[nVar] == 3 ) itypeNew = 0 ;  
+               } else {
+                 if ( FVar[nVar] == 0 ) itypeNew = 0 ;  
+                 if ( FVar[nVar] == 1 ) itypeNew = 3 ;  
+                 if ( FVar[nVar] == 2 ) itypeNew = 2 ;  
+                 if ( FVar[nVar] == 3 ) itypeNew = 1 ;  
+               } 
                FVar[nVar] = itypeNew ;
-             }  */ 
+               //cout << "Smurfing my channel #: " << itype << " --> " << itypeNew << endl;
+             }   
              //cout <<  FVar[nVar] << " " ;
            }
-           //cout << endl;
          }
          // Evaluate DataSetWght Formula
          for ( vector<DataSetWght_t>::iterator itDSW = (Cfg.GetDataSetWghts())->begin() ; itDSW != (Cfg.GetDataSetWghts())->end() ; ++itDSW ) itDSW->EvaFormula();
@@ -473,6 +483,7 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
              r = (RESULTS.at(iDim)+1.)/2. ;
              result *= r ; 
            }
+           result = (2.*result-1.);
 
          }
          // TMVA result used in log mode 
@@ -841,7 +852,233 @@ void UATmvaReader::Read( UATmvaConfig& Cfg, UATmvaTree& T, string Name, int nVar
      DataLimit->Write();
 
 
+     // And the histo in the signal region ...
 
+     TH1D* hMVA_data_CB = new TH1D ("Data_CB"     ,"Data_CB"     ,nbins,minBin,maxBin) ;
+     TH1D* hMVA_sig_CB  = new TH1D ("Signal_CB"   ,"Signal_CB"   ,nbins,minBin,maxBin) ;
+     TH1D* hMVA_data_NoCB = new TH1D ("Data_NoCB"     ,"Data_NoCB"     ,nbins,minBin,maxBin) ;
+     TH1D* hMVA_sig_NoCB  = new TH1D ("Signal_NoCB"   ,"Signal_NoCB"   ,nbins,minBin,maxBin) ;
+
+
+     for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) { 
+       // skip Train sample (unless we are in a poorman aproach of having Train=Test)
+       if (iD->SigTrain  && Cfg.GetTestMode() != 1 ) continue;
+       if (iD->BkgdTrain && Cfg.GetTestMode() != 1 ) continue;
+       Double_t DaWeight=1.0;
+       Double_t SgWeight=1.0;
+       Double_t BgWeight=1.0;
+       Double_t Weight=1.0;
+       // Set TargetLumi
+       Double_t LumiScale = 1.;
+       LumiScale = Cfg.GetTargetLumi()->at(iLumi).Lumi / (iD->Lumi/iD->ScaleFac) ;
+       cout << iD->NickName << " : SampleLumi= " << iD->Lumi/iD->ScaleFac << " TargetLumi= " << Cfg.GetTargetLumi()->at(iLumi).Lumi << " --> LumiScale = " << LumiScale << endl;
+       if ( Cfg.GetTargetLumi()->at(iLumi).useData ) {
+         if ( iD->TrueData &&  LumiScale != 1. ) cout << "[UATmvaReade::DoMLP] WARNING: Rescaling Data Luminosity" << endl;
+         DaWeight *= LumiScale;
+       }
+       else DaWeight = 0;
+       SgWeight *= LumiScale;
+       BgWeight *= LumiScale;
+       cout << "------> DaWeight= " << DaWeight << " SgWeight= " << SgWeight << " BgWeight= " << BgWeight << endl;
+       // WeightFormula
+       TTreeFormula* TreeWght = 0 ;
+       if ( Cfg.GetTmvaWeight() != "" ) TreeWght = new TTreeFormula("TreeWght",(Cfg.GetTmvaWeight()).c_str(),T.GetTree(iD->NickName));
+       // Recreate Tmva Preselection Cut
+       TTreeFormula* Presel = 0 ;
+       if ( Cfg.GetTmvaPreCut() != "" ) {
+         // define cut
+         Presel = new TTreeFormula("Presel",(Cfg.GetTmvaPreCut()).c_str(),T.GetTree(iD->NickName));
+         // Enable needed branches 
+         for (Int_t bi = 0; bi<Presel->GetNcodes(); bi++) {
+            T.GetTree(iD->NickName)->SetBranchStatus( Presel->GetLeaf(bi)->GetBranch()->GetName(), 1 );
+         }
+       }
+       // Expression
+       vector<TTreeFormula*> Expressions ;
+       Int_t nnVar = 0;
+       for (vector<InputVar_t>::iterator iVar = (Cfg.GetTmvaVar())->begin() ; iVar != (Cfg.GetTmvaVar())->end() ; ++iVar){
+         ostringstream var;
+         var << "var" << nnVar;
+         if (++nnVar <= nVarMax) Expressions.push_back ( new TTreeFormula(var.str().c_str(), iVar->VarName , T.GetTree(iD->NickName) ) ) ;
+       }
+       // Cut Base selection
+       (Cfg.GetCutBaseSel())->MakFormula(T.GetTree(iD->NickName));
+       // DataSetWeights
+       for ( vector<DataSetWght_t>::iterator itDSW = (Cfg.GetDataSetWghts())->begin() ; itDSW != (Cfg.GetDataSetWghts())->end() ; ++itDSW ) itDSW->MakFormula(T.GetTree(iD->NickName));
+       // Init histograms
+       vector<TH1F*> hCtrlSig ;
+       vector<TH1F*> hCtrlNoSig ;
+       vector<TH1F*> hCtrlCB ;
+       vector<TH1F*> hCtrlNoCB ;
+       for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) {
+         TString HistName = iD->NickName+"_SigSel_"+Cfg.GetCtrlPlot()->at(iP).VarName ;
+         hCtrlSig.push_back( new TH1F (HistName,HistName,Cfg.GetCtrlPlot()->at(iP).nBins,Cfg.GetCtrlPlot()->at(iP).xMin,Cfg.GetCtrlPlot()->at(iP).xMax) );
+       }
+       for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) {
+         TString HistName = iD->NickName+"_NoSigSel_"+Cfg.GetCtrlPlot()->at(iP).VarName ;
+         hCtrlNoSig.push_back( new TH1F (HistName,HistName,Cfg.GetCtrlPlot()->at(iP).nBins,Cfg.GetCtrlPlot()->at(iP).xMin,Cfg.GetCtrlPlot()->at(iP).xMax) );
+       }
+       for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) {
+         TString HistName = iD->NickName+"_CBSel_"+Cfg.GetCtrlPlot()->at(iP).VarName ;
+         hCtrlCB.push_back( new TH1F (HistName,HistName,Cfg.GetCtrlPlot()->at(iP).nBins,Cfg.GetCtrlPlot()->at(iP).xMin,Cfg.GetCtrlPlot()->at(iP).xMax) );
+       }
+       TString MHistName = iD->NickName+"_CBSel" ;
+       TH1D* hMVA_CB = new TH1D (MHistName,MHistName,nbins,minBin,maxBin) ;
+       for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) {
+         TString HistName = iD->NickName+"_NoCBSel_"+Cfg.GetCtrlPlot()->at(iP).VarName ;
+         hCtrlNoCB.push_back( new TH1F (HistName,HistName,Cfg.GetCtrlPlot()->at(iP).nBins,Cfg.GetCtrlPlot()->at(iP).xMin,Cfg.GetCtrlPlot()->at(iP).xMax) );
+       }
+       MHistName = iD->NickName+"_NoCBSel" ;
+       TH1D* hMVA_NoCB = new TH1D (MHistName,MHistName,nbins,minBin,maxBin) ;
+       // Tree Loop
+       Int_t nEntries = (T.GetTree(iD->NickName))->GetEntries();
+       for (Int_t jEntry = 0 ;  jEntry < nEntries ; ++jEntry) {
+         (T.GetTree(iD->NickName))->GetEntry(jEntry);
+         // Apply Tmva Preselection Cut
+         if ( Presel && !(Presel->EvalInstance()) ) continue;
+         // ... convert everything to Float_t
+         nVar = 0;
+         for (vector<InputVar_t>::iterator iVar = (Cfg.GetTmvaVar())->begin() ; iVar != (Cfg.GetTmvaVar())->end() ; ++iVar){
+           if (++nVar <= nVarMax) {
+             if ( iVar->VarType == 'I' ) FVar[nVar] = IVar[nVar] ;
+             if ( iVar->VarType == 'D' ) FVar[nVar] = DVar[nVar] ;
+             if ( iVar->VarType == 'E' ) {
+               if ( Expressions.at(nVar-1) ) FVar[nVar] = (Expressions.at(nVar))->EvalInstance() ;
+             }
+             if ( iVar->VarName == "channel" && Cfg.GetTmvaType() == "XML" && Cfg.Getsmurfchannel() ) {
+               int itypeNew = -1 ;
+               int itype = FVar[nVar] ;
+               bool Ema = false ;
+               if ( Ema ) {
+                 if ( FVar[nVar] == 0 ) itypeNew = 3 ;
+                 if ( FVar[nVar] == 1 ) itypeNew = 2 ;
+                 if ( FVar[nVar] == 2 ) itypeNew = 1 ;
+                 if ( FVar[nVar] == 3 ) itypeNew = 0 ;
+               } else {
+                 if ( FVar[nVar] == 0 ) itypeNew = 0 ;
+                 if ( FVar[nVar] == 1 ) itypeNew = 3 ;
+                 if ( FVar[nVar] == 2 ) itypeNew = 2 ;
+                 if ( FVar[nVar] == 3 ) itypeNew = 1 ;
+               }
+               FVar[nVar] = itypeNew ;
+               //cout << "Smurfing my channel #: " << itype << " --> " << itypeNew << endl;
+             }
+             //cout <<  FVar[nVar] << " " ;
+           }
+         }
+         // Evaluate DataSetWght Formula
+         for ( vector<DataSetWght_t>::iterator itDSW = (Cfg.GetDataSetWghts())->begin() ; itDSW != (Cfg.GetDataSetWghts())->end() ; ++itDSW ) itDSW->EvaFormula();
+
+
+         // ... Evaluate
+         treeWeight  = 1.;
+         if ( TreeWght ) treeWeight = TreeWght->EvalInstance() ;
+         Weight = treeWeight ;
+         if (iD->SigTest                ) Weight *= SgWeight;
+         if (iD->BkgdData||iD->BkgdTest ) Weight *= BgWeight;
+         if (iD->TrueData               ) Weight *= DaWeight;
+         Double_t DataSetWeight = 1.0 ;
+         for ( vector<DataSetWght_t>::iterator itDSW = (Cfg.GetDataSetWghts())->begin() ; itDSW != (Cfg.GetDataSetWghts())->end() ; ++itDSW ) {
+            for ( vector<string>::iterator itDSN = (itDSW->DataSets).begin() ; itDSN != (itDSW->DataSets).end() ; ++itDSN ) {
+              if ( (*itDSN) == iD->NickName ) DataSetWeight *= itDSW->Result() ;
+            }
+         }
+         Weight *= DataSetWeight ;
+
+         Double_t result = -99. ;
+         vector<Double_t> RESULTS ;
+         bool kEvent = true;
+         if ( Cfg.GetTmvaDim() == 1 ) {
+           result = UAReader->TmvaReader->EvaluateMVA((UAReader->TmvaName).at(0));
+         } else {
+           // result for each separated MVA
+           for ( int iDim = 1 ; iDim <=  Cfg.GetTmvaDim() ; ++iDim ) {
+             RESULTS.push_back ( UAReader->TmvaReader->EvaluateMVA((UAReader->TmvaName).at(iDim)) ) ;
+           }
+           // and combine
+           //double r2 = 0. ;
+           //for ( int iDim = 0 ; iDim < Cfg.GetTmvaDim() ; ++iDim ) r2 += pow((1.+RESULTS.at(iDim)),2)  ;
+           //if (r2>=0.) result = sqrt(r2)-1.;
+           //result = RESULTS.at(0) ; 
+           //if ( RESULTS.at(1) < 0.5 ) kEvent = false ;
+
+           result = 1.;
+           for ( int iDim = 0 ; iDim < Cfg.GetTmvaDim() ; ++iDim ) {
+             double r;
+             r = (RESULTS.at(iDim)+1.)/2. ;
+             result *= r ;
+           }
+           result = (2.*result-1.);
+
+         }
+         // TMVA result used in log mode 
+         if ( Cfg.GetTmvaRespUseLog() ) {
+           result = result + 1. + Cfg.GetTmvaRespXMin() ;
+           result = log(result);
+         }
+
+         // Select MVA Signal region
+         Float_t SigCut = Cut->GetBinContent(3) ; // Use SoverSqrtBPlusDeltaB [FIXME]
+         if ( result > SigCut ) { 
+           for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) hCtrlSig.at(iP)->Fill( FVar[((Cfg.GetCtrlPlot())->at(iP)).iVarPos+1] , Weight);
+         } else {
+           for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) hCtrlNoSig.at(iP)->Fill( FVar[((Cfg.GetCtrlPlot())->at(iP)).iVarPos+1] , Weight); 
+         }
+
+         // Select Cut Base Signal region
+         (Cfg.GetCutBaseSel())->EvaFormula();
+         if ( (Cfg.GetCutBaseSel())->Result() ) {
+           for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) hCtrlCB.at(iP)->Fill( FVar[((Cfg.GetCtrlPlot())->at(iP)).iVarPos+1] , Weight);
+           hMVA_CB->Fill(result,Weight);
+           if (iD->TrueData                ) hMVA_data_CB -> Fill( result , Weight);
+           if (iD->SigTest                 ) hMVA_sig_CB  -> Fill( result , Weight);
+         } else {
+           for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) hCtrlNoCB.at(iP)->Fill( FVar[((Cfg.GetCtrlPlot())->at(iP)).iVarPos+1] , Weight); 
+           hMVA_NoCB->Fill(result,Weight);
+           if (iD->TrueData                ) hMVA_data_NoCB -> Fill( result , Weight);
+           if (iD->SigTest                 ) hMVA_sig_NoCB  -> Fill( result , Weight);
+         }
+
+         
+
+       } // tree loop end
+       // Write to File
+       ((UAReader->TmvaFile).at(0))->cd(Directory.str().c_str());
+       for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) { hCtrlSig.at(iP)->Write() ; } 
+       for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) { hCtrlNoSig.at(iP)->Write() ; } 
+       for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) { hCtrlCB.at(iP)->Write() ; } 
+       for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) { hCtrlNoCB.at(iP)->Write() ; } 
+       // clean
+       for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) { delete hCtrlSig.at(iP) ; }
+       for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) { delete hCtrlNoSig.at(iP) ; }
+       for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) { delete hCtrlCB.at(iP) ; }
+       for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) { delete hCtrlNoCB.at(iP) ; }
+       hCtrlSig.clear() ;
+       hCtrlNoSig.clear() ;
+       hCtrlCB.clear() ;
+       hCtrlNoCB.clear() ;
+
+       hMVA_CB->Write() ;
+       hMVA_NoCB->Write() ;
+       delete hMVA_CB;
+       delete hMVA_NoCB;
+
+       for ( vector<DataSetWght_t>::iterator itDSW = (Cfg.GetDataSetWghts())->begin() ; itDSW != (Cfg.GetDataSetWghts())->end() ; ++itDSW ) itDSW->DelFormula();
+       (Cfg.GetCutBaseSel())->DelFormula();
+
+
+     } // Dataset loop end
+
+     ((UAReader->TmvaFile).at(0))->cd(Directory.str().c_str());
+     hMVA_data_CB ->Write();
+     hMVA_sig_CB  ->Write();
+     hMVA_data_NoCB ->Write();
+     hMVA_sig_NoCB  ->Write();
+
+     delete hMVA_data_CB;
+     delete hMVA_sig_CB;
+     delete hMVA_data_NoCB;
+     delete hMVA_sig_NoCB;
 
 
      // clean histo's 

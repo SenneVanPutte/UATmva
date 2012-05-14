@@ -57,6 +57,7 @@ void UATmvaConfig::Reset(){
   TmvaDim            = 1 ;
   TmvaOptim          = false ;
   TmvaVarTrans.clear();
+  smurfchannel = 0 ;
   TmvaWeight         = "" ;
   TmvaVar.clear();
   TmvaPreCut         = "" ;
@@ -103,10 +104,16 @@ void UATmvaConfig::Reset(){
   TmvaRespXMin      = -1.1 ;
   TmvaRespXMax      =  1.1 ;
   TmvaRespRebinFac  =  10 ;
+  TmvaRespUseLog    = false ;
+  TmvaRespUseSigmoid= false ;
 
   //CutBasedHistName   = "NULL" ;
   //CutBasedHistBin    = -1 ;
   CutBased         .clear();
+
+  CutBaseSel.NickName    = "CutBaseSel" ;
+  CutBaseSel.Expression  = "1." ;
+
 
 
   SignalName = "signal";
@@ -114,6 +121,7 @@ void UATmvaConfig::Reset(){
   CtrlPlot.clear()  ;
 
   LimBinName = "1";
+  HiggsMass  = -1 ;
   DataSetWghts.clear();
   Systematic.clear() ;
   SyDDEstim.clear();
@@ -256,6 +264,8 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
       if   ( Elements.size() == 2 ) SetInputVar(Elements.at(1),TmvaVar) ;
       else UAError("[UATmvaConfig] Wrong TmvaVar Input !");
     }
+
+    if ( Elements.at(0) == "SMURFS" ) smurfchannel = 1 ;
 
     if ( Elements.at(0) == "TmvaPreCut" ) {
       if   ( Elements.size() == 2 ) TmvaPreCut = Elements.at(1) ;
@@ -416,7 +426,7 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
     // ------------------------------- Reader MVA Output binning
 
     if ( Elements.at(0) == "TmvaRespBinning" ) {
-      if   ( Elements.size() == 6 ) {
+      if   ( Elements.size() >= 6 ) {
          TmvaRespNBins = atoi(Elements.at(1).c_str());
          TmvaRespXMin  = atof(Elements.at(2).c_str());
          TmvaRespXMax  = atof(Elements.at(3).c_str()); 
@@ -428,6 +438,7 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
            TmvaRespXMin =  log(TmvaRespXMin);
            TmvaRespXMax =  log(TmvaRespXMax);
          }
+         if ( Elements.size() >= 7 ) TmvaRespUseSigmoid = atoi(Elements.at(6).c_str());
       }
       else UAError("[UATmvaConfig] Wrong TmvaResBinning Input !");
     }  
@@ -451,6 +462,11 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
       }
       else UAError("[UATmvaConfig] Wrong CutBased Input !");
 
+   }
+
+   if ( Elements.at(0) == "CutBaseSel" ) {
+     CutBaseSel.NickName    = "CutBaseSel" ;
+     CutBaseSel.Expression  = Elements.at(1);
    }
 
    if ( Elements.at(0) == "SignalName" ) SignalName = Elements.at(1) ;
@@ -481,8 +497,8 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
          CtrlPlotTmp.VarName = VarName ;
          CtrlPlotTmp.iVarPos = iPosVar ;
          CtrlPlotTmp.nBins   = atoi(Elements.at(2).c_str()) ;
-         CtrlPlotTmp.xMin    = atoi(Elements.at(3).c_str()) ;
-         CtrlPlotTmp.xMax    = atoi(Elements.at(4).c_str()) ;
+         CtrlPlotTmp.xMin    = atof(Elements.at(3).c_str()) ;
+         CtrlPlotTmp.xMax    = atof(Elements.at(4).c_str()) ;
          CtrlPlotTmp.kLogY   = atoi(Elements.at(5).c_str()) ;
          CtrlPlot.push_back(CtrlPlotTmp);
        }
@@ -519,6 +535,10 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
       LimBinName = Elements.at(1) ;
     }
 
+    // HiggsMass
+    if ( Elements.at(0) == "HiggsMass") {
+      HiggsMass = atof(Elements.at(1).c_str()) ;
+    }
 
     // Sytematics
     if ( Elements.at(0) == "Systematic" ) {

@@ -15,6 +15,210 @@
 #include "src/tdrstyle.C"
 
 
+
+void getsyst(TString cname, float mass, float &N, float &s, float &u) {
+  
+  ifstream card; card.open(cname.Data());
+  if(!card) {
+    printf("Did not find card %s\n", cname.Data());
+    return;
+  }
+  cout << " Reading: " << cname.Data() << endl ;
+
+  while ( !card.eof() ) { 
+
+    //cout << "." << endl;
+    float HiggsMass(0);
+    float NumEventsInCtrlRegion(0);
+    float scaleToSignRegion(0);
+    float uncertaintyOnScaleToSignRegion(0);
+    card >> HiggsMass >> NumEventsInCtrlRegion >> scaleToSignRegion >> uncertaintyOnScaleToSignRegion;
+    //cout << HiggsMass << NumEventsInCtrlRegion << scaleToSignRegion << uncertaintyOnScaleToSignRegion << endl;
+    // notes from Emanuele
+    // n in signal region = NumEventsInCtrlRegion * scaleToSignRegion
+    // uncertainty on n   = NumEventsInCtrlRegion * uncertaintyOnScaleToSignRegion    
+    // fractional uncertainty on n = uncertaintyOnScaleToSignRegion / scaleToSignRegion
+
+    printf("looking for mass point %.1f %.1f\n", mass, HiggsMass);
+    if (fabs(HiggsMass-mass)<5) {
+      s = scaleToSignRegion;
+      N = NumEventsInCtrlRegion;
+      u = uncertaintyOnScaleToSignRegion;
+      printf("Found mass point %.0f: %.3f %.3f %.3f\n", mass, N, s, u);
+      return;
+    }
+  }
+  printf("Did not find mass point %.0f\n", mass);
+  return;
+
+}
+
+//void GetRateTarget( vBName.at(iD) , Cfg.GetLimBinName() , Cfg.GetHiggsMass() ) ;
+void  GetRateTarget ( string BName , TString LimBinName , float HiggsMass , float &RateTarget ) {
+  RateTarget = -1.;
+  int   ijet = -1 ;
+  if ( LimBinName.Contains("0j") ) ijet = 0 ;
+  if ( LimBinName.Contains("1j") ) ijet = 1 ;
+
+  vector<string> RateFiles;
+
+  if ( BName == "WW" ) {
+    if (ijet==0) {
+      if ( LimBinName.Contains("ee") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_ee_0j.txt"); 
+      if ( LimBinName.Contains("em") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_em_0j.txt"); 
+      if ( LimBinName.Contains("me") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_me_0j.txt"); 
+      if ( LimBinName.Contains("mm") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_mm_0j.txt"); 
+      if ( LimBinName.Contains("sf") ) { RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_ee_0j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_mm_0j.txt"); }
+      if ( LimBinName.Contains("of") ) { RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_em_0j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_me_0j.txt"); }
+      if ( LimBinName.Contains("comb") ) { 
+         RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_mm_0j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_ee_0j.txt"); 
+         RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_em_0j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_me_0j.txt");
+      }
+    } else if (ijet==1) {
+      if ( LimBinName.Contains("ee") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_ee_1j.txt"); 
+      if ( LimBinName.Contains("em") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_em_1j.txt"); 
+      if ( LimBinName.Contains("me") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_me_1j.txt"); 
+      if ( LimBinName.Contains("mm") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_mm_1j.txt"); 
+      if ( LimBinName.Contains("sf") ) { RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_ee_1j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_mm_1j.txt"); }
+      if ( LimBinName.Contains("of") ) { RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_em_1j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_me_1j.txt"); }
+      if ( LimBinName.Contains("comb") ) { 
+         RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_mm_1j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_ee_1j.txt"); 
+         RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_em_1j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/WWCard_me_1j.txt");
+      }
+    } 
+  } 
+
+
+  if ( BName == "ggWW" ) {
+    if (ijet==0) {
+      if ( LimBinName.Contains("ee") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_ee_0j.txt"); 
+      if ( LimBinName.Contains("em") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_em_0j.txt"); 
+      if ( LimBinName.Contains("me") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_me_0j.txt"); 
+      if ( LimBinName.Contains("mm") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_mm_0j.txt"); 
+      if ( LimBinName.Contains("sf") ) { RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_ee_0j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_mm_0j.txt"); }
+      if ( LimBinName.Contains("of") ) { RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_em_0j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_me_0j.txt"); }
+      if ( LimBinName.Contains("comb") ) { 
+         RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_mm_0j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_ee_0j.txt"); 
+         RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_em_0j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_me_0j.txt");
+      }
+    } else if (ijet==1) {
+      if ( LimBinName.Contains("ee") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_ee_1j.txt"); 
+      if ( LimBinName.Contains("em") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_em_1j.txt"); 
+      if ( LimBinName.Contains("me") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_me_1j.txt"); 
+      if ( LimBinName.Contains("mm") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_mm_1j.txt"); 
+      if ( LimBinName.Contains("sf") ) { RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_ee_1j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_mm_1j.txt"); }
+      if ( LimBinName.Contains("of") ) { RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_em_1j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_me_1j.txt"); }
+      if ( LimBinName.Contains("comb") ) { 
+         RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_mm_1j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_ee_1j.txt"); 
+         RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_em_1j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/ggWWCard_me_1j.txt");
+      }
+    } 
+  } 
+
+  if ( BName == "DY" ) {
+/*    if (ijet==0) {
+      if ( LimBinName.Contains("ee") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/DYCard_ee_0j.txt"); 
+      if ( LimBinName.Contains("mm") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/DYCard_mm_0j.txt"); 
+      if ( LimBinName.Contains("sf") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/DYCard_ll_0j.txt"); 
+      if ( LimBinName.Contains("comb") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/DYCard_ll_0j.txt"); 
+    } else if (ijet==1) {
+      if ( LimBinName.Contains("ee") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/DYCard_ee_1j.txt"); 
+      if ( LimBinName.Contains("mm") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/DYCard_mm_1j.txt"); 
+      if ( LimBinName.Contains("sf") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/DYCard_ll_1j.txt"); 
+      if ( LimBinName.Contains("comb") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/DYCard_ll_1j.txt"); 
+    }
+*/
+    if (ijet==0) {
+      if ( LimBinName.Contains("ee") ||  LimBinName.Contains("mm") ||  LimBinName.Contains("sf") ||  LimBinName.Contains("comb") ) 
+        RateFiles.push_back("DDECards-BDT-4.63fb-1/DYLLCard_ll_0j.txt");
+    } else if (ijet==1) {
+      if ( LimBinName.Contains("ee") ||  LimBinName.Contains("mm") ||  LimBinName.Contains("sf") ||  LimBinName.Contains("comb") ) 
+        RateFiles.push_back("DDECards-BDT-4.63fb-1/DYLLCard_ll_1j.txt");
+    }
+ 
+  } 
+
+  if ( BName == "Top" ) {
+    if (ijet==0) {
+      if ( LimBinName.Contains("ee") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_ee_0j.txt"); 
+      if ( LimBinName.Contains("em") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_em_0j.txt"); 
+      if ( LimBinName.Contains("me") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_me_0j.txt"); 
+      if ( LimBinName.Contains("mm") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_mm_0j.txt"); 
+      if ( LimBinName.Contains("sf") ) { RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_ee_0j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_mm_0j.txt"); }
+      if ( LimBinName.Contains("of") ) { RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_em_0j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_me_0j.txt"); }
+      if ( LimBinName.Contains("comb") ) { 
+         RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_mm_0j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_ee_0j.txt"); 
+         RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_em_0j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_me_0j.txt");
+      }
+    } else if (ijet==1) {
+      if ( LimBinName.Contains("ee") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_ee_1j.txt"); 
+      if ( LimBinName.Contains("em") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_em_1j.txt"); 
+      if ( LimBinName.Contains("me") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_me_1j.txt"); 
+      if ( LimBinName.Contains("mm") ) RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_mm_1j.txt"); 
+      if ( LimBinName.Contains("sf") ) { RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_ee_1j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_mm_1j.txt"); }
+      if ( LimBinName.Contains("of") ) { RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_em_1j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_me_1j.txt"); }
+      if ( LimBinName.Contains("comb") ) { 
+         RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_mm_1j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_ee_1j.txt"); 
+         RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_em_1j.txt"); RateFiles.push_back("DDECards-BDT-4.63fb-1/TopCard_me_1j.txt");
+      }
+    } 
+  } 
+
+  if ( RateFiles.size() > 0 ) {
+    RateTarget = 0. ;
+    for ( int iRF = 0 ; iRF < (signed)  RateFiles.size() ; ++iRF ) {
+      float N (0), s(0), u(0) ;
+      getsyst(RateFiles.at(iRF),HiggsMass,N,s,u);
+      RateTarget += N*s ;
+    }
+  }
+
+}
+
+
+void Norm2RateRef( UATmvaConfig& Cfg , string NickName , TH1D* hTmp, TH1D* hRef ) {
+
+  if ( NickName == "WW" || NickName == "ggWW" ) {
+   if (  Cfg.GetHiggsMass() < 200 ) {
+    float RateOrigin = hRef->Integral(); 
+    float RateTarget ;
+    GetRateTarget( NickName , Cfg.GetLimBinName() , Cfg.GetHiggsMass() , RateTarget ) ;
+    if (  RateTarget > 0 ) {
+      float ScaleRate  = RateTarget/RateOrigin;
+      cout << "Rates " << RateOrigin << " --> " << RateTarget << " : " << ScaleRate << endl;
+      hTmp->Scale(ScaleRate);
+    }
+   }
+  } 
+  if ( NickName == "Top" || NickName == "DY" ) {
+    float RateOrigin = hRef->Integral();
+    float RateTarget ;
+    GetRateTarget( NickName , Cfg.GetLimBinName() , Cfg.GetHiggsMass() , RateTarget ) ;
+    if (  RateTarget > 0 ) {
+      float ScaleRate  = RateTarget/RateOrigin;
+      cout << "Rates " << RateOrigin << " --> " << RateTarget << " : " << ScaleRate << endl;
+      hTmp->Scale(ScaleRate);
+    }
+  }
+  if ( NickName == "Wjet" ) {
+    float RateOrigin = hTmp->Integral();
+    for ( int iBin = 0 ; iBin <= (signed) hTmp->GetNbinsX() ; ++iBin ) {
+      if ( hTmp->GetBinContent(iBin) < 0 ) hTmp->SetAt(0.,iBin) ;
+    }
+    float RateAfter  = hTmp->Integral();
+    float ScaleRate  = RateOrigin / RateAfter ;
+    cout << "Wjet " << RateOrigin << " --> " << RateAfter << " : " << ScaleRate << endl;
+    hTmp->Scale(ScaleRate);
+  }
+
+}
+
+void Norm2Rate( UATmvaConfig& Cfg , string NickName , TH1D *hTmp ) {
+  TH1D* hRef = (TH1D*) hTmp->Clone();
+  Norm2RateRef ( Cfg , NickName , hTmp , hRef );
+  delete hRef;
+}
+
 void SetGoodAxis(TObject* Curve_){
 
   // For the canvas:
@@ -103,47 +307,118 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   vector< TH1F* >             CPlotsData_ ;
   vector< TH1F* >             CPlotsSign_ ;  
   vector< vector< TH1F* > >  vCPlotsBkgd_ ;
+
+  vector< TH1F* >             CPSigData_ ;
+  vector< TH1F* >             CPSigSign_ ;  
+  vector< vector< TH1F* > >  vCPSigBkgd_ ;
+
+  vector< TH1F* >             CPNoSigData_ ;
+  vector< TH1F* >             CPNoSigSign_ ;  
+  vector< vector< TH1F* > >  vCPNoSigBkgd_ ;
+
   for ( int iP = 0 ; iP < (signed) Cfg.GetCtrlPlot()->size() ; ++iP ) {
     CPlotsXAxis.push_back( Cfg.GetCtrlPlot()->at(iP).VarName );
     CPlotsLogY.push_back( Cfg.GetCtrlPlot()->at(iP).kLogY );
     // Data and Signal
     TH1F* CPlotData_ = NULL;
     TH1F* CPlotSign_ = NULL;
+    TH1F* CPSgData_  = NULL;
+    TH1F* CPSgSign_  = NULL;
+    TH1F* CPNoSgData_  = NULL;
+    TH1F* CPNoSgSign_  = NULL;
     for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
       TString HistName = iD->NickName+"_"+Cfg.GetCtrlPlot()->at(iP).VarName ;
+      TString HistSgN  = iD->NickName+"_SigSel_"+Cfg.GetCtrlPlot()->at(iP).VarName ;
+      TString HistNoSgN  = iD->NickName+"_NoSigSel_"+Cfg.GetCtrlPlot()->at(iP).VarName ;
       if (iD->TrueData) {
         if ( CPlotData_ == NULL ) CPlotData_ = (TH1F*) ((TH1F*) File->Get(TSDirectory+"/"+HistName))->Clone() ;
         else                      CPlotData_ -> Add    ((TH1F*) File->Get(TSDirectory+"/"+HistName))          ;
+        if ( CPSgData_  == NULL ) CPSgData_  = (TH1F*) ((TH1F*) File->Get(TSDirectory+"/"+HistSgN))->Clone() ;
+        else                      CPSgData_  -> Add    ((TH1F*) File->Get(TSDirectory+"/"+HistSgN))          ;
+        if ( CPNoSgData_  == NULL ) CPNoSgData_  = (TH1F*) ((TH1F*) File->Get(TSDirectory+"/"+HistNoSgN))->Clone() ;
+        else                      CPNoSgData_  -> Add    ((TH1F*) File->Get(TSDirectory+"/"+HistNoSgN))          ;
       }
       if (iD->SigTest ) {  
         if ( CPlotSign_ == NULL ) CPlotSign_ = (TH1F*) ((TH1F*) File->Get(TSDirectory+"/"+HistName))->Clone() ;
         else                      CPlotSign_ -> Add    ((TH1F*) File->Get(TSDirectory+"/"+HistName))          ;
+        if ( CPSgSign_  == NULL ) CPSgSign_  = (TH1F*) ((TH1F*) File->Get(TSDirectory+"/"+HistSgN))->Clone() ;
+        else                      CPSgSign_  -> Add    ((TH1F*) File->Get(TSDirectory+"/"+HistSgN))          ;
+        if ( CPNoSgSign_  == NULL ) CPNoSgSign_  = (TH1F*) ((TH1F*) File->Get(TSDirectory+"/"+HistNoSgN))->Clone() ;
+        else                      CPNoSgSign_  -> Add    ((TH1F*) File->Get(TSDirectory+"/"+HistNoSgN))          ;
       }
     }
+    cout << "Hello" << endl;
     // Backgrounds (need to group if requested)
     vector<TH1F*> CPlotsBkgd_ ;
+    vector<TH1F*> CPSigBkgd_ ;
+    vector<TH1F*> CPNoSigBkgd_ ;
     if ( Cfg.GetPlotGroup()->size() == 0 ) {
       for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
         if (iD->BkgdData||iD->BkgdTest  ) {
           TString HistName = iD->NickName+"_"+Cfg.GetCtrlPlot()->at(iP).VarName ;
-          CPlotsBkgd_.push_back( (TH1F*) File->Get(TSDirectory+"/"+HistName) );
+          TString HistSgN  = iD->NickName+"_SigSel_"+Cfg.GetCtrlPlot()->at(iP).VarName ;
+          TString HistNoSgN  = iD->NickName+"_NoSigSel_"+Cfg.GetCtrlPlot()->at(iP).VarName ;
+          TH1D* hTmp = (TH1D*) (File->Get(TSDirectory+"/"+HistName))->Clone();
+          Norm2Rate( Cfg , iD->NickName , hTmp ) ; 
+          CPlotsBkgd_.push_back( (TH1F*) hTmp->Clone() ) ; 
+          delete hTmp ;
+          //CPlotsBkgd_.push_back( (TH1F*) File->Get(TSDirectory+"/"+HistName) );
+          TH1D* hRef = (TH1D*) (File->Get(TSDirectory+"/"+HistName))->Clone();
+                hTmp = (TH1D*) (File->Get(TSDirectory+"/"+HistSgN))->Clone();
+          Norm2RateRef( Cfg , iD->NickName , hTmp , hRef ) ;
+          CPSigBkgd_.push_back( (TH1F*) hTmp->Clone() ) ; 
+          delete hTmp ;
+          delete hRef ;
+                hRef = (TH1D*) (File->Get(TSDirectory+"/"+HistName))->Clone();
+                hTmp = (TH1D*) (File->Get(TSDirectory+"/"+HistNoSgN))->Clone();
+          Norm2RateRef( Cfg , iD->NickName , hTmp , hRef ) ;
+          CPNoSigBkgd_.push_back( (TH1F*) hTmp->Clone() ) ; 
+          delete hTmp ;
+          delete hRef ;
         }
       }
     } else {
       for ( vector<PlotGroup_t>::iterator iG = (Cfg.GetPlotGroup())->begin() ; iG != (Cfg.GetPlotGroup())->end() ; ++iG) {
         TH1F* CPlotBkgd_ = NULL; 
+        TH1F* CPSgBkgd_  = NULL; 
+        TH1F* CPNoSgBkgd_  = NULL; 
         for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
           TString HistName = iD->NickName+"_"+Cfg.GetCtrlPlot()->at(iP).VarName ; 
+          TString HistSgN  = iD->NickName+"_SigSel_"+Cfg.GetCtrlPlot()->at(iP).VarName ;
+          TString HistNoSgN  = iD->NickName+"_NoSigSel_"+Cfg.GetCtrlPlot()->at(iP).VarName ;
           for ( int iGM=0 ; iGM < (signed) iG->PlotGroupMember.size() ; ++iGM ) {
             if ( iG->PlotGroupMember.at(iGM) == iD->NickName ) {
-              if ( CPlotBkgd_ == NULL ) CPlotBkgd_ = (TH1F*) ((TH1F*) File->Get(TSDirectory+"/"+HistName))->Clone() ;
-              else                      CPlotBkgd_ -> Add    ((TH1F*) File->Get(TSDirectory+"/"+HistName))          ;
+              TH1D* hTmp = (TH1D*) (File->Get(TSDirectory+"/"+HistName))->Clone();
+              Norm2Rate( Cfg , iD->NickName , hTmp ) ; 
+              if ( CPlotBkgd_ == NULL ) CPlotBkgd_ = (TH1F*) hTmp->Clone() ;
+              else                      CPlotBkgd_ -> Add    (hTmp)        ;
+              delete hTmp;
+//              if ( CPlotBkgd_ == NULL ) CPlotBkgd_ = (TH1F*) ((TH1F*) File->Get(TSDirectory+"/"+HistName))->Clone() ;
+//              else                      CPlotBkgd_ -> Add    ((TH1F*) File->Get(TSDirectory+"/"+HistName))          ;
+              TH1D* hRef = (TH1D*) (File->Get(TSDirectory+"/"+HistName))->Clone();
+                    hTmp = (TH1D*) (File->Get(TSDirectory+"/"+HistSgN))->Clone();
+              Norm2RateRef( Cfg , iD->NickName , hTmp , hRef ) ;
+              if ( CPSgBkgd_  == NULL ) CPSgBkgd_ = (TH1F*) hTmp->Clone() ;
+              else                      CPSgBkgd_ -> Add    (hTmp)        ;
+              delete hTmp ;
+              delete hRef ;
+                    hRef = (TH1D*) (File->Get(TSDirectory+"/"+HistName))->Clone();
+                    hTmp = (TH1D*) (File->Get(TSDirectory+"/"+HistNoSgN))->Clone();
+              Norm2RateRef( Cfg , iD->NickName , hTmp , hRef ) ;
+              if ( CPNoSgBkgd_  == NULL ) CPNoSgBkgd_ = (TH1F*) hTmp->Clone() ;
+              else                        CPNoSgBkgd_ -> Add    (hTmp)        ;
+              delete hTmp ;
+              delete hRef ;
             }    
           } 
         }
         //if ( CPlotBkgd_ == NULL ) CPlotBkgd_ = new TH1D(
         CPlotsBkgd_.push_back( (TH1F*) CPlotBkgd_ ->Clone() ) ;
+        CPSigBkgd_. push_back( (TH1F*) CPSgBkgd_  ->Clone() ) ; 
+        CPNoSigBkgd_. push_back( (TH1F*) CPNoSgBkgd_  ->Clone() ) ; 
         delete CPlotBkgd_;
+        delete CPSgBkgd_;
+        delete CPNoSgBkgd_;
       }
     }
     // Store CtrlPlots far all sample  
@@ -152,7 +427,24 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
     CPlotsData_.push_back(CPlotData_ );
     CPlotsSign_.push_back(CPlotSign_ );
     vCPlotsBkgd_.push_back(CPlotsBkgd_); 
+
+    if ( CPSgData_ == NULL ) CPSgData_ = new TH1F(Cfg.GetCtrlPlot()->at(iP).VarName,Cfg.GetCtrlPlot()->at(iP).VarName,
+                                                    Cfg.GetCtrlPlot()->at(iP).nBins,Cfg.GetCtrlPlot()->at(iP).xMin,Cfg.GetCtrlPlot()->at(iP).xMax);    
+    CPSigData_.push_back(CPSgData_ );
+    CPSigSign_.push_back(CPSgSign_ );
+    vCPSigBkgd_.push_back(CPSigBkgd_); 
+
+    if ( CPNoSgData_ == NULL ) CPNoSgData_ = new TH1F(Cfg.GetCtrlPlot()->at(iP).VarName,Cfg.GetCtrlPlot()->at(iP).VarName,
+                                                    Cfg.GetCtrlPlot()->at(iP).nBins,Cfg.GetCtrlPlot()->at(iP).xMin,Cfg.GetCtrlPlot()->at(iP).xMax);    
+    CPNoSigData_.push_back(CPNoSgData_ );
+    CPNoSigSign_.push_back(CPNoSgSign_ );
+    vCPNoSigBkgd_.push_back(CPNoSigBkgd_); 
+
+
+
   }  
+
+  cout << "CPSigData " << CPSigData.size() << endl;
  
   cout << "[UATmvaSummary_t] Fetching CorrelationMatrix" << endl;
 
@@ -201,6 +493,11 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   TH1D* BCutTr_   = (TH1D*) File->Get(TSDirectory+"/BkgdTrain");
   TH1D* BCutAll_  = (TH1D*) File->Get(TSDirectory+"/BkgdTot");
 
+  TH1D*  MVACutData_  = (TH1D*) File->Get(TSDirectory+"/Data_CB");
+  TH1D*  MVACutSign_  = (TH1D*) File->Get(TSDirectory+"/Signal_CB");
+  TH1D*  MVANoCutData_  = (TH1D*) File->Get(TSDirectory+"/Data_NoCB");
+  TH1D*  MVANoCutSign_  = (TH1D*) File->Get(TSDirectory+"/Signal_NoCB");
+
   cout << "[UATmvaSummary_t] Fetching MVA outputs ... vSCut" << endl;
   vector <TH1D*>  vSCut_ ;
 //  if ( Cfg.GetPlotGroup()->size() == 0 ) {
@@ -240,12 +537,32 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
 
   cout << "[UATmvaSummary_t] Fetching MVA outputs ... vBCut" << endl;
   vector <TH1D*>  vBCut_ ;
+  vector<TH1D*>       vMVACutBkgd_  ;
+  vector<TH1D*>       vMVANoCutBkgd_  ;
 
   if ( Cfg.GetPlotGroup()->size() == 0 ) {
     for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
       if (iD->BkgdData) {
         vBName.push_back(iD->NickName);
-        vBCut_.push_back( (TH1D*) ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName))->Clone() ) ;
+
+        TH1D* hTmp = (TH1D*) (File->Get(TSDirectory+"/"+iD->NickName))->Clone();
+        cout << "[UATmvaSummary_t] Renormalize Background MVA outputs to data driven estimates !!!!! " << endl;
+        Norm2Rate( Cfg , iD->NickName , hTmp ) ;
+        vBCut_.push_back( (TH1D*)  hTmp->Clone() ) ;
+        //vBCut_.push_back( (TH1D*) ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName))->Clone() ) ;
+        delete hTmp;
+        TH1D* hRef = (TH1D*) (File->Get(TSDirectory+"/"+iD->NickName))->Clone();
+              hTmp = (TH1D*) (File->Get(TSDirectory+"/"+iD->NickName+"_CBSel"))->Clone(); 
+        Norm2RateRef( Cfg , iD->NickName , hTmp , hRef ) ;
+        vMVACutBkgd_.push_back( (TH1D*)  hTmp->Clone() ) ;
+        delete hTmp ;
+        delete hRef ;
+              hRef = (TH1D*) (File->Get(TSDirectory+"/"+iD->NickName))->Clone();
+              hTmp = (TH1D*) (File->Get(TSDirectory+"/"+iD->NickName+"_NoCBSel"))->Clone(); 
+        Norm2RateRef( Cfg , iD->NickName , hTmp , hRef ) ;
+        vMVANoCutBkgd_.push_back( (TH1D*)  hTmp->Clone() ) ;
+        delete hTmp ;
+        delete hRef ;
       } 
     } 
   } else {
@@ -257,18 +574,72 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
       if ( iSBkgd ) {
         vBName.push_back(iG->PlotGroupName) ;
         TH1D* iGHist = NULL ;
+        TH1D* iGHist_CB   = NULL ;
+        TH1D* iGHist_NoCB = NULL ;
         for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
-          if ( iG->PlotGroupMember.at(0) == iD->NickName ) iGHist = (TH1D*) ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName))->Clone()  ;
+
+          if ( iG->PlotGroupMember.at(0) == iD->NickName ) {
+            TH1D* hTmp = (TH1D*) (File->Get(TSDirectory+"/"+iD->NickName))->Clone();
+            cout << "[UATmvaSummary_t] Renormalize Background MVA outputs to data driven estimates !!!!! " << endl;
+            Norm2Rate( Cfg , iD->NickName , hTmp ) ;
+            iGHist = (TH1D*) hTmp->Clone() ;
+            delete hTmp ;
+            TH1D* hRef = (TH1D*) (File->Get(TSDirectory+"/"+iD->NickName))->Clone();
+                  hTmp = (TH1D*) (File->Get(TSDirectory+"/"+iD->NickName+"_CBSel"))->Clone(); 
+            Norm2RateRef( Cfg , iD->NickName , hTmp , hRef ) ;
+            iGHist_CB = (TH1D*) hTmp->Clone() ;
+            delete hTmp ;
+            delete hRef ;
+                  hRef = (TH1D*) (File->Get(TSDirectory+"/"+iD->NickName))->Clone();
+                  hTmp = (TH1D*) (File->Get(TSDirectory+"/"+iD->NickName+"_NoCBSel"))->Clone(); 
+            Norm2RateRef( Cfg , iD->NickName , hTmp , hRef ) ;
+            iGHist_NoCB = (TH1D*) hTmp->Clone() ;
+            delete hTmp ;
+            delete hRef ;
+          } 
+ 
+
+          // if ( iG->PlotGroupMember.at(0) == iD->NickName ) iGHist = (TH1D*) ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName))->Clone()  ;
         }
         for ( int iGM=1 ; iGM < (signed) iG->PlotGroupMember.size() ; ++iGM ) {
           for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
-            if ( iG->PlotGroupMember.at(iGM) == iD->NickName ) iGHist->Add ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName));
+            if ( iG->PlotGroupMember.at(iGM) == iD->NickName ) {
+             
+              TH1D* hTmp = (TH1D*) (File->Get(TSDirectory+"/"+iD->NickName))->Clone();
+              cout << "[UATmvaSummary_t] Renormalize Background MVA outputs to data driven estimates !!!!! " << endl;
+              //iGHist->Add ((TH1D*) File->Get(TSDirectory+"/"+iD->NickName));
+              Norm2Rate( Cfg , iD->NickName , hTmp ) ;
+              iGHist->Add (hTmp);
+              delete hTmp ;
+              TH1D* hRef = (TH1D*) (File->Get(TSDirectory+"/"+iD->NickName))->Clone();
+                    hTmp = (TH1D*) (File->Get(TSDirectory+"/"+iD->NickName+"_CBSel"))->Clone(); 
+              Norm2RateRef( Cfg , iD->NickName , hTmp , hRef ) ;
+              iGHist_CB->Add (hTmp); 
+              delete hTmp ;
+              delete hRef ;
+                    hRef = (TH1D*) (File->Get(TSDirectory+"/"+iD->NickName))->Clone();
+                    hTmp = (TH1D*) (File->Get(TSDirectory+"/"+iD->NickName+"_NoCBSel"))->Clone(); 
+              Norm2RateRef( Cfg , iD->NickName , hTmp , hRef ) ;
+              iGHist_NoCB->Add (hTmp); 
+              delete hTmp ;
+              delete hRef ;
+            }
           }
         }
         if ( iGHist != NULL ) {
           vBCut_.push_back( (TH1D*) iGHist->Clone() ) ;
           delete iGHist ;
         } 
+        if ( iGHist_CB != NULL ) {
+          vMVACutBkgd_.push_back( (TH1D*) iGHist_CB->Clone() ) ;
+          delete iGHist_CB ;
+        } 
+        if ( iGHist_NoCB != NULL ) {
+          vMVANoCutBkgd_.push_back( (TH1D*) iGHist_NoCB->Clone() ) ;
+          delete iGHist_NoCB ;
+        } 
+
+
       }
     }
   }
@@ -301,6 +672,22 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
     vCPlotsBkgd.push_back(CPlotsBkgd) ;
   }
 
+  for ( vector< TH1F* >::iterator iCP = CPSigData_.begin() ; iCP != CPSigData_.end() ; ++iCP ) CPSigData.push_back( (TH1F*) (*iCP)->Clone() ) ;
+  for ( vector< TH1F* >::iterator iCP = CPSigSign_.begin() ; iCP != CPSigSign_.end() ; ++iCP ) CPSigSign.push_back( (TH1F*) (*iCP)->Clone() ) ;
+  for ( vector<vector<TH1F*> >::iterator ivCP  = vCPSigBkgd_.begin() ; ivCP !=  vCPSigBkgd_.end() ; ++ivCP ) {
+    vector< TH1F* > CPSigBkgd ;
+    for ( vector< TH1F* >::iterator iCP = ivCP->begin() ; iCP != ivCP->end() ; ++iCP )  CPSigBkgd.push_back( (TH1F*) (*iCP)->Clone() ) ;
+    vCPSigBkgd.push_back(CPSigBkgd) ;
+  }
+
+  for ( vector< TH1F* >::iterator iCP = CPNoSigData_.begin() ; iCP != CPNoSigData_.end() ; ++iCP ) CPNoSigData.push_back( (TH1F*) (*iCP)->Clone() ) ;
+  for ( vector< TH1F* >::iterator iCP = CPNoSigSign_.begin() ; iCP != CPNoSigSign_.end() ; ++iCP ) CPNoSigSign.push_back( (TH1F*) (*iCP)->Clone() ) ;
+  for ( vector<vector<TH1F*> >::iterator ivCP  = vCPNoSigBkgd_.begin() ; ivCP !=  vCPNoSigBkgd_.end() ; ++ivCP ) {
+    vector< TH1F* > CPNoSigBkgd ;
+    for ( vector< TH1F* >::iterator iCP = ivCP->begin() ; iCP != ivCP->end() ; ++iCP )  CPNoSigBkgd.push_back( (TH1F*) (*iCP)->Clone() ) ;
+    vCPNoSigBkgd.push_back(CPNoSigBkgd) ;
+  }
+
   cout << "[UATmvaSummary_t] Copying CorrelationMatrix" << endl;
   CorrMtxS = (TH2F*) CorrMtxS_ ->Clone();
   CorrMtxB = (TH2F*) CorrMtxB_ ->Clone();
@@ -324,6 +711,13 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   for ( int iD = 0 ; iD < (signed) vSCut_.size() ; ++iD ) vSCut.push_back( (TH1D*) vSCut_.at(iD)->Clone() ) ;
   for ( int iD = 0 ; iD < (signed) vBCut_.size() ; ++iD ) vBCut.push_back( (TH1D*) vBCut_.at(iD)->Clone() ) ;
 
+  MVACutData = (TH1D*) MVACutData_ ->Clone() ;
+  MVACutSign = (TH1D*) MVACutSign_ ->Clone() ;
+  for ( int iD = 0 ; iD < (signed) vMVACutBkgd_.size() ; ++iD ) vMVACutBkgd.push_back( (TH1D*) vMVACutBkgd_.at(iD)->Clone() ) ;
+
+  MVANoCutData = (TH1D*) MVANoCutData_ ->Clone() ;
+  MVANoCutSign = (TH1D*) MVANoCutSign_ ->Clone() ;
+  for ( int iD = 0 ; iD < (signed) vMVANoCutBkgd_.size() ; ++iD ) vMVANoCutBkgd.push_back( (TH1D*) vMVANoCutBkgd_.at(iD)->Clone() ) ;
 
   cout << "[UATmvaSummary_t] Copying S/B & Limit optim hist" << endl;
   SignCutTr   = (TH1D*) SignCutTr_   ->Clone() ;
@@ -347,6 +741,20 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
     for ( vector< TH1F* >::iterator iCP = ivCP->begin() ; iCP != ivCP->end() ; ++iCP ) SetGoodAxis(*iCP); 
   }
 
+  for ( vector< TH1F* >::iterator iCP = CPSigData.begin() ; iCP != CPSigData.end() ; ++iCP ) SetGoodAxis(*iCP);
+  for ( vector< TH1F* >::iterator iCP = CPSigSign.begin() ; iCP != CPSigSign.end() ; ++iCP ) SetGoodAxis(*iCP);
+  for ( vector<vector<TH1F*> >::iterator ivCP  = vCPSigBkgd.begin() ; ivCP !=  vCPSigBkgd.end() ; ++ivCP ) {
+    for ( vector< TH1F* >::iterator iCP = ivCP->begin() ; iCP != ivCP->end() ; ++iCP ) SetGoodAxis(*iCP); 
+  }
+
+  for ( vector< TH1F* >::iterator iCP = CPNoSigData.begin() ; iCP != CPNoSigData.end() ; ++iCP ) SetGoodAxis(*iCP);
+  for ( vector< TH1F* >::iterator iCP = CPNoSigSign.begin() ; iCP != CPNoSigSign.end() ; ++iCP ) SetGoodAxis(*iCP);
+  for ( vector<vector<TH1F*> >::iterator ivCP  = vCPNoSigBkgd.begin() ; ivCP !=  vCPNoSigBkgd.end() ; ++ivCP ) {
+    for ( vector< TH1F* >::iterator iCP = ivCP->begin() ; iCP != ivCP->end() ; ++iCP ) SetGoodAxis(*iCP); 
+  }
+
+ 
+
   cout << "[UATmvaSummary_t] SetGoodAxis" << endl;
 
   SetGoodAxis(CorrMtxS);
@@ -366,6 +774,14 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   SetGoodAxis(BCutAll);
   for ( int iD = 0 ; iD < (signed) vSCut.size() ; ++iD ) SetGoodAxis(vSCut.at(iD));
   for ( int iD = 0 ; iD < (signed) vBCut.size() ; ++iD ) SetGoodAxis(vBCut.at(iD));
+
+  SetGoodAxis(MVACutData);
+  SetGoodAxis(MVACutSign);
+  for ( int iD = 0 ; iD < (signed) vMVACutBkgd.size() ; ++iD ) SetGoodAxis(vMVACutBkgd.at(iD));
+
+  SetGoodAxis(MVANoCutData);
+  SetGoodAxis(MVANoCutSign);
+  for ( int iD = 0 ; iD < (signed) vMVANoCutBkgd.size() ; ++iD ) SetGoodAxis(vMVANoCutBkgd.at(iD));
 
   SetGoodAxis(SignCutTr)  ;
   SetGoodAxis(SignCutAll) ;
@@ -392,6 +808,29 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   CPlotsSign_.clear();
   vCPlotsBkgd_.clear();
 
+  for ( vector< TH1F* >::iterator iCP = CPSigData_.begin() ; iCP != CPSigData_.end() ; ++iCP ) delete (*iCP);
+  for ( vector< TH1F* >::iterator iCP = CPSigSign_.begin() ; iCP != CPSigSign_.end() ; ++iCP ) delete (*iCP);
+  for ( vector<vector<TH1F*> >::iterator ivCP  = vCPSigBkgd_.begin() ; ivCP !=  vCPSigBkgd_.end() ; ++ivCP ) {
+    for ( vector< TH1F* >::iterator iCP = ivCP->begin() ; iCP != ivCP->end() ; ++iCP ) delete (*iCP);
+    ivCP->clear();
+  }
+  CPSigData_.clear();
+  CPSigSign_.clear();
+  vCPSigBkgd_.clear();
+
+  for ( vector< TH1F* >::iterator iCP = CPNoSigData_.begin() ; iCP != CPNoSigData_.end() ; ++iCP ) delete (*iCP);
+  for ( vector< TH1F* >::iterator iCP = CPNoSigSign_.begin() ; iCP != CPNoSigSign_.end() ; ++iCP ) delete (*iCP);
+  for ( vector<vector<TH1F*> >::iterator ivCP  = vCPNoSigBkgd_.begin() ; ivCP !=  vCPNoSigBkgd_.end() ; ++ivCP ) {
+    for ( vector< TH1F* >::iterator iCP = ivCP->begin() ; iCP != ivCP->end() ; ++iCP ) delete (*iCP);
+    ivCP->clear();
+  }
+  CPNoSigData_.clear();
+  CPNoSigSign_.clear();
+  vCPNoSigBkgd_.clear();
+
+
+
+
   delete CorrMtxS_ ;
   delete CorrMtxB_ ;
 
@@ -411,6 +850,16 @@ UATmvaSummary_t::UATmvaSummary_t(TString NameBase, TString MethodName , TString 
   for ( int iD = 0 ; iD < (signed) vBCut.size() ; ++iD ) delete vBCut_.at(iD);
   vSCut_.clear();
   vBCut_.clear();
+
+  delete MVACutData_ ;
+  delete MVACutSign_ ;
+  for ( int iD = 0 ; iD < (signed) vMVACutBkgd_.size() ; ++iD ) delete vMVACutBkgd_.at(iD);
+  vMVACutBkgd_.clear();
+
+  delete MVANoCutData_ ;
+  delete MVANoCutSign_ ;
+  for ( int iD = 0 ; iD < (signed) vMVANoCutBkgd_.size() ; ++iD ) delete vMVANoCutBkgd_.at(iD);
+  vMVANoCutBkgd_.clear();
 
   delete SignCutTr_   ;
   delete SignCutAll_  ;
@@ -450,6 +899,26 @@ UATmvaSummary_t::~UATmvaSummary_t(){
   CPlotsSign.clear();
   vCPlotsBkgd.clear();
 
+  for ( vector< TH1F* >::iterator iCP = CPSigData.begin() ; iCP != CPSigData.end() ; ++iCP ) delete (*iCP);
+  for ( vector< TH1F* >::iterator iCP = CPSigSign.begin() ; iCP != CPSigSign.end() ; ++iCP ) delete (*iCP);
+  for ( vector<vector<TH1F*> >::iterator ivCP  = vCPSigBkgd.begin() ; ivCP !=  vCPSigBkgd.end() ; ++ivCP ) {
+    for ( vector< TH1F* >::iterator iCP = ivCP->begin() ; iCP != ivCP->end() ; ++iCP ) delete (*iCP);
+    ivCP->clear();
+  }
+  CPSigData.clear();
+  CPSigSign.clear();
+  vCPSigBkgd.clear();
+
+  for ( vector< TH1F* >::iterator iCP = CPNoSigData.begin() ; iCP != CPNoSigData.end() ; ++iCP ) delete (*iCP);
+  for ( vector< TH1F* >::iterator iCP = CPNoSigSign.begin() ; iCP != CPNoSigSign.end() ; ++iCP ) delete (*iCP);
+  for ( vector<vector<TH1F*> >::iterator ivCP  = vCPNoSigBkgd.begin() ; ivCP !=  vCPNoSigBkgd.end() ; ++ivCP ) {
+    for ( vector< TH1F* >::iterator iCP = ivCP->begin() ; iCP != ivCP->end() ; ++iCP ) delete (*iCP);
+    ivCP->clear();
+  }
+  CPNoSigData.clear();
+  CPNoSigSign.clear();
+  vCPNoSigBkgd.clear();
+
   delete CorrMtxS ;
   delete CorrMtxB ;
 
@@ -472,6 +941,15 @@ UATmvaSummary_t::~UATmvaSummary_t(){
   vSName.clear();
   vBName.clear();
 
+  delete MVACutData ;
+  delete MVACutSign ;
+  for ( int iD = 0 ; iD < (signed) vMVACutBkgd.size() ; ++iD ) delete vMVACutBkgd.at(iD);
+  vMVACutBkgd.clear();
+
+  delete MVANoCutData ;
+  delete MVANoCutSign ;
+  for ( int iD = 0 ; iD < (signed) vMVANoCutBkgd.size() ; ++iD ) delete vMVANoCutBkgd.at(iD);
+  vMVANoCutBkgd.clear();
 
   delete SignCutTr;
   delete SignCutAll;
@@ -672,7 +1150,7 @@ void UATmvaSummary::Print( ){
 //-------------------------------- Plots()
 
 
-void UATmvaSummary::Plots( UATmvaConfig& Cfg , bool bBest ){
+void UATmvaSummary::Plots( UATmvaConfig& Cfg , bool bBest , int iLevel ){
 
   setTDRStyle();
 
@@ -695,6 +1173,7 @@ void UATmvaSummary::Plots( UATmvaConfig& Cfg , bool bBest ){
 
       TCanvas* Canvas = NULL ;
       
+      if ( iLevel == 0 ) {
       if ( Cfg.GetTmvaDim() == 1 ) {
         Canvas = new TCanvas(vUASummary.at(ID-1)->TmvaName,vUASummary.at(ID-1)->TmvaName,950,700);
         Canvas->Divide(3,2);
@@ -709,16 +1188,16 @@ void UATmvaSummary::Plots( UATmvaConfig& Cfg , bool bBest ){
         Canvas->cd(3);
         PlotEff(ID-1);
         Canvas->cd(6);
-        PlotMVAStack(Cfg,ID-1 );
+        PlotMVAStack(Cfg,ID-1,iLevel );
       } else {
         Canvas = new TCanvas(vUASummary.at(ID-1)->TmvaName,vUASummary.at(ID-1)->TmvaName,700,350);
         Canvas->Divide(2,1);
         Canvas->cd(1);
         PlotEff(ID-1);
         Canvas->cd(2);
-        PlotMVAStack(Cfg,ID-1 );
+        PlotMVAStack(Cfg,ID-1,iLevel );
       }
-
+      }
       //gPad->WaitPrimitive();
 
       string PlotName ;
@@ -734,20 +1213,28 @@ void UATmvaSummary::Plots( UATmvaConfig& Cfg , bool bBest ){
         PlotName = vUASummary.at(ID-1)->TmvaName ;
       } 
   
-
-      Canvas->SaveAs("plots/mvasummary_"+TString(PlotName)+".eps");
-      Canvas->SaveAs("plots/mvasummary_"+TString(PlotName)+".gif");
+ 
+      if ( iLevel ==  0 ) {
+        Canvas->SaveAs("plots/mvasummary_"+TString(PlotName)+".eps");
+        Canvas->SaveAs("plots/mvasummary_"+TString(PlotName)+".gif");
+        Canvas->SaveAs("plots/mvasummary_"+TString(PlotName)+".png");
+        Canvas->SaveAs("plots/mvasummary_"+TString(PlotName)+".pdf");
+      }
 
       TCanvas* CanvasStack = new TCanvas(vUASummary.at(ID-1)->TmvaName+"_Stack",vUASummary.at(ID-1)->TmvaName,600,600);
       CanvasStack->cd();
-      PlotMVAStack(Cfg,ID-1);
-      CanvasStack->SaveAs("plots/mvastack_"+TString(PlotName)+".eps");
-      CanvasStack->SaveAs("plots/mvastack_"+TString(PlotName)+".gif");
-      CanvasStack->SaveAs("plots/mvastack_"+TString(PlotName)+".pdf");
+      PlotMVAStack(Cfg,ID-1,iLevel);
+      TString SelName ;  
+      if (  iLevel == 3 ) SelName = "CBSel_" ;
+      if (  iLevel == 4 ) SelName = "NoCBSel_" ;
+      CanvasStack->SaveAs("plots/mvastack_"+SelName+TString(PlotName)+".eps");
+      CanvasStack->SaveAs("plots/mvastack_"+SelName+TString(PlotName)+".gif");
+      CanvasStack->SaveAs("plots/mvastack_"+SelName+TString(PlotName)+".png");
+      CanvasStack->SaveAs("plots/mvastack_"+SelName+TString(PlotName)+".pdf");
 
-      if ( Cfg.GetTmvaDim() > 1 ) {
-        for (int iDim = 1 ; iDim <= Cfg.GetTmvaDim() ; ++iDim ) PlotDimMVA(Cfg,ID-1,iDim) ;
-      }  
+//      if ( Cfg.GetTmvaDim() > 1 ) {
+//        for (int iDim = 1 ; iDim <= Cfg.GetTmvaDim() ; ++iDim ) PlotDimMVA(Cfg,ID-1,iDim) ;
+//      }  
 
     } else if ( ID != 0 ) {
       cout << "  --> Invalid ID !!!!!!!!!!! " << endl ;
@@ -758,7 +1245,7 @@ void UATmvaSummary::Plots( UATmvaConfig& Cfg , bool bBest ){
 }
 
 
-void UATmvaSummary::CPlots() {
+void UATmvaSummary::CPlots( UATmvaConfig& Cfg , int iLevel ) {
 
       int nDiv = 2; 
       int nBox = nDiv*nDiv;
@@ -768,7 +1255,7 @@ void UATmvaSummary::CPlots() {
       if ( ((float)vUASummary.at(0)->CPlotsData.size()/(float)nBox) > nCanvas ) ++nCanvas;
       for ( int iCanvas = 0 ; iCanvas < nCanvas ; ++iCanvas ) {
         ostringstream CanName; 
-        CanName  << "Cplot_" << iCanvas;
+        CanName  << "Cplot_" << iLevel << "_" << iCanvas;
         vCanvasCplot.push_back( new TCanvas(CanName.str().c_str(),vUASummary.at(0)->TmvaName,700,700) ) ;
         vCanvasCplot.at(iCanvas)->Divide(nDiv,nDiv);
         TString VarList;
@@ -776,14 +1263,21 @@ void UATmvaSummary::CPlots() {
           int iVar = iCanvas*nBox+iPad-1 ;
           if (iVar < (signed) vUASummary.at(0)->CPlotsData.size()) { 
             vCanvasCplot.at(iCanvas)->cd(iPad) ; 
-            PlotCplotStack(0,iVar);
+            PlotCplotStack( Cfg , 0 , iVar , iLevel );
             VarList += "_" ;
             VarList += vUASummary.at(0)->CPlotsXAxis.at(iVar);
           }
         }
         // gPad->WaitPrimitive();
-        vCanvasCplot.at(iCanvas)->SaveAs("plots/cplot"+VarList+"_"+vUASummary.at(0)->TmvaName+".eps");
-        vCanvasCplot.at(iCanvas)->SaveAs("plots/cplot"+VarList+"_"+vUASummary.at(0)->TmvaName+".gif");
+        TString Level ;
+        if ( iLevel == 0 ) Level = "_MVAPreSel" ;
+        if ( iLevel == 1 ) Level = "_MVASigSel" ;
+        if ( iLevel == 2 ) Level = "_MVANoSigSel" ;
+
+        vCanvasCplot.at(iCanvas)->SaveAs("plots/cplot"+Level+VarList+"_"+vUASummary.at(0)->TmvaName+".eps");
+        vCanvasCplot.at(iCanvas)->SaveAs("plots/cplot"+Level+VarList+"_"+vUASummary.at(0)->TmvaName+".png");
+        vCanvasCplot.at(iCanvas)->SaveAs("plots/cplot"+Level+VarList+"_"+vUASummary.at(0)->TmvaName+".gif");
+        vCanvasCplot.at(iCanvas)->SaveAs("plots/cplot"+Level+VarList+"_"+vUASummary.at(0)->TmvaName+".pdf");
 
       }
 
@@ -798,8 +1292,8 @@ void UATmvaSummary::Yields() {
     cout << "Yields for: " << vUASummary.at(iUAS)->ExtName << endl;
     cout << "---> Limit optimisation:" << endl;
     PrintYields(iUAS,9);
-    cout << "---> CutBased optimisation:" << endl;
-    PrintYields(iUAS,10);
+    //cout << "---> CutBased optimisation:" << endl;
+    //PrintYields(iUAS,10);
   }
 
 }
@@ -860,7 +1354,7 @@ void UATmvaSummary::BestMVA() {
 
 //-------------------------------- PlottStack()
 
-void UATmvaSummary::PlotStack( TH1F* hData , TH1F* hSign , vector<TH1F*> vBkgd , TString XAxisTitle , TString GlobalTitle , int iUAS , bool kLogY ){
+void UATmvaSummary::PlotStack( UATmvaConfig& Cfg , TH1F* hData , TH1F* hSign , vector<TH1F*> vBkgd , TString XAxisTitle , TString GlobalTitle , int iUAS , bool kLogY ){
 
    gPad->SetRightMargin(0.02);
    gPad->SetLeftMargin(0.15);
@@ -872,13 +1366,19 @@ void UATmvaSummary::PlotStack( TH1F* hData , TH1F* hSign , vector<TH1F*> vBkgd ,
      for (int iD2Sum=iD+1 ; iD2Sum < (signed)  vBkgd.size() ; ++iD2Sum ) {
        iStack->Add(vBkgd.at(iD2Sum));
      }
-     iStack->SetLineColor(iD+2);
-     iStack->SetFillColor(iD+2);
+     if ( Cfg.GetPlotGroup()->size() == 0 ) {
+       iStack->SetLineColor(iD+2);
+       iStack->SetFillColor(iD+2);
+     } else {
+       iStack->SetLineColor(  ((Cfg.GetPlotGroup())->at(iD)).PlotGroupColor   );
+       iStack->SetFillColor(  ((Cfg.GetPlotGroup())->at(iD)).PlotGroupColor   );
+     }
      vStack.push_back( (TH1D*) iStack->Clone() );
      delete iStack; 
    }
-  
-   hSign->SetLineColor(kBlack);
+
+   if ( Cfg.GetPlotGroup()->size() == 0 ) hSign->SetLineColor(kBlack);
+   else                                   hSign->SetLineColor(kRed);
    hSign->SetLineWidth(2);
    hData->SetMarkerColor(kBlack);
    hData->SetMarkerStyle(20);
@@ -887,7 +1387,7 @@ void UATmvaSummary::PlotStack( TH1F* hData , TH1F* hSign , vector<TH1F*> vBkgd ,
    hMax = TMath::Max ( hMax , hData->GetMaximum() ); 
 
    if (kLogY) vStack.at(0)->GetYaxis()->SetRangeUser( 0.01 , 10*hMax);
-   else       vStack.at(0)->GetYaxis()->SetRangeUser( 0.   , 1.2*hMax); 
+   else       vStack.at(0)->GetYaxis()->SetRangeUser( 0.   , 1.6*hMax); 
    vStack.at(0)->SetTitle(GlobalTitle);
    vStack.at(0)->GetXaxis()->SetTitle(XAxisTitle);
    vStack.at(0)->GetYaxis()->SetTitle("Events");
@@ -897,24 +1397,46 @@ void UATmvaSummary::PlotStack( TH1F* hData , TH1F* hSign , vector<TH1F*> vBkgd ,
    hData->DrawCopy("esame");
    hSign->DrawCopy("histsame");
 
-   int nLegEntry = 2 + (signed) vStack.size();
-   TLegend* Legend = new TLegend (.18,.85-nLegEntry*.035,.5,.85);
+   //int nLegEntry = 2 + (signed) vStack.size();
+   //TLegend* Legend = new TLegend (.18,.85-nLegEntry*.035,.5,.85);
+
+   int nLegEntry = 2 + ((signed) vStack.size())/3;
+   TLegend* Legend = new TLegend (.30,.87-nLegEntry*.038,.9,.87);
+   Legend->SetNColumns(3);
+
    Legend->SetBorderSize(0);
    Legend->SetFillColor(0);
    Legend->SetFillStyle(0);
    Legend->SetTextSize(0.04);
-   Legend->AddEntry( hData , "Data  " , "p");
-   Legend->AddEntry( hSign , "Signal" , "l");
+   Legend->AddEntry( hData , "data  " , "p");
+   //Legend->AddEntry( hSign , "Signal" , "l");
+   Legend->AddEntry( hSign , (Cfg.GetSignalName()).c_str() , "l");
    for (int iD=0 ; iD < (signed) vStack.size()  ; ++iD ) Legend->AddEntry( vStack.at(iD) , (vUASummary.at(iUAS)->vBName.at(iD)).c_str() , "f");
    Legend->Draw("same");
 
+   TText* CMS = new TText(.15,.94,"CMS Preliminary");
+   CMS ->SetTextSize(.04);
+   CMS ->SetNDC(1);
+   CMS ->Draw("same");
+
+   char LumiText[50];
+   sprintf ( LumiText , "L_{int} = %4.2f fb^{-1}", (((Cfg.GetTargetLumi())->at(0)).Lumi)/1000. );
+   TLatex* Lumi = new TLatex(.75,.94,LumiText);
+   Lumi ->SetTextSize(.04);
+   Lumi ->SetNDC(1);
+   Lumi ->Draw("same");
+
+
 }
 
-//-------------------------------- PlotCplotStack()
+//-------------------------------- PlotCplotStack( UATmvaConfig& Cfg  )
 
-void UATmvaSummary::PlotCplotStack(int iUAS , int iVar ){
+void UATmvaSummary::PlotCplotStack(  UATmvaConfig& Cfg , int iUAS , int iVar , int iLevel ){
 
-   PlotStack(vUASummary.at(iUAS)->CPlotsData.at(iVar),
+ if ( iLevel == 0 ) {
+
+   PlotStack(Cfg, 
+             vUASummary.at(iUAS)->CPlotsData.at(iVar),
              vUASummary.at(iUAS)->CPlotsSign.at(iVar),
              vUASummary.at(iUAS)->vCPlotsBkgd.at(iVar),
              vUASummary.at(iUAS)->CPlotsXAxis.at(iVar),
@@ -923,13 +1445,37 @@ void UATmvaSummary::PlotCplotStack(int iUAS , int iVar ){
              vUASummary.at(iUAS)->CPlotsLogY.at(iVar)
             );
 
-    cout << vUASummary.at(iUAS)->CPlotsLogY.at(iVar) << endl;
+  } else if  ( iLevel == 1 ) {
+
+   PlotStack(Cfg, 
+             vUASummary.at(iUAS)->CPSigData.at(iVar),
+             vUASummary.at(iUAS)->CPSigSign.at(iVar),
+             vUASummary.at(iUAS)->vCPSigBkgd.at(iVar),
+             vUASummary.at(iUAS)->CPlotsXAxis.at(iVar),
+             " ",
+             iUAS, 
+             vUASummary.at(iUAS)->CPlotsLogY.at(iVar)
+            );
+
+  } else if  ( iLevel == 2 ) {
+
+   PlotStack(Cfg, 
+             vUASummary.at(iUAS)->CPNoSigData.at(iVar),
+             vUASummary.at(iUAS)->CPNoSigSign.at(iVar),
+             vUASummary.at(iUAS)->vCPNoSigBkgd.at(iVar),
+             vUASummary.at(iUAS)->CPlotsXAxis.at(iVar),
+             " ",
+             iUAS, 
+             vUASummary.at(iUAS)->CPlotsLogY.at(iVar)
+            );
+
+  }
 
 }
 
 //-------------------------------- PlotMVAStack()
 
-void UATmvaSummary::PlotMVAStack( UATmvaConfig& Cfg ,  int iUAS ){
+void UATmvaSummary::PlotMVAStack( UATmvaConfig& Cfg ,  int iUAS , int iLevel ){
 
 
 /*
@@ -953,10 +1499,15 @@ void UATmvaSummary::PlotMVAStack( UATmvaConfig& Cfg ,  int iUAS ){
    vector<TH1D*> vStack;
    for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) {
      cout << vUASummary.at(iUAS)->vBName.at(iD) << " = " ;
-     TH1D* iStack = (TH1D*) vUASummary.at(iUAS)->vBCut.at(iD)->Clone(("s"+vUASummary.at(iUAS)->vBName.at(iD)).c_str());
+     TH1D* iStack = NULL; 
+     if ( iLevel == 0 ) iStack = (TH1D*) vUASummary.at(iUAS)->vBCut.at(iD)->Clone(("s"+vUASummary.at(iUAS)->vBName.at(iD)).c_str());
+     if ( iLevel == 3 ) iStack = (TH1D*) vUASummary.at(iUAS)->vMVACutBkgd.at(iD)->Clone(("s"+vUASummary.at(iUAS)->vBName.at(iD)).c_str());
+     if ( iLevel == 4 ) iStack = (TH1D*) vUASummary.at(iUAS)->vMVANoCutBkgd.at(iD)->Clone(("s"+vUASummary.at(iUAS)->vBName.at(iD)).c_str());
      for (int iD2Sum=iD+1 ; iD2Sum < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD2Sum ) {
-        cout << vUASummary.at(iUAS)->vBName.at(iD2Sum) << " + " ;
-       iStack->Add(vUASummary.at(iUAS)->vBCut.at(iD2Sum));
+       cout << vUASummary.at(iUAS)->vBName.at(iD2Sum) << " + " ;
+       if ( iLevel == 0 ) iStack->Add(vUASummary.at(iUAS)->vBCut.at(iD2Sum));
+       if ( iLevel == 3 ) iStack->Add(vUASummary.at(iUAS)->vMVACutBkgd.at(iD2Sum));
+       if ( iLevel == 4 ) iStack->Add(vUASummary.at(iUAS)->vMVANoCutBkgd.at(iD2Sum));
      }
      cout << endl;
      if ( Cfg.GetPlotGroup()->size() == 0 ) {
@@ -971,32 +1522,43 @@ void UATmvaSummary::PlotMVAStack( UATmvaConfig& Cfg ,  int iUAS ){
      delete iStack;
    }
 
+   TH1D* Data = NULL ;
+   if ( iLevel == 0 ) Data = vUASummary.at(iUAS)->DCut ;
+   if ( iLevel == 3 ) Data = vUASummary.at(iUAS)->MVACutData ;
+   if ( iLevel == 4 ) Data = vUASummary.at(iUAS)->MVANoCutData ;
+
+   TH1D* Sign = NULL ;
+   if ( iLevel == 0 ) Sign = vUASummary.at(iUAS)->SCut ;
+   if ( iLevel == 3 ) Sign = vUASummary.at(iUAS)->MVACutSign ;
+   if ( iLevel == 4 ) Sign = vUASummary.at(iUAS)->MVANoCutSign ;
+
    if ( Cfg.GetPlotGroup()->size() == 0 ) {
-     vUASummary.at(iUAS)->SCut->SetLineColor(kBlack);
-     vUASummary.at(iUAS)->DCut->SetMarkerColor(kBlack);
+     Sign->SetLineColor(kBlack);
+     Data->SetMarkerColor(kBlack);
    } else {
-     vUASummary.at(iUAS)->SCut->SetLineColor(kRed+1);
-     vUASummary.at(iUAS)->DCut->SetMarkerColor(kBlack);
+     Sign->SetLineColor(kRed+1);
+     Data->SetMarkerColor(kBlack);
    }
-   vUASummary.at(iUAS)->SCut->SetLineWidth(2);
-   vUASummary.at(iUAS)->DCut->SetMarkerStyle(20);
+   Sign->SetLineWidth(2);
+   Data->SetMarkerStyle(20);
     
-   Double_t hMax = TMath::Max( vStack.at(0)->GetMaximum() , vUASummary.at(iUAS)->DCut->GetMaximum() );
-   hMax = TMath::Max ( hMax , vUASummary.at(iUAS)->BCutAll->GetMaximum() );
+   Double_t hMax = TMath::Max( vStack.at(0)->GetMaximum() , Data->GetMaximum() );
+   // FIXME
+   if ( iLevel == 0 )  hMax = TMath::Max ( hMax , vUASummary.at(iUAS)->BCutAll->GetMaximum() );
 
    if (useLog) vStack.at(0)->GetYaxis()->SetRangeUser( 0.01 , 10*hMax);
    else        vStack.at(0)->GetYaxis()->SetRangeUser(  0.  , 1.6*hMax);
    vStack.at(0)->SetTitle(vUASummary.at(iUAS)->TmvaName);
    vStack.at(0)->GetXaxis()->SetTitleOffset(1.2);
-   vStack.at(0)->GetXaxis()->SetTitle("MVA Output");
+   vStack.at(0)->GetXaxis()->SetTitle("BDT Output");
    vStack.at(0)->GetYaxis()->SetTitle("Events");
 
    vStack.at(0)->DrawCopy("hist"); 
    for (int iD=1 ; iD < (signed) vStack.size()  ; ++iD ) vStack.at(iD)->DrawCopy("histsame");
    //vUASummary.at(iUAS)->SCut->DrawCopy("histsame");
    //vUASummary.at(iUAS)->DCut->DrawCopy("esame");
-   TH1D* SCut = (TH1D*) (vUASummary.at(iUAS)->SCut)->Clone() ;
-   TH1D* DCut = (TH1D*) (vUASummary.at(iUAS)->DCut)->Clone() ;
+   TH1D* SCut = (TH1D*) Sign->Clone() ;
+   TH1D* DCut = (TH1D*) Data->Clone() ;
    SCut->Rebin(MVARebinFac);
    DCut->Rebin(MVARebinFac);
    SCut->DrawCopy("histsame");
@@ -1385,6 +1947,8 @@ void UATmvaSummary::PlotDimMVA ( UATmvaConfig& Cfg , int iUAS , int iDim) {
 
   Canvas->SaveAs("plots/mvasummary_"+TmvaName1D+".eps");
   Canvas->SaveAs("plots/mvasummary_"+TmvaName1D+".gif");
+  Canvas->SaveAs("plots/mvasummary_"+TmvaName1D+".png");
+  Canvas->SaveAs("plots/mvasummary_"+TmvaName1D+".pdf");
 
   TCanvas* CanvasStack = new TCanvas(TmvaName1D+"_Stack",TmvaName1D,600,600);
   CanvasStack->cd();
@@ -1392,6 +1956,8 @@ void UATmvaSummary::PlotDimMVA ( UATmvaConfig& Cfg , int iUAS , int iDim) {
 
   CanvasStack->SaveAs("plots/mvastack_"+TmvaName1D+".eps");
   CanvasStack->SaveAs("plots/mvastack_"+TmvaName1D+".gif");
+  CanvasStack->SaveAs("plots/mvastack_"+TmvaName1D+".png");
+  CanvasStack->SaveAs("plots/mvastack_"+TmvaName1D+".pdf");
 
   // Close File
   //File->Close();
@@ -1406,7 +1972,7 @@ void UATmvaSummary::PrintYields ( int iUAS , int iOptim ) {
 
   Double_t          Data   ;  
   Double_t          Signal ;
-  Double_t          BkgdTot;
+  Double_t          BkgdTot (0);
   Double_t          EStatData  ;
   Double_t          EStatSignal;
   Double_t          EStatBkgdTot; 
@@ -1416,55 +1982,24 @@ void UATmvaSummary::PrintYields ( int iUAS , int iOptim ) {
   int iBin = (int) vUASummary.at(iUAS)->Bin->GetBinContent(iOptim)  ;
   Data    =  vUASummary.at(iUAS)->DCut->IntegralAndError(iBin,vUASummary.at(iUAS)->DCut->GetNbinsX(),EStatData);
   Signal  =  vUASummary.at(iUAS)->SCut->IntegralAndError(iBin,vUASummary.at(iUAS)->SCut->GetNbinsX(),EStatSignal);
-  BkgdTot =  vUASummary.at(iUAS)->BCutAll->IntegralAndError(iBin,vUASummary.at(iUAS)->BCutAll->GetNbinsX(),EStatBkgdTot);
+  //BkgdTot =  vUASummary.at(iUAS)->BCutAll->IntegralAndError(iBin,vUASummary.at(iUAS)->BCutAll->GetNbinsX(),EStatBkgdTot);
 
   cout << "Yields: Data    = " << Data    << " +- " << EStatData    << endl;
   cout << "Yields: Signal  = " << Signal  << " +- " << EStatSignal  << endl;
-  cout << "Yields: BkgdTot = " << BkgdTot << " +- " << EStatBkgdTot << endl;
 
   for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) {
     Double_t EStat;
     Background.push_back( vUASummary.at(iUAS)->vBCut.at(iD)->IntegralAndError(iBin,vUASummary.at(iUAS)->vBCut.at(iD)->GetNbinsX(),EStat) );
     EStatBkgd.push_back(EStat);
+    BkgdTot += Background.at(iD) ;
     cout << "Yields: Bkgd " <<  vUASummary.at(iUAS)->vBName.at(iD) << " = " << Background.at(iD) << " +- " << EStat << endl;
   }
-
+  cout << "Yields: BkgdTot = " << BkgdTot << " +- " << EStatBkgdTot << endl;
 }
 
 // --------------------------- LimitCard ()
 
 
-void getsyst(TString cname, float mass, float &N, float &s, float &u) {
-  
-  ifstream card; card.open(cname.Data());
-  if(!card) {
-    printf("Did not find card %s\n", cname.Data());
-    return;
-  }
-  while ( !card.eof() ) { 
-    float HiggsMass(0);
-    float NumEventsInCtrlRegion(0);
-    float scaleToSignRegion(0);
-    float uncertaintyOnScaleToSignRegion(0);
-    card >> HiggsMass >> NumEventsInCtrlRegion >> scaleToSignRegion >> uncertaintyOnScaleToSignRegion;
-    // notes from Emanuele
-    // n in signal region = NumEventsInCtrlRegion * scaleToSignRegion
-    // uncertainty on n   = NumEventsInCtrlRegion * uncertaintyOnScaleToSignRegion    
-    // fractional uncertainty on n = uncertaintyOnScaleToSignRegion / scaleToSignRegion
-
-    //printf("looking for mass point %.1f %.1f\n", mass, HiggsMass);
-    if (fabs(HiggsMass-mass)<5) {
-      s = scaleToSignRegion;
-      N = NumEventsInCtrlRegion;
-      u = uncertaintyOnScaleToSignRegion;
-      //printf("Found mass point %.0f: %.3f %.3f %.3f\n", mass, N, s, u);
-      return;
-    }
-  }
-  printf("Did not find mass point %.0f\n", mass);
-  return;
-
-}
 
 void UATmvaSummary::LimitCard ( UATmvaConfig& Cfg ) {
 
@@ -1609,28 +2144,49 @@ void UATmvaSummary::LimitCard ( UATmvaConfig& Cfg ) {
         vector<float> NCtrlRegion ;
         vector<float> Scale2Sign  ;
         vector<float> UScale2Sign ;
+        cout << "[ getsyst ] Start! " << (itDDE->SyDDECards).size()   << endl;
         for ( vector<string>::iterator itDDECard = (itDDE->SyDDECards).begin() ; itDDECard != (itDDE->SyDDECards).end() ; ++itDDECard ) {
+          cout << *itDDECard << " " << itDDE->SyDDEmass << endl ;
           float N (Nsig), s(0), u(0) ;  
           getsyst(*itDDECard,itDDE->SyDDEmass,N,s,u); 
           NCtrlRegion.push_back(N);
           Scale2Sign .push_back(s);
           UScale2Sign.push_back(u); 
         }
+        cout << "[ getsyst ] Done ! " << endl;
         // N.B.: since there is no dd estimates at BDT-level, do a temporary patch: combine two sub-channels
         // ... ratio of events in signal region (datacard / current)
-        float rdenom(0) , ratio(1) ; 
-        for ( int j = 0 ; j < (signed) NCtrlRegion.size() ; ++j) rdenom += Scale2Sign.at(j) * NCtrlRegion.at(j); 
-        if (rdenom>0) ratio = Nsig / rdenom ;
+        //float rdenom(0) , ratio(1) ; 
+        //for ( int j = 0 ; j < (signed) NCtrlRegion.size() ; ++j) rdenom += Scale2Sign.at(j) * NCtrlRegion.at(j); 
+        //if (rdenom>0) ratio = Nsig / rdenom ;
         // ... currently extrapolating WW level estimates
-        float Nctrl = itDDE->SyDDEdctrl;
+        float Nctrl (0) ;
+        Nctrl = NCtrlRegion.at(0);
+        float scfac = Nsig/Nctrl; 
+        float unc (0) ;
+        for ( int j = 0 ; j < (signed) NCtrlRegion.size() ; ++j) unc += UScale2Sign.at(j);
+
+/*
+        if ( itDDE->SyDDEdctrl != -1 ) Nctrl = itDDE->SyDDEdctrl;
+        else {
+          for ( int j = 0 ; j < (signed) NCtrlRegion.size() ; ++j) Nctrl += NCtrlRegion.at(j); 
+        }                            
         // ... scale factor from control region
-        float scfac = Nsig/Nctrl;           
+        float scfac ;
+        scfac = Nsig/Nctrl;           
         // ... average uncertainty fractions
-        float unum(0);
-        for ( int j = 0 ; j < (signed) NCtrlRegion.size() ; ++j) unum += UScale2Sign.at(j) / Scale2Sign.at(j);
-        float unc = scfac*(1/(float)NCtrlRegion.size())*unum; 
+        float unc ;
+        if ( NCtrlRegion.size() > 1 ) {  
+          float unum(0);
+          for ( int j = 0 ; j < (signed) NCtrlRegion.size() ; ++j) unum += UScale2Sign.at(j) / Scale2Sign.at(j);
+          unc = scfac*(1/(float)NCtrlRegion.size())*unum;
+        } else {
+          unc = UScale2Sign.at(0)  ;
+        } 
         // ... but take it from input if specified
         if (itDDE->SyDDEderr != -1) unc = scfac*itDDE->SyDDEderr;
+*/
+
         // ... and the final stuff
         float extr(0);
         if ( (itDDE->SyDDEType) == "lnN" ) extr = 1+unc/scfac;  // syst w.r.t 1
@@ -1649,7 +2205,7 @@ void UATmvaSummary::LimitCard ( UATmvaConfig& Cfg ) {
         extrName = itDDE->SyDDEName + "_stat";
         fprintf (cFile,"%-30s %-5s %-5.0f  ",extrName.c_str() , "gmN" , Nctrl ) ;
         for ( vector<string>::iterator itProc =  Proc.begin() ; itProc != Proc.end() ; ++itProc) {
-          if ( (*itDDEMemb) == (*itProc) ) fprintf (cFile,"%-5.3f     ", scfac ) ;
+          if ( (*itDDEMemb) == (*itProc) ) fprintf (cFile,"%-6.4f    ", scfac ) ;
           else                                                     fprintf (cFile,"  -       ");
         } 
         fprintf (cFile,"\n") ;
@@ -1677,6 +2233,14 @@ void UATmvaSummary::LimitCard ( UATmvaConfig& Cfg ) {
     }
   
     for (int iD=0 ; iD < (signed) vUASummary.at(iUAS)->vBCut.size() ; ++iD ) {
+      // skip if DDE
+      bool isDDE = false ;
+      for ( vector<SyDDEstim_t>::iterator itDDE = (Cfg.GetSyDDEstim())->begin() ; itDDE != (Cfg.GetSyDDEstim())->end() ; ++itDDE ) {
+        for ( vector<string>::iterator itDDEMemb = (itDDE->SyDDEMember).begin() ; itDDEMemb != (itDDE->SyDDEMember).end() ; ++itDDEMemb ) {
+          if ( (vUASummary.at(iUAS)->vBName.at(iD)) == (*itDDEMemb) )  isDDE = true;
+        }
+      }
+      if ( isDDE ) continue; 
       double eStaRel = 1. ;
       //if (Background.at(iD)>0.) eStaRel += eStatBkgd.at(iD) / Background.at(iD) ;
       if (eStatBkgd.at(iD)>0.) eStaRel += 1. / eStatBkgd.at(iD);

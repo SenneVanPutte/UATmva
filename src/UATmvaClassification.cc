@@ -50,7 +50,7 @@ void UATmvaClassification::DoMLP( UATmvaConfig& Cfg, UATmvaTree& T) {
      Train(Cfg,T,Name.str(),Method.str(),nVarMax);
 
      // Making some basic plots
-     Plot(1);
+     //Plot(1);
    
    } // Nodes
    } // Layers
@@ -116,7 +116,7 @@ void UATmvaClassification::DoBDT( UATmvaConfig& Cfg, UATmvaTree& T) {
      Train(Cfg,T,Name.str(),Method.str(),nVarMax);
 
      // Making some basic plots
-     Plot(0);
+     //Plot(0);
 
    } // BDTNTrees
    } // BDTBoostType
@@ -147,16 +147,20 @@ void UATmvaClassification::DoLH( UATmvaConfig& Cfg, UATmvaTree& T) {
 
      // Create Method Options
      ostringstream Method;
-     //Method << "H:!V" ;
-     Method << "H:!V:!TransformOutput:PDFInterpol=Spline2:NSmoothSig[0]=30:NSmoothBkg[0]=30:NSmoothBkg[1]=10:NSmooth=1:NAvEvtPerBin=50" ;
-
+     Method << "H:!V" ;
+     if ( Cfg.GetTmvaRespUseSigmoid() ) {
+       Method << ":TransformOutput" ;
+     } else {
+       Method << ":!TransformOutput" ;
+     }
+     Method << ":PDFInterpol=Spline2:NSmoothSig[0]=30:NSmoothBkg[0]=30:NSmoothBkg[1]=10:NSmooth=1:NAvEvtPerBin=50" ;
 
 
      // Create and Train MVA
      Train(Cfg,T,Name.str(),Method.str(),nVarMax);
 
      // Making some basic plots
-     Plot(0);
+     //Plot(0);
    
    } // Variables
 
@@ -180,7 +184,7 @@ void UATmvaClassification::DoPDERS( UATmvaConfig& Cfg, UATmvaTree& T) {
      Train(Cfg,T,Name.str(),Method.str(),nVarMax);
 
      // Making some basic plots
-     Plot(0);
+     //Plot(0);
 
    } // Variables
 
@@ -206,7 +210,7 @@ void UATmvaClassification::DoPDEFoam( UATmvaConfig& Cfg, UATmvaTree& T) {
      Train(Cfg,T,Name.str(),Method.str(),nVarMax);
 
      // Making some basic plots
-     Plot(0);
+     //Plot(0);
 
    } // Variables
 
@@ -231,7 +235,7 @@ void UATmvaClassification::DoCUT( UATmvaConfig& Cfg, UATmvaTree& T) {
      Train(Cfg,T,Name.str(),Method.str(),nVarMax);
 
      // Making some basic plots
-     Plot(0);
+     //Plot(0);
 
    } // Variables
 

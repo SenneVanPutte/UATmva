@@ -132,6 +132,8 @@ class UATmvaConfig {
   Int_t                TestMode   ; // Training & Test Separation !
   vector<InputData_t>  InputData  ;
   vector<InputVar_t>   InputVar   ;
+
+  bool  smurfchannel ;
   
   // TMVA Method:
 
@@ -184,11 +186,14 @@ class UATmvaConfig {
   Float_t              TmvaRespXMax       ; 
   Int_t                TmvaRespRebinFac   ;     
   Bool_t               TmvaRespUseLog     ;
+  Bool_t               TmvaRespUseSigmoid ;
  
   // Cut Based Yields
   //TString              CutBasedHistName   ;
   //Int_t                CutBasedHistBin    ;  
   vector <CutBased_t>  CutBased ; 
+  TreeFormula_t        CutBaseSel ;   
+
 
   // Final Plots 
   string               SignalName;
@@ -201,7 +206,8 @@ class UATmvaConfig {
   vector<DataSetWght_t>  DataSetWghts ;
 
 
-  string                 LimBinName;
+  string               LimBinName;
+  float                HiggsMass ;
   // Systematic errors
   vector<Systematic_t> Systematic;
   vector<SyDDEstim_t>  SyDDEstim; 
@@ -274,10 +280,12 @@ class UATmvaConfig {
   Float_t              GetTmvaRespXMax()       { return TmvaRespXMax       ; }
   Int_t                GetTmvaRespRebinFac()   { return TmvaRespRebinFac   ; }
   Bool_t               GetTmvaRespUseLog()     { return TmvaRespUseLog     ; }
+  Bool_t               GetTmvaRespUseSigmoid() { return TmvaRespUseSigmoid ; }
  
   //TString              GetCutBasedHistName()   { return CutBasedHistName ; }
   //Int_t                GetCutBasedHistBin()    { return CutBasedHistBin  ; }
   vector<CutBased_t>*  GetCutBased()           { return &CutBased ; } 
+  TreeFormula_t*       GetCutBaseSel()         { return &CutBaseSel ; }
 
   string                 GetSignalName()       { return SignalName  ; } 
   vector<TargetLumi_t>*  GetTargetLumi()       { return &TargetLumi ; }
@@ -286,7 +294,9 @@ class UATmvaConfig {
 
   vector<DataSetWght_t>*  GetDataSetWghts()   { return &DataSetWghts ; }
 
-  string                  GetLimBinName()   { return LimBinName  ; }
+  string                 GetLimBinName()   { return LimBinName  ; }
+  float                  GetHiggsMass()    { return HiggsMass ; } 
+
   vector<Systematic_t>*  GetSystematic()       { return &Systematic ; }
   vector<SyDDEstim_t>*   GetSyDDEstim()        { return &SyDDEstim  ; } 
 
@@ -295,6 +305,8 @@ class UATmvaConfig {
   string                 GetStatMiddle()    { return  StatMiddle ; }
   string                 GetStatSuffix()    { return  StatSuffix ; }
 
+
+  bool  Getsmurfchannel() { return smurfchannel ; }
 
 };
 
