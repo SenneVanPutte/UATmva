@@ -1492,7 +1492,7 @@ void UATmvaSummary::PlotMVAStack( UATmvaConfig& Cfg ,  int iUAS , int iLevel ){
 */
 
 
-   bool useLog = false ;
+   bool useLog = true ;
 
    gPad->SetRightMargin(0.05);
    gPad->SetLeftMargin(0.15);
