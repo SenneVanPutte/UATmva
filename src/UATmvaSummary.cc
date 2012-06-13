@@ -178,6 +178,7 @@ void  GetRateTarget ( string BName , TString LimBinName , float HiggsMass , floa
 
 void Norm2RateRef( UATmvaConfig& Cfg , string NickName , TH1D* hTmp, TH1D* hRef ) {
 
+/*
   if ( NickName == "WW" || NickName == "ggWW" ) {
    if (  Cfg.GetHiggsMass() < 200 ) {
     float RateOrigin = hRef->Integral(); 
@@ -200,6 +201,7 @@ void Norm2RateRef( UATmvaConfig& Cfg , string NickName , TH1D* hTmp, TH1D* hRef 
       hTmp->Scale(ScaleRate);
     }
   }
+*/
   if ( NickName == "Wjet" ) {
     float RateOrigin = hTmp->Integral();
     for ( int iBin = 0 ; iBin <= (signed) hTmp->GetNbinsX() ; ++iBin ) {
