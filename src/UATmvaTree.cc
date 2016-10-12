@@ -14,12 +14,12 @@ UATmvaTree::UATmvaTree(UATmvaConfig& Cfg) { Open (Cfg) ;}
 void UATmvaTree::Open (UATmvaConfig& Cfg){
  
  // FlatFile Input
- if (Cfg.InputType == 1 ) { 
+ if (Cfg.GetInputType() == 1 ) { 
    cout << "[UATmvaTree::OpenTree] FlatFile Input not available !!!! " << endl;
    InitDone = false ;
  }
  // TTree Input
- else if (Cfg.InputType == 2 ) {  
+ else if (Cfg.GetInputType() == 2 ) {  
     for (vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
       TString NickName = iD->NickName; 
       TString FileName = iD->FileName;

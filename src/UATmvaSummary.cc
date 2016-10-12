@@ -12,7 +12,7 @@
 #include <TLegend.h>
 
 
-#include "src/tdrstyle.C"
+//#include "src/tdrstyle.C"
 
 
 
@@ -1048,7 +1048,7 @@ void UATmvaSummary::Init( UATmvaConfig& Cfg ) {
       for( int iBDTnCuts              = 0 ; iBDTnCuts               < (signed) (Cfg.GetBDTnCuts())->size()               ; ++iBDTnCuts               ) {
       for( int iBDTPruneMethod        = 0 ; iBDTPruneMethod         < (signed) (Cfg.GetBDTPruneMethod())->size()         ; ++iBDTPruneMethod         ) {
       for( int iBDTPruneStrength      = 0 ; iBDTPruneStrength       < (signed) (Cfg.GetBDTPruneStrength())->size()       ; ++iBDTPruneStrength       ) {
-      for( int iBDTNNodesMax          = 0 ; iBDTNNodesMax           < (signed) (Cfg.GetBDTNNodesMax())->size()           ; ++iBDTNNodesMax           ) {
+//      for( int iBDTNNodesMax          = 0 ; iBDTNNodesMax           < (signed) (Cfg.GetBDTNNodesMax())->size()           ; ++iBDTNNodesMax           ) {
 
 
 
@@ -1065,7 +1065,7 @@ void UATmvaSummary::Init( UATmvaConfig& Cfg ) {
         Name << Cfg.GetBDTnCuts()->at(iBDTnCuts) << "Cuts_" ;
         Name << Cfg.GetBDTPruneMethod()->at(iBDTPruneMethod) << "_" ;
         Name << Cfg.GetBDTPruneStrength()->at(iBDTPruneStrength) << "PruneStrength_" ;
-        Name << Cfg.GetBDTNNodesMax()->at(iBDTNNodesMax) << "NodesMax_" ;
+//        Name << Cfg.GetBDTNNodesMax()->at(iBDTNNodesMax) << "NodesMax_" ;
         Name << nVarMax << "Var" ;
         if (Cfg.GetTmvaOptim()) Name << "_Optim" ;
         // Read
@@ -1081,7 +1081,7 @@ void UATmvaSummary::Init( UATmvaConfig& Cfg ) {
       } // BDTnCuts
       } // BDTPruneMethod
       } // BDTPruneStrength
-      } // BDTNNodesMax
+//      } // BDTNNodesMax
 
     }
 
@@ -1154,7 +1154,7 @@ void UATmvaSummary::Print( ){
 
 void UATmvaSummary::Plots( UATmvaConfig& Cfg , bool bBest , int iLevel ){
 
-  setTDRStyle();
+  //setTDRStyle();
 
 
   Int_t ID = -1 ;

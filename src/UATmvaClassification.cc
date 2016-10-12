@@ -74,7 +74,7 @@ void UATmvaClassification::DoBDT( UATmvaConfig& Cfg, UATmvaTree& T) {
    for( int iBDTnCuts              = 0 ; iBDTnCuts               < (signed) (Cfg.GetBDTnCuts())->size()               ; ++iBDTnCuts               ) {
    for( int iBDTPruneMethod        = 0 ; iBDTPruneMethod         < (signed) (Cfg.GetBDTPruneMethod())->size()         ; ++iBDTPruneMethod         ) {
    for( int iBDTPruneStrength      = 0 ; iBDTPruneStrength       < (signed) (Cfg.GetBDTPruneStrength())->size()       ; ++iBDTPruneStrength       ) {
-   for( int iBDTNNodesMax          = 0 ; iBDTNNodesMax           < (signed) (Cfg.GetBDTNNodesMax())->size()           ; ++iBDTNNodesMax           ) {
+//   for( int iBDTNNodesMax          = 0 ; iBDTNNodesMax           < (signed) (Cfg.GetBDTNNodesMax())->size()           ; ++iBDTNNodesMax           ) {
 
      // Skip non-meningfull combination
 
@@ -92,14 +92,14 @@ void UATmvaClassification::DoBDT( UATmvaConfig& Cfg, UATmvaTree& T) {
      Name << Cfg.GetBDTnCuts()->at(iBDTnCuts) << "Cuts_" ; 
      Name << Cfg.GetBDTPruneMethod()->at(iBDTPruneMethod) << "_" ; 
      Name << Cfg.GetBDTPruneStrength()->at(iBDTPruneStrength) << "PruneStrength_" ;
-     Name << Cfg.GetBDTNNodesMax()->at(iBDTNNodesMax) << "NodesMax_" ;
+//     Name << Cfg.GetBDTNNodesMax()->at(iBDTNNodesMax) << "NodesMax_" ;
      Name << nVarMax << "Var" ;    
      if (Cfg.GetTmvaOptim()) Name << "_Optim" ;
      NAME =  Name.str();
 
      // Create ethod Options
      ostringstream Method;
-     Method << "H:!V:NTrees="      << Cfg.GetBDTNTrees()->at(iBDTNTrees)                ;
+     Method << "H:V:NTrees="      << Cfg.GetBDTNTrees()->at(iBDTNTrees)                ;
      Method << ":BoostType="       << Cfg.GetBDTBoostType()->at(iBDTBoostType)          ;
      if ( Cfg.GetBDTBoostType()->at(iBDTBoostType) == "Grad" ) {
        Method << ":UseBaggedGrad="        << Cfg.GetBDTUseBaggedGrad()->at(iBDTUseBaggedGrad)  ;
@@ -110,7 +110,7 @@ void UATmvaClassification::DoBDT( UATmvaConfig& Cfg, UATmvaTree& T) {
      Method << ":nCuts="           << Cfg.GetBDTnCuts()->at(iBDTnCuts)                  ;
      Method << ":PruneMethod="     << Cfg.GetBDTPruneMethod()->at(iBDTPruneMethod)      ;
      Method << ":PruneStrength="   << Cfg.GetBDTPruneStrength()->at(iBDTPruneStrength)  ;
-     Method << ":NNodesMax="        << Cfg.GetBDTNNodesMax()->at(iBDTNNodesMax)          ;
+//     Method << ":NNodesMax="        << Cfg.GetBDTNNodesMax()->at(iBDTNNodesMax)          ;
 
      // Create and Train MVA
      Train(Cfg,T,Name.str(),Method.str(),nVarMax);
@@ -128,7 +128,7 @@ void UATmvaClassification::DoBDT( UATmvaConfig& Cfg, UATmvaTree& T) {
    } // BDTnCuts
    } // BDTPruneMethod
    } // BDTPruneStrength
-   } // BDTNNodesMax
+//   } // BDTNNodesMax
 
    } // Variables
 
@@ -266,14 +266,16 @@ void UATmvaClassification::Train1D(UATmvaConfig& Cfg, UATmvaTree& T , string Nam
      UAFactory->TmvaName = Name;
  
      // Open TMVA output file
-     cout << "[UATmvaClassification::DoMLP()] Create: " << UAFactory->TmvaName << endl;
+     cout << "[UATmvaClassification::Train1D()] Create: " << UAFactory->TmvaName << endl;
      UAFactory->TmvaFile  = TFile::Open("rootfiles/" + UAFactory->TmvaName  + ".root","RECREATE" );
   
      // Create TMVA Factory
      //UAFactory->TmvaFactory = new Factory(UAFactory->TmvaName , UAFactory->TmvaFile ,
       UAFactory->TmvaFactory = new Factory("UATmva" , UAFactory->TmvaFile ,
       "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification");
-     
+    
+
+     cout << "[UATmvaClassification::Train1D()] Factory created !!! "<< endl;
      // Add VariablesCfg.GetTmvaVar())
      Int_t nVar = 0;     
      for (vector<InputVar_t>::iterator iVar = (Cfg.GetTmvaVar())->begin() ; iVar != (Cfg.GetTmvaVar())->end() ; ++iVar){
@@ -281,11 +283,13 @@ void UATmvaClassification::Train1D(UATmvaConfig& Cfg, UATmvaTree& T , string Nam
      }    
   
      // Weights
+     cout << "[UATmvaClassification::Train1D()] Setting weight "<< endl;
      UAFactory->TmvaFactory->SetWeightExpression(Cfg.GetTmvaWeight());
      Double_t SgWeight=1.0;
      Double_t BgWeight=1.0;
      
      // Add Tree
+     cout << "[UATmvaClassification::Train1D()] Adding trees "<< endl;
      for ( vector<InputData_t>::iterator iD = (Cfg.GetInputData())->begin() ; iD != (Cfg.GetInputData())->end() ; ++iD) {
        // SigTrain
        if(iD->SigTrain ) {
@@ -337,10 +341,12 @@ void UATmvaClassification::Train1D(UATmvaConfig& Cfg, UATmvaTree& T , string Nam
      }
   
      // Set training options
+     cout << "[UATmvaClassification::Train1D()] Set training options" << endl;
      TCut Cut = (Cfg.GetTmvaPreCut()).c_str() ;
      UAFactory->TmvaFactory->PrepareTrainingAndTestTree(Cut,"");
   
      // BookMethod
+     cout << "[UATmvaClassification::Train1D()] BookMethod" << endl;
      string VarTrans = "";
      if  ( (Cfg.GetTmvaVarTrans())->size() > 0 ) VarTrans = ":VarTransform=";
      for ( int i = 0 ; i < (signed) (Cfg.GetTmvaVarTrans())->size() ; ++i ) {
@@ -349,6 +355,7 @@ void UATmvaClassification::Train1D(UATmvaConfig& Cfg, UATmvaTree& T , string Nam
      } 
      if  ( (Cfg.GetTmvaVarTrans())->size() > 0 ) Method += VarTrans ;
 
+     cout << "[UATmvaClassification::Train1D()] Method = " << Method << endl;
      if ( Cfg.GetTmvaType() == "CUT" )    UAFactory->TmvaFactory->BookMethod( TMVA::Types::kCuts      , UAFactory->TmvaName , Method );
      if ( Cfg.GetTmvaType() == "ANN" )    UAFactory->TmvaFactory->BookMethod( TMVA::Types::kMLP       , UAFactory->TmvaName , Method );
      if ( Cfg.GetTmvaType() == "BDT" )    UAFactory->TmvaFactory->BookMethod( TMVA::Types::kBDT       , UAFactory->TmvaName , Method );
@@ -356,12 +363,17 @@ void UATmvaClassification::Train1D(UATmvaConfig& Cfg, UATmvaTree& T , string Nam
      if ( Cfg.GetTmvaType() == "PDERS")   UAFactory->TmvaFactory->BookMethod( TMVA::Types::kPDERS     , UAFactory->TmvaName , Method );
      if ( Cfg.GetTmvaType() == "PDEFoam") UAFactory->TmvaFactory->BookMethod( TMVA::Types::kPDEFoam   , UAFactory->TmvaName , Method );
 
+
      // Tmva Optimisation
+     cout << "[UATmvaClassification::Train1D()] Optimisation " << endl;
      if (Cfg.GetTmvaOptim()) UAFactory->TmvaFactory->OptimizeAllMethods();
 
      // Train , Test, Validate
+     cout << "[UATmvaClassification::Train1D()] Train NOW " << endl;
      UAFactory->TmvaFactory->TrainAllMethods(); 
+     cout << "[UATmvaClassification::Train1D()] Testing NOW " << endl;
      UAFactory->TmvaFactory->TestAllMethods();
+     cout << "[UATmvaClassification::Train1D()] Evaluating NOW " << endl;
      UAFactory->TmvaFactory->EvaluateAllMethods();
 
      // Clean UAFactory

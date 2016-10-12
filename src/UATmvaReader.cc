@@ -62,7 +62,7 @@ void UATmvaReader::DoBDT( UATmvaConfig& Cfg, UATmvaTree& T) {
    for( int iBDTnCuts              = 0 ; iBDTnCuts               < (signed) (Cfg.GetBDTnCuts())->size()               ; ++iBDTnCuts               ) {
    for( int iBDTPruneMethod        = 0 ; iBDTPruneMethod         < (signed) (Cfg.GetBDTPruneMethod())->size()         ; ++iBDTPruneMethod         ) {
    for( int iBDTPruneStrength      = 0 ; iBDTPruneStrength       < (signed) (Cfg.GetBDTPruneStrength())->size()       ; ++iBDTPruneStrength       ) {
-   for( int iBDTNNodesMax          = 0 ; iBDTNNodesMax           < (signed) (Cfg.GetBDTNNodesMax())->size()           ; ++iBDTNNodesMax           ) {
+   //for( int iBDTNNodesMax          = 0 ; iBDTNNodesMax           < (signed) (Cfg.GetBDTNNodesMax())->size()           ; ++iBDTNNodesMax           ) {
 
 
      // Build Name
@@ -79,7 +79,7 @@ void UATmvaReader::DoBDT( UATmvaConfig& Cfg, UATmvaTree& T) {
      Name << Cfg.GetBDTnCuts()->at(iBDTnCuts) << "Cuts_" ;
      Name << Cfg.GetBDTPruneMethod()->at(iBDTPruneMethod) << "_" ;
      Name << Cfg.GetBDTPruneStrength()->at(iBDTPruneStrength) << "PruneStrength_" ;
-     Name << Cfg.GetBDTNNodesMax()->at(iBDTNNodesMax) << "NodesMax_" ;
+     //Name << Cfg.GetBDTNNodesMax()->at(iBDTNNodesMax) << "NodesMax_" ;
      Name << nVarMax << "Var" ;
      if (Cfg.GetTmvaOptim()) Name << "_Optim" ;
      NAME =  Name.str();
@@ -96,7 +96,7 @@ void UATmvaReader::DoBDT( UATmvaConfig& Cfg, UATmvaTree& T) {
    } // BDTnCuts
    } // BDTPruneMethod
    } // BDTPruneStrength
-   } // BDTNNodesMax
+//   } // BDTNNodesMax
 
    } // Variables
    } // TargetLumi

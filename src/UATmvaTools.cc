@@ -37,7 +37,7 @@ Double_t OptimalCutLow(TH1D* hSign,int iVal=0){
 
 Double_t FindCutBased(TH1D* Signal, Double_t CutBSign , int iVal=0){
 
-  if ( ! CutBSign > 0 ) return 999. ;
+  if ( ! (CutBSign > 0) ) return 999. ;
 
   TH1D* iSign = (TH1D*) Signal->Clone();
   iSign->Reset();
@@ -86,10 +86,10 @@ Double_t FindCutBased(TH1D* Signal, Double_t CutBSign , int iVal=0){
 
 TH1D* GetSoverB(TString hName, TH1D* Signal , TH1D* Background) {
 
-  if ( ! Signal->CheckConsistency(Signal,Background) ) { 
-    cout << "[GetSignificance] histograms with different definitions" << endl; 
-    return new TH1D() ;
-  } 
+//  if ( ! Signal->CheckConsistency(Signal,Background) ) { 
+//    cout << "[GetSignificance] histograms with different definitions" << endl; 
+//    return new TH1D() ;
+//  } 
 
   TH1D* hSign = (TH1D*) Signal->Clone(hName);
   hSign->Reset();
@@ -107,10 +107,10 @@ TH1D* GetSoverB(TString hName, TH1D* Signal , TH1D* Background) {
 
 TH1D* GetSoverSqrtSPlusB(TString hName, TH1D* Signal , TH1D* Background) {
 
-  if ( ! Signal->CheckConsistency(Signal,Background) ) { 
-    cout << "[GetSignificance] histograms with different definitions" << endl; 
-    return new TH1D() ;
-  } 
+//  if ( ! Signal->CheckConsistency(Signal,Background) ) { 
+//    cout << "[GetSignificance] histograms with different definitions" << endl; 
+//    return new TH1D() ;
+//  } 
 
   TH1D* hSign = (TH1D*) Signal->Clone(hName);
   hSign->Reset();
@@ -128,10 +128,10 @@ TH1D* GetSoverSqrtSPlusB(TString hName, TH1D* Signal , TH1D* Background) {
 
 TH1D* GetSoverSqrtBPlusDeltaB(TString hName, TH1D* Signal , TH1D* Background, Double_t FracDeltaB = .35 ) {
 
-  if ( ! Signal->CheckConsistency(Signal,Background) ) { 
-    cout << "[GetSignificance] histograms with different definitions" << endl; 
-    return new TH1D() ;
-  } 
+//  if ( ! Signal->CheckConsistency(Signal,Background) ) { 
+//    cout << "[GetSignificance] histograms with different definitions" << endl; 
+//    return new TH1D() ;
+//  } 
 
   TH1D* hSign = (TH1D*) Signal->Clone(hName);
   hSign->Reset();
@@ -151,10 +151,10 @@ TH1D* GetSoverSqrtBPlusDeltaB(TString hName, TH1D* Signal , TH1D* Background, Do
 TH1D* GetExclusionLimit(TString hName, TH1D* Signal , TH1D* Background) {
 
 
-  if ( ! Signal->CheckConsistency(Signal,Background) ) { 
-    cout << "[GetSignificance] histograms with different definitions" << endl; 
-    return new TH1D() ;
-  } 
+//  if ( ! Signal->CheckConsistency(Signal,Background) ) { 
+//    cout << "[GetSignificance] histograms with different definitions" << endl; 
+//    return new TH1D() ;
+//  } 
 
   TH1D* hSign = (TH1D*) Signal->Clone(hName);
   hSign->Reset();
@@ -432,7 +432,7 @@ Double_t limitACLs( int iBin ,TH1D*& hData , vector<TH1D*>& vhSignal , vector<TH
   ifstream indata;
   indata.open(".explim");
   if(!indata) { // file couldn't be opened
-    cerr << "Error: file could not be opened .explim !!!!! " << cout;  
+    cerr << "Error: file could not be opened .explim !!!!! " << endl;  
     Limit = 40. ;
   } else { 
     while ( !indata.eof() ) {
