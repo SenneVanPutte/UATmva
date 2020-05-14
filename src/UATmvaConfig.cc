@@ -161,10 +161,10 @@ void UATmvaConfig::ReadCfg(TString CfgName) {
     return ;
   }
 
-  char str[255];
+  char str[500];
   while( Cfg ) {
 
-    Cfg.getline(str, 255);  
+    Cfg.getline(str, 500);  
     if(!Cfg) continue;  
     istringstream iss(str);
     if (iss.str().find("#") != string::npos ) continue; 
